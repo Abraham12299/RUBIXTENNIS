@@ -1813,4 +1813,1944 @@ function screenChats(){
 
 /* ---------- CHAT VIEW ---------- */
 function screenChatView(params){
-  const u = userById
+  const u = userById(params.id);
+  const c = Chat.threadWith(params.id);
+  if (!u || !c) return '<div class="empty">Chat not found.</div>';
+  if (!c.unlocked){
+    return '<div class="pad" style="padding-top:20px">'+
+      '<div class="paywall">'+
+        '<div class="paywall__inner">'+
+          '<div class="paywall__ico">'+ico('lock')+'</div>'+
+          '<h3>Unlock chat with '+u.name.split(' ')[0]+'</h3>'+
+          '<p>Send and receive messages instantly. One-time payment — no subscription.</p>'+
+          '<div class="paywall__price">'+money(PRICES.chatUnlock)+'<small> / one-time</small></div>'+
+          '<div class="paywall__btns">'+
+            '<button class="btn btn--ghost" style="flex:1;background:rgba(255,255,255,.1);color:#fff" data-act="back">Cancel</button>'+
+            '<button class="btn btn--gold" style="flex:1" data-act="unlockchat" data-id="'+u.id+'">Unlock</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+  const msgs = c.messages.map(m => {
+    const mine = m.from === 'me';
+    return '<div class="msg msg--'+(mine?'me':'them')+'">'+
+      escapeHTML(m.text)+
+      '<span class="msg__time">'+new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})+'</span>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="chat-view">'+
+    '<div class="chat-view__scroll" id="chatScroll">'+
+      (c.messages.length ? msgs : '<div style="text-align:center;color:var(--muted);font-size:12px;font-weight:600;padding:20px">Say hi to '+u.name.split(' ')[0]+'.</div>')+
+    '</div>'+
+    '<div class="chat-view__input">'+
+      '<input id="chatInput" placeholder="Message…">'+
+      '<button data-act="chatsend" data-id="'+u.id+'">'+ico('send')+'</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ---------- FEED ---------- */
+function screenFeed(){
+  const items = DB.feed.slice().sort((a,b) => b.ts - a.ts);
+  const me = getMe();
+  return '<div class="pad">'+
+    '<div class="ai-card" style="background:linear-gradient(140deg,#16233A,#0A1220)">'+
+      '<div class="ai-card__inner">'+
+        '<div class="ai-card__eyebrow">'+ico('users')+' RUBIX FEED</div>'+
+        '<h3>What your tennis circle is up to</h3>'+
+        '<p>Wins, meetups, streaks — everything worth knowing from your community.</p>'+
+      '</div>'+
+    '</div>'+
+
+    items.map(f => {
+      const u = userById(f.authorId);
+      if (!u) return '';
+      const liked = me.id && (f.likes.includes('me') || state.feedLikes[f.id]);
+      const c1 = 'hsl('+u.hue+' 60% 55%)';
+      const c2 = 'hsl('+((u.hue+45)%360)+' 55% 35%)';
+      return '<div class="feed-card">'+
+        '<div class="feed-card__head">'+
+          avatarHTML(u, 'av--sm')+
+          '<div class="feed-card__main">'+
+            '<div class="feed-card__name">'+u.name+' '+
+              (f.type === 'win' ? '<span class="badge badge--green" style="font-size:8px;padding:2px 6px">WIN</span>' : '') +
+              (f.type === 'achievement' ? '<span class="badge badge--gold" style="font-size:8px;padding:2px 6px">ACHIEVEMENT</span>' : '') +
+              (f.type === 'joined' ? '<span class="badge badge--soft" style="font-size:8px;padding:2px 6px">JOINED</span>' : '') +
+            '</div>'+
+            '<div class="feed-card__time">'+timeAgo(f.ts)+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="feed-card__text">'+escapeHTML(f.text)+'</div>'+
+        (f.media
+          ? '<div class="feed-card__media" style="--c1:'+c1+';--c2:'+c2+'">'+
+              '<img src="'+img('feed-'+f.id,800,400)+'" alt="" onerror="this.remove()">'+
+            '</div>'
+          : '')+
+        '<div class="feed-card__foot">'+
+          '<button class="feed-action '+(liked?'is-on':'')+'" data-act="feedlike" data-id="'+f.id+'">'+
+            ico('heart') + ' '+(f.likes.length + (state.feedLikes[f.id] && !f.likes.includes('me') ? 1 : 0))+
+          '</button>'+
+          '<button class="feed-action" data-act="feedcomment" data-id="'+f.id+'">'+
+            ico('comment') + ' '+f.comments+
+          '</button>'+
+          '<button class="feed-action" data-act="feedshare" data-id="'+f.id+'">'+
+            ico('share') + ' Share'+
+          '</button>'+
+        '</div>'+
+      '</div>';
+    }).join('')+
+  '</div>';
+}
+
+/* ---------- BADGES ---------- */
+const ALL_BADGES = [
+  { id:'first-match', name:'First Match', icon:'🎾', desc:'Play your first match' },
+  { id:'5-matches', name:'5 Matches', icon:'🏅', desc:'Play 5 matches' },
+  { id:'10-matches', name:'10 Matches', icon:'🥈', desc:'Play 10 matches' },
+  { id:'25-matches', name:'25 Matches', icon:'🥇', desc:'Play 25 matches' },
+  { id:'social-butterfly', name:'Social Butterfly', icon:'🦋', desc:'5 doubles games' },
+  { id:'surface-hopper', name:'Surface Hopper', icon:'🌍', desc:'Play on 3 surfaces' },
+  { id:'streak-5', name:'5-Win Streak', icon:'🔥', desc:'Win 5 in a row' },
+  { id:'streak-10', name:'10-Win Streak', icon:'⚡', desc:'Win 10 in a row' },
+  { id:'tourney-champ', name:'Tournament Champion', icon:'🏆', desc:'Win a tournament' }
+];
+function screenBadges(){
+  const me = getMe();
+  return '<div class="pad">'+
+    '<div class="streak-card">'+
+      '<div class="streak-card__inner">'+
+        '<div class="streak-card__flame">🔥</div>'+
+        '<div class="streak-card__main">'+
+          '<div class="streak-card__n">CURRENT WIN STREAK</div>'+
+          '<div class="streak-card__v">'+ (me.streaks?.current || 0) +' WINS</div>'+
+          '<div class="streak-card__s">Longest: '+ (me.streaks?.longest || 0) +' wins</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="sec-title">Your badges <small>'+ (me.badges?.length || 0) +' / '+ALL_BADGES.length+'</small></div>'+
+    '<div class="badge-grid">'+
+      ALL_BADGES.map(b => {
+        const got = (me.badges || []).includes(b.id);
+        return '<div class="badge-tile '+(got?'':'is-locked')+'">'+
+          '<div class="badge-tile__ico">'+(got ? b.icon : '🔒')+'</div>'+
+          '<div class="badge-tile__n">'+b.name+'</div>'+
+          '<div class="badge-tile__s">'+b.desc+'</div>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
+  '</div>';
+}
+
+/* ---------- AI RECOMMENDATIONS ---------- */
+function screenAI(){
+  const matches = AI.topMatches(8);
+  return '<div class="pad">'+
+    '<div class="ai-card">'+
+      '<div class="ai-card__inner">'+
+        '<div class="ai-card__eyebrow">'+ico('bolt')+' AI MATCH ENGINE</div>'+
+        '<h3>Your best matches today</h3>'+
+        '<p>Scored using level, surface preference, hand, availability, region and shared interests.</p>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="sec-title">Top picks <small>'+matches.length+'</small></div>'+
+    matches.map(({u, s}) => {
+      const sent = state.requestsSent[u.id];
+      return '<div class="row" style="background:#fff;border-radius:18px;box-shadow:var(--shadow);margin-bottom:9px" data-act="player" data-id="'+u.id+'">'+
+        avatarHTML(u, 'av--sm')+
+        '<div class="row__main">'+
+          '<div class="row__title">'+u.name+'<span class="lvl">'+u.level+'</span></div>'+
+          '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+' · '+u.dist+' m · '+u.surface+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;margin-right:6px">'+
+          '<div class="match-score">'+s+'%</div>'+
+        '</div>'+
+      '</div>';
+    }).join('')+
+  '</div>';
+}
+
+/* ---------- WALLET ---------- */
+function screenWallet(){
+  const me = getMe();
+  const txs = txsOf('me').slice(0, 20);
+  return '<div class="pad" style="padding-top:10px">'+
+    '<div class="wallet-hero">'+
+      '<div class="wallet-hero__inner">'+
+        '<div class="wallet-hero__label">RUBIX WALLET</div>'+
+        '<div class="wallet-hero__balance">'+
+          money(me.wallet).replace(/^\$/, '<small>$</small>')+
+        '</div>'+
+        '<div class="wallet-hero__row">'+
+          '<button class="btn btn--primary" data-act="topup">Add funds</button>'+
+          '<button class="btn" style="background:rgba(255,255,255,.14);color:#fff" data-act="toast" data-msg="Withdrawals available once you earn from hosting">Withdraw</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="sec-title">What you can pay for</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Send a request: '+money(PRICES.requestPlayer)+' per player">'+
+      '<div class="menu-row__ico">'+ico('send')+'</div>'+
+      '<div class="menu-row__main">'+
+        '<div class="menu-row__t">Send play request</div>'+
+        '<div class="menu-row__s">'+money(PRICES.requestPlayer)+' · reaches a player directly</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Chat unlock: '+money(PRICES.chatUnlock)+' one-time">'+
+      '<div class="menu-row__ico">'+ico('chat')+'</div>'+
+      '<div class="menu-row__main">'+
+        '<div class="menu-row__t">Unlock chat</div>'+
+        '<div class="menu-row__s">'+money(PRICES.chatUnlock)+' · one-time per person</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Court booking fees: '+PRICES.courtPct+'% of total">'+
+      '<div class="menu-row__ico">'+ico('ball')+'</div>'+
+      '<div class="menu-row__main">'+
+        '<div class="menu-row__t">Court booking</div>'+
+        '<div class="menu-row__s">'+PRICES.courtPct+'% platform fee · paid at booking</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Coach sessions: '+PRICES.coachPct+'% platform fee">'+
+      '<div class="menu-row__ico">'+ico('briefcase')+'</div>'+
+      '<div class="menu-row__main">'+
+        '<div class="menu-row__t">Coach lessons</div>'+
+        '<div class="menu-row__s">'+PRICES.coachPct+'% platform fee · paid at session</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Tournament host: '+money(PRICES.tournamentHost)+' · entry fees split automatically">'+
+      '<div class="menu-row__ico">'+ico('trophy')+'</div>'+
+      '<div class="menu-row__main">'+
+        '<div class="menu-row__t">Host a tournament</div>'+
+        '<div class="menu-row__s">'+money(PRICES.tournamentHost)+' + '+PRICES.tournamentPct+'% of entry</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Vendor listing: '+money(PRICES.vendorListing)+' flat per item">'+
+      '<div class="menu-row__ico">'+ico('briefcase')+'</div>'+
+      '<div class="menu-row__main">'+
+        '<div class="menu-row__t">Vendor listing</div>'+
+        '<div class="menu-row__s">'+money(PRICES.vendorListing)+' flat + '+PRICES.shopPct+'% of sale</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+
+    '<div class="sec-title">Recent activity <small>'+txs.length+'</small></div>'+
+    (txs.length === 0
+      ? '<div class="empty">No transactions yet.</div>'
+      : txs.map(t => {
+          const inOut = t.amount > 0 ? 'in' : 'out';
+          const ico2 = t.kind === 'topup' ? '💳' :
+            t.kind === 'court-booking' ? '🎾' :
+            t.kind === 'chat-unlock' ? '💬' :
+            t.kind === 'tournament-entry' ? '🏆' :
+            t.kind === 'coach-session' ? '🧑‍🏫' :
+            t.kind === 'vendor-listing' ? '🛒' :
+            t.kind === 'earnings' ? '💰' : '💵';
+          return '<div class="tx">'+
+            '<div class="tx__ico tx__ico--'+inOut+'">'+ico2+'</div>'+
+            '<div class="tx__main">'+
+              '<div class="tx__t">'+escapeHTML(t.note || t.kind)+'</div>'+
+              '<div class="tx__m">'+timeAgo(t.ts)+' · '+t.kind+'</div>'+
+            '</div>'+
+            '<div class="tx__amt tx__amt--'+inOut+'">'+
+              (t.amount > 0 ? '+' : '')+money(t.amount).replace('$-','-$')+
+              (t.fee ? '<small>fee '+money(t.fee)+'</small>' : '')+
+            '</div>'+
+          '</div>';
+        }).join(''))+
+  '</div>';
+}
+
+/* ---------- TRUST & SAFETY ---------- */
+function screenSafety(){
+  const me = getMe();
+  return '<div class="pad">'+
+    '<div class="safety-banner">'+
+      '<div class="safety-banner__ico">🛡️</div>'+
+      '<div>'+
+        '<div class="safety-banner__t">Your safety on RUBIX</div>'+
+        '<div class="safety-banner__s">Always meet in public courts. Share your match details with a friend. Report anything suspicious.</div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="sec-title">Verification</div>'+
+    '<div class="safety-action" data-act="verifyid">'+
+      '<div class="safety-action__ico">'+(me.idVerified ? '✅' : '🆔')+'</div>'+
+      '<div class="safety-action__main">'+
+        '<div class="safety-action__t">ID verification</div>'+
+        '<div class="safety-action__s">'+(me.idVerified ? 'Verified' : 'Verify with a government ID')+'</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+    '<div class="safety-action" data-act="verifyphoto">'+
+      '<div class="safety-action__ico">'+(me.photoVerified ? '✅' : '📷')+'</div>'+
+      '<div class="safety-action__main">'+
+        '<div class="safety-action__t">Photo verification</div>'+
+        '<div class="safety-action__s">'+(me.photoVerified ? 'Verified' : 'Selfie must match your profile photo')+'</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+
+    '<div class="sec-title">Before every match</div>'+
+    '<div class="notif-row">'+
+      '<div class="notif-row__main">'+
+        '<div class="notif-row__t">Share location with a friend</div>'+
+        '<div class="notif-row__s">Auto-prompt when you open a court booking</div>'+
+      '</div>'+
+      '<div class="toggle '+(me.safety.shareLocationBeforeMatch?'is-on':'')+'" data-act="safetytoggle" data-f="shareLocationBeforeMatch"></div>'+
+    '</div>'+
+    '<div class="safety-action" data-act="emergencycontact">'+
+      '<div class="safety-action__ico">📞</div>'+
+      '<div class="safety-action__main">'+
+        '<div class="safety-action__t">Emergency contact</div>'+
+        '<div class="safety-action__s">'+ (me.safety.emergencyContact || 'Not set — tap to add') +'</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+
+    '<div class="sec-title">Blocked players</div>'+
+    (me.safety.blocked.length === 0
+      ? '<div class="empty" style="padding:22px">Nobody blocked.</div>'
+      : me.safety.blocked.map(id => {
+          const u = userById(id);
+          return '<div class="safety-action" data-act="unblock" data-id="'+id+'">'+
+            avatarHTML(u, 'av--sm')+
+            '<div class="safety-action__main">'+
+              '<div class="safety-action__t">'+u.name+'</div>'+
+              '<div class="safety-action__s">Tap to unblock</div>'+
+            '</div>'+ico('chev')+
+          '</div>';
+        }).join(''))+
+
+    '<div class="sec-title">Report</div>'+
+    '<button class="btn btn--danger btn--block" data-act="report-abuse">Report a player or issue</button>'+
+  '</div>';
+}
+
+/* ---------- NOTIFICATION PREFS ---------- */
+function screenNotifPrefs(){
+  const me = getMe();
+  const rows = [
+    { k:'push',     t:'Push notifications', s:'Enable all push alerts' },
+    { k:'email',    t:'Email notifications', s:'Weekly digest + booking reminders' },
+    { k:'nearby',   t:'Nearby player alerts', s:'When a player is within 500 m' },
+    { k:'requests', t:'Play requests', s:'When someone sends you a request' },
+    { k:'chat',     t:'Chat messages', s:'New message alerts' },
+    { k:'bookings', t:'Court bookings', s:'Booking confirmations & reminders' },
+    { k:'community',t:'Community activity', s:'Posts and events from your clubs' },
+    { k:'quietHours', t:'Quiet hours (10pm – 7am)', s:'Silence push during quiet hours' }
+  ];
+  return '<div class="pad">'+
+    '<div style="background:linear-gradient(140deg,#16233A,#0A1220);border-radius:18px;padding:16px;color:#fff;margin-bottom:14px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">NOTIFICATION CENTRE</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Control exactly what reaches you — and when.</div>'+
+    '</div>'+
+    rows.map(r =>
+      '<div class="notif-row">'+
+        '<div class="notif-row__main">'+
+          '<div class="notif-row__t">'+r.t+'</div>'+
+          '<div class="notif-row__s">'+r.s+'</div>'+
+        '</div>'+
+        '<div class="toggle '+(me.notifPrefs[r.k]?'is-on':'')+'" data-act="notiftoggle" data-k="'+r.k+'"></div>'+
+      '</div>'
+    ).join('')+
+  '</div>';
+}
+
+/* ---------- VENDOR / COACH / COURT APPLICATIONS ---------- */
+function screenVendorApply(){
+  const me = getMe();
+  if (me.vendorStatus === 'pending' || me.vendorStatus === 'approved'){
+    return '<div class="pad" style="padding-top:30px">'+
+      '<div style="text-align:center;padding:40px 20px;background:#fff;border-radius:24px;box-shadow:var(--shadow)">'+
+        '<div style="font-size:52px">'+(me.vendorStatus==='approved'?'✅':'⏳')+'</div>'+
+        '<div style="font-size:18px;font-weight:900;letter-spacing:-.03em;margin-top:14px">'+
+          (me.vendorStatus==='approved'?'You are a verified vendor':'Application under review')+
+        '</div>'+
+        '<div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-top:10px;line-height:1.55">'+
+          (me.vendorStatus==='approved'
+            ? 'Your shop listings are live and visible to all players.'
+            : 'An admin will review your request shortly.')+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="background:linear-gradient(140deg,#16233A,#0A1220);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">VENDOR APPLICATION</div>'+
+      '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Sell gear in the RUBIX shop</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Listing fee: '+money(PRICES.vendorListing)+' flat + '+PRICES.shopPct+'% of sale.</div>'+
+    '</div>'+
+
+    '<div class="form-field"><label class="form-label">Item name</label>'+
+      '<input class="form-input" id="v-item" placeholder="e.g. Wilson Pro Staff 97"></div>'+
+    '<div class="form-field"><label class="form-label">Category</label>'+
+      '<div class="form-chips">'+
+        ['Racket','Shoes','Bag','Strings','Apparel','Other'].map(c =>
+          '<button class="form-chip '+(state.vendorDraft?.category===c?'is-on':'')+'" data-act="vendorfield" data-field="category" data-v="'+c+'">'+c+'</button>').join('')+
+      '</div></div>'+
+    '<div class="form-field"><label class="form-label">Asking price (USD)</label>'+
+      '<input class="form-input" id="v-price" type="number" placeholder="0"></div>'+
+    '<div class="form-field"><label class="form-label">Condition / notes</label>'+
+      '<textarea class="form-input" id="v-note" placeholder="Describe the item…"></textarea></div>'+
+    '<button class="btn btn--primary btn--block" data-act="vendorsubmit">Pay '+money(PRICES.vendorListing)+' & Submit</button>'+
+    '<button class="btn btn--ghost btn--block" style="margin-top:9px" data-act="back">Cancel</button>'+
+  '</div>';
+}
+
+function screenCoachApply(){
+  const c = DB.courts.filter(x => x.status === 'approved');
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="background:linear-gradient(140deg,#16233A,#0A1220);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">COACH APPLICATION</div>'+
+      '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Get stationed at a court</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Coaches earn '+ (100 - PRICES.coachPct) +'% of each booking. '+PRICES.coachPct+'% platform fee.</div>'+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Select court</label>'+
+      c.map(ct =>
+        '<div class="toggle-row" data-act="coachcourt" data-id="'+ct.id+'">'+
+          '<div>'+
+            '<div class="toggle-row__t">'+ct.name+'</div>'+
+            '<div class="toggle-row__s">📍 '+ct.address+'</div>'+
+          '</div>'+
+          '<div class="toggle '+(state.coachCourt===ct.id?'is-on':'')+'"></div>'+
+        '</div>').join('')+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Specialty</label>'+
+      '<input class="form-input" id="co-spec" placeholder="e.g. Serve mechanics"></div>'+
+    '<div class="form-row">'+
+      '<div class="form-field"><label class="form-label">Hourly rate</label>'+
+        '<input class="form-input" id="co-rate" type="number" placeholder="30"></div>'+
+      '<div class="form-field"><label class="form-label">Experience</label>'+
+        '<input class="form-input" id="co-exp" placeholder="e.g. 5 yrs"></div>'+
+    '</div>'+
+    '<button class="btn btn--primary btn--block" data-act="coachsubmit">Submit Application</button>'+
+  '</div>';
+}
+
+function screenSubmitCourt(){
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="background:linear-gradient(140deg,#16233A,#0A1220);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">COURT SUBMISSION</div>'+
+      '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Add a venue to RUBIX</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Reviewed by admin before going live.</div>'+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Court name</label>'+
+      '<input class="form-input" id="nc-name" placeholder="e.g. Eastside Tennis Hub"></div>'+
+    '<div class="form-field"><label class="form-label">Address</label>'+
+      '<input class="form-input" id="nc-addr" placeholder="Street, city"></div>'+
+    '<div class="form-row">'+
+      '<div class="form-field"><label class="form-label">Price / hour</label>'+
+        '<input class="form-input" id="nc-price" type="number" placeholder="20"></div>'+
+      '<div class="form-field"><label class="form-label">Courts</label>'+
+        '<input class="form-input" id="nc-count" type="number" placeholder="4"></div>'+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Surface</label>'+
+      '<div class="form-chips">'+
+        ['Hard','Clay','Grass','Indoor'].map(s =>
+          '<button class="form-chip '+(state.courtSurface===s?'is-on':'')+'" data-act="courtsurface" data-v="'+s+'">'+s+'</button>').join('')+
+      '</div></div>'+
+    '<button class="btn btn--primary btn--block" data-act="courtsubmit">Submit for Review</button>'+
+  '</div>';
+}
+
+function screenHostTourney(){
+  const courts = DB.courts.filter(c => c.status === 'approved');
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="background:linear-gradient(140deg,#3D1F5C,#1F0F30);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">HOST TOURNAMENT</div>'+
+      '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Bring nearby doubles players together</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Players have 7 days to agree on match times. Host fee: '+money(PRICES.tournamentHost)+'.</div>'+
+    '</div>'+
+
+    '<div class="form-field"><label class="form-label">Tournament name</label>'+
+      '<input class="form-input" id="ht-name" placeholder="e.g. Riverside Doubles Open"></div>'+
+    '<div class="form-field"><label class="form-label">Format</label>'+
+      '<div class="form-chips">'+
+        [['doubles-elim','Doubles · Knockout'],['doubles-roundrobin','Doubles · Round Robin'],
+         ['singles-elim','Singles · Knockout'],['singles-roundrobin','Singles · Round Robin']].map(([v,l]) =>
+          '<button class="form-chip '+(state.hostFormat===v?'is-on':'')+'" data-act="hostfield" data-f="format" data-v="'+v+'">'+l+'</button>').join('')+
+      '</div></div>'+
+    '<div class="form-field"><label class="form-label">Court</label>'+
+      '<select class="form-input" id="ht-court">'+
+        courts.map(c => '<option value="'+c.id+'">'+c.name+'</option>').join('')+
+      '</select></div>'+
+    '<div class="form-row">'+
+      '<div class="form-field"><label class="form-label">Max teams</label>'+
+        '<input class="form-input" id="ht-max" type="number" value="8"></div>'+
+      '<div class="form-field"><label class="form-label">Entry ($)</label>'+
+        '<input class="form-input" id="ht-entry" type="number" value="5"></div>'+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Prize pool ($)</label>'+
+      '<input class="form-input" id="ht-prize" type="number" value="60"></div>'+
+
+    '<div style="background:#F5F7F2;border-radius:14px;padding:14px;font-size:12px;font-weight:600;color:#3A4756;line-height:1.6;margin-bottom:16px">'+
+      '<b>How it works:</b> Players join for the entry fee. ' + PRICES.tournamentPct + '% platform fee is deducted automatically. Winners are paid instantly from the prize pool once the bracket completes.'+
+    '</div>'+
+
+    '<button class="btn btn--primary btn--block" data-act="hosttourneysubmit">Pay '+money(PRICES.tournamentHost)+' & Create</button>'+
+  '</div>';
+}
+
+/* ---------- MORE ---------- */
+function screenMore(){
+  const me = getMe();
+  const unread = Chat.unreadCount();
+
+  const vendorRow = me.vendorStatus === 'approved'
+    ? '<div class="menu-row" data-act="toast" data-msg="You are a verified vendor ✓">'+
+        '<div class="menu-row__ico" style="background:var(--green)">'+ico('check')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Verified Vendor</div><div class="menu-row__s">Your shop listings are live</div></div>'+
+        ico('chev')+
+      '</div>'
+    : me.vendorStatus === 'pending'
+    ? '<div class="menu-row" data-act="toast" data-msg="Your vendor application is under review">'+
+        '<div class="menu-row__ico" style="background:#FFF3DE;color:#A56A00">'+ico('bolt')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Vendor Application Pending</div><div class="menu-row__s">An admin will review shortly</div></div>'+
+        ico('chev')+
+      '</div>'
+    : '<div class="menu-row" data-act="vendorapply">'+
+        '<div class="menu-row__ico">'+ico('briefcase')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Become a Vendor · '+money(PRICES.vendorListing)+'</div><div class="menu-row__s">Sell gear in the RUBIX shop</div></div>'+
+        ico('chev')+
+      '</div>';
+
+  const coachDashRow = me.role === 'coach' && me.coachCourt
+    ? '<div class="menu-row" style="background:linear-gradient(140deg,#1E3A1F,#0F2E12);color:#fff" data-act="coachdash">'+
+        '<div class="menu-row__ico" style="background:var(--green);color:var(--navy)">'+ico('clipboard')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t" style="color:#fff">Coach Dashboard</div><div class="menu-row__s" style="color:rgba(255,255,255,.6)">Manage bookings & court status</div></div>'+
+        ico('chev', 'style="color:#fff"')+
+      '</div>'
+    : '<div class="menu-row" data-act="coachapply">'+
+        '<div class="menu-row__ico">'+ico('users')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Apply as Coach</div><div class="menu-row__s">Earn '+ (100 - PRICES.coachPct) +'% of each lesson</div></div>'+
+        ico('chev')+
+      '</div>';
+
+  return '<div class="pad">'+
+    '<div class="wallet-hero" data-act="wallet" style="margin-bottom:14px;cursor:pointer">'+
+      '<div class="wallet-hero__inner">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+          '<div>'+
+            '<div class="wallet-hero__label">RUBIX WALLET</div>'+
+            '<div class="wallet-hero__balance" style="font-size:32px">'+money(me.wallet)+'</div>'+
+          '</div>'+
+          '<div style="width:44px;height:44px;border-radius:16px;background:var(--green);color:var(--navy);display:grid;place-items:center">'+ico('wallet')+'</div>'+
+        '</div>'+
+        '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:14px">Tap to top up, view activity and see platform fees</div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="tile" style="background:linear-gradient(140deg,#3D1F5C,#1F0F30)" data-act="ai">'+
+      '<h3>AI Match Recommendations</h3>'+
+      '<p>Top picks based on level, surface, hand, region, and availability.</p>'+
+      '<div class="tile__emoji">✨</div>'+
+    '</div>'+
+
+    '<div class="tile" style="background:linear-gradient(140deg,#16233A,#0A1220)" data-act="feed">'+
+      '<h3>RUBIX Feed</h3>'+
+      '<p>Wins, meetups, streaks — your tennis circle in one place.</p>'+
+      '<div class="tile__emoji">📰</div>'+
+    '</div>'+
+
+    '<div class="tile" style="background:linear-gradient(140deg,#FF8A3D,#C25A1E)" data-act="badges">'+
+      '<h3>Badges & Streaks</h3>'+
+      '<p>Unlock achievements as you play. Track your current and longest streaks.</p>'+
+      '<div class="tile__emoji">🔥</div>'+
+    '</div>'+
+
+    '<div class="tile" style="background:linear-gradient(140deg,#0A1220,#16233A)" data-act="lostfound">'+
+      '<h3>Lost &amp; Found</h3>'+
+      '<p>Reunite gear with its owner. Post a lost or found item in seconds.</p>'+
+      '<div class="tile__emoji">🎒</div>'+
+    '</div>'+
+
+    '<div class="tile" style="background:linear-gradient(140deg,#3E6B1F,#1F3A0E)" data-act="shop">'+
+      '<h3>RUBIX Shop</h3>'+
+      '<p>Buy and sell rackets, shoes, bags and strings near you.</p>'+
+      '<div class="tile__emoji">🛒</div>'+
+    '</div>'+
+
+    '<div class="sec-title">Inbox</div>'+
+    '<div class="menu-row" data-act="chats">'+
+      '<div class="menu-row__ico">'+ico('chat')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Chats</div><div class="menu-row__s">'+ (unread ? unread + ' new messages' : 'No new messages') +'</div></div>'+
+      (unread ? '<span class="icon-btn__badge" style="position:static">'+unread+'</span>' : ico('chev'))+
+    '</div>'+
+
+    '<div class="sec-title">Account</div>'+
+    '<div class="menu-row" data-act="idcard">'+
+      '<div class="menu-row__ico">'+ico('shield')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">My RUBIX ID</div><div class="menu-row__s">Digital card · '+me.idNumber+'</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="editprofile">'+
+      '<div class="menu-row__ico">'+ico('edit')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Edit Profile</div><div class="menu-row__s">Update your player details</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="safety">'+
+      '<div class="menu-row__ico">'+ico('shield2')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Trust & Safety</div><div class="menu-row__s">Verification, emergency contact, blocked players</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="notifprefs">'+
+      '<div class="menu-row__ico">'+ico('bell')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Notifications</div><div class="menu-row__s">Control what reaches you and when</div></div>'+
+      ico('chev')+
+    '</div>'+
+    vendorRow+
+    coachDashRow+
+    '<div class="menu-row" data-act="submitcourt">'+
+      '<div class="menu-row__ico">'+ico('pin')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Submit a Court</div><div class="menu-row__s">Add a new venue to RUBIX</div></div>'+
+      ico('chev')+
+    '</div>'+
+
+    '<div class="sec-title">Activity</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="You have 3 upcoming bookings">'+
+      '<div class="menu-row__ico">'+ico('calendar')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">My Bookings</div><div class="menu-row__s">3 upcoming court reservations</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="You have 2 pending play requests">'+
+      '<div class="menu-row__ico">'+ico('send')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Play Requests</div><div class="menu-row__s">2 pending · 5 accepted</div></div>'+
+      ico('chev')+
+    '</div>'+
+
+    (SESSION.adminId
+      ? '<div class="sec-title">Admin</div>'+
+        '<div class="menu-row" style="background:linear-gradient(140deg,#0F1B2E,#16233A);color:#fff" data-act="returnadmin">'+
+          '<div class="menu-row__ico" style="background:var(--green);color:var(--navy)">'+ico('shield2')+'</div>'+
+          '<div class="menu-row__main"><div class="menu-row__t" style="color:#fff">Return to Admin Console</div><div class="menu-row__s" style="color:rgba(255,255,255,.55)">You are still signed in as admin</div></div>'+
+          ico('chev', 'style="color:#fff"')+
+        '</div>'
+      : '<div class="sec-title">Admin</div>'+
+        '<div class="menu-row" style="background:linear-gradient(140deg,#0F1B2E,#16233A);color:#fff" data-act="exitgate">'+
+          '<div class="menu-row__ico" style="background:var(--green);color:var(--navy)">'+ico('lock')+'</div>'+
+          '<div class="menu-row__main"><div class="menu-row__t" style="color:#fff">Admin Sign-in</div><div class="menu-row__s" style="color:rgba(255,255,255,.55)">Approvals · Users · Rankings</div></div>'+
+          ico('chev', 'style="color:#fff"')+
+        '</div>')+
+
+    '<div style="text-align:center;padding:22px 0 6px;font-size:11px;font-weight:700;color:#B3BDC6;letter-spacing:.14em">RUBIX TENNIS · NO ADS · v1.0</div>'+
+  '</div>';
+}
+
+/* ---------- LOST & FOUND / SHOP / COACH / CLUB ---------- */
+function screenLostFound(){
+  const list = DB.lostFound.filter(i => state.lfFilter === 'all' || i.type === state.lfFilter);
+  return '<div class="pad" style="position:relative;min-height:100%">'+
+    '<div class="chips chips--pad" style="padding-left:0">'+
+      [['all','All items'],['lost','Lost'],['found','Found']].map(([v,l]) =>
+        '<button class="chip '+(state.lfFilter===v?'is-on':'')+'" data-act="lffilter" data-v="'+v+'">'+l+'</button>').join('')+
+    '</div>'+
+    (list.length === 0 ? '<div class="empty">Nothing here yet.</div>' :
+      list.map(i => {
+        const c1 = 'hsl('+i.hue+' 70% 60%)';
+        const c2 = 'hsl('+((i.hue+45)%360)+' 66% 42%)';
+        return '<div class="lf-card" data-act="toast" data-msg="Opening conversation about \''+escapeHTML(i.title)+'\'…">'+
+          '<div class="lf-card__img" style="--c1:'+c1+';--c2:'+c2+'">'+i.emoji+
+            '<img src="'+img('lf-'+i.id,160,160)+'" alt="" onerror="this.remove()">'+
+          '</div>'+
+          '<div class="lf-card__main">'+
+            '<span class="lf-card__tag tag--'+i.type+'">'+i.type+'</span>'+
+            '<div class="lf-card__t">'+i.title+'</div>'+
+            '<div class="lf-card__m">📍 '+i.place+' · '+i.time+'</div>'+
+          '</div>'+ ico('chev')+
+        '</div>';
+      }).join(''))+
+    '<button class="fab" data-act="lfadd">+</button>'+
+  '</div>';
+}
+function screenShop(){
+  return '<div class="pad">'+
+    '<div class="search">'+ico('search')+
+      '<input placeholder="Search rackets, shoes, bags…" data-input="shopQuery">'+
+    '</div>'+
+    '<div class="chips chips--pad" style="padding-left:0">'+
+      '<button class="chip is-on">All</button>'+
+      '<button class="chip">Rackets</button>'+
+      '<button class="chip">Shoes</button>'+
+      '<button class="chip">Bags</button>'+
+      '<button class="chip">Strings</button>'+
+    '</div>'+
+    '<div class="grid2">'+
+      DB.shop.filter(i => i.status === 'approved').map(it => {
+        const c1 = 'hsl('+it.hue+' 72% 58%)';
+        const c2 = 'hsl('+((it.hue+45)%360)+' 68% 40%)';
+        return '<div class="shop-card" data-act="shopitem" data-id="'+it.id+'">'+
+          '<div class="shop-card__img" style="--c1:'+c1+';--c2:'+c2+'">'+
+            '<img src="'+img('shop-'+it.id,400,300)+'" alt="" loading="lazy" onerror="this.remove()">'+
+          '</div>'+
+          '<div class="shop-card__body">'+
+            '<div class="shop-card__t">'+it.title+'</div>'+
+            '<div class="shop-card__p">$'+it.price+'</div>'+
+            '<div class="shop-card__c">'+it.cond+' · '+(userById(it.sellerId)?.name.split(' ')[0] || 'Seller')+'</div>'+
+          '</div>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
+  '</div>';
+}
+function screenShopItem(params){
+  const it = shopById(params.id);
+  if (!it) return '<div class="empty">Item not found.</div>';
+  const c1 = 'hsl('+it.hue+' 72% 58%)';
+  const c2 = 'hsl('+((it.hue+45)%360)+' 68% 40%)';
+  const seller = userById(it.sellerId);
+  const fee = shopFee(it.price);
+  return '<div class="shop-hero">'+
+      '<div class="shop-hero__bg" style="--c1:'+c1+';--c2:'+c2+'">'+
+        '<img src="'+img('shop-'+it.id,800,500)+'" alt="" onerror="this.remove()">'+
+      '</div>'+
+    '</div>'+
+    '<div class="pad" style="padding-top:20px">'+
+      '<div style="display:flex;gap:12px;align-items:flex-start">'+
+        '<div style="flex:1">'+
+          '<div style="font-size:19px;font-weight:900;letter-spacing:-.04em;line-height:1.2">'+it.title+'</div>'+
+          '<div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:6px">'+it.cond+'</div>'+
+        '</div>'+
+        '<div style="font-size:26px;font-weight:900;letter-spacing:-.05em">$'+it.price+'</div>'+
+      '</div>'+
+      '<div class="sec-title">Seller</div>'+
+      '<div class="row" style="background:#fff;border-radius:18px;box-shadow:var(--shadow)" data-act="player" data-id="'+it.sellerId+'">'+
+        (seller ? avatarHTML(seller, 'av--sm') : '')+
+        '<div class="row__main">'+
+          '<div class="row__title">'+(seller ? seller.name : 'Unknown')+'<span class="lvl">'+(seller ? seller.level : '—')+'</span></div>'+
+          '<div class="row__sub">📍 '+it.place+' · ⭐ 4.9 seller rating</div>'+
+        '</div>'+ ico('chev')+
+      '</div>'+
+      '<div class="sticky-bar">'+
+        '<div class="sticky-bar__price" style="flex:1">'+
+          '<b>$'+it.price+'</b>'+
+          '<span>'+PRICES.shopPct+'% platform fee ('+money(fee)+')</span>'+
+        '</div>'+
+        '<button class="btn btn--primary" data-act="shopbuy" data-id="'+it.id+'">Buy Now</button>'+
+      '</div>'+
+    '</div>';
+}
+function screenCoach(params){
+  const c = courtById(params.court);
+  const co = c && c.coaches.find(x => x.id === params.id);
+  if (!co) return '<div class="empty">Coach not found.</div>';
+  const owner = userById(co.userId);
+  const fee = coachFee(co.rate);
+  const total = co.rate;
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="display:flex;gap:16px;align-items:center">'+
+      (owner ? avatarHTML(owner, 'av--lg') : '')+
+      '<div>'+
+        '<div style="font-size:21px;font-weight:900;letter-spacing:-.04em">'+co.name+'</div>'+
+        '<div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:5px">'+co.spec+'</div>'+
+        '<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap">'+
+          '<span class="badge badge--soft">'+co.exp+'</span>'+
+          (co.verified
+            ? '<span class="badge badge--ok">✓ Verified by Admin</span>'
+            : '<span class="badge badge--amber">⏳ Pending</span>')+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="sec-title">Stationed at</div>'+
+    '<div class="row" style="background:#fff;border-radius:18px;box-shadow:var(--shadow)" data-act="court" data-id="'+c.id+'">'+
+      '<div class="av av--sm" style="--c1:hsl('+c.hue+' 62% 56%);--c2:hsl('+((c.hue+45)%360)+' 58% 34%)">'+
+        '<img src="'+img('court-'+c.id,120,120)+'" alt="" onerror="this.remove()">'+
+      '</div>'+
+      '<div class="row__main">'+
+        '<div class="row__title">'+c.name+'</div>'+
+        '<div class="row__sub">📍 '+c.address+'</div>'+
+      '</div>'+ ico('chev')+
+    '</div>'+
+    '<div class="sec-title">Availability this week</div>'+
+    '<div class="slots">'+
+      TIMES.slice(0, 6).map((t, i) => {
+        const off = (i*2 + co.name.length) % 5 === 0;
+        return '<button class="slot '+(off?'is-off':'')+'" data-act="coachbook" data-court="'+c.id+'" data-coach="'+co.id+'" data-time="'+t+'">'+t+'</button>';
+      }).join('')+
+    '</div>'+
+    '<div class="sticky-bar">'+
+      '<div class="sticky-bar__price" style="flex:1">'+
+        '<b>$'+total+'</b>'+
+        '<span>+ '+money(fee)+' platform fee ('+PRICES.coachPct+'%)</span>'+
+      '</div>'+
+      '<button class="btn btn--primary" data-act="coachbook" data-court="'+c.id+'" data-coach="'+co.id+'">Book Lesson</button>'+
+    '</div>'+
+  '</div>';
+}
+function screenClub(params){
+  const k = commById(params.id);
+  if (!k) return '<div class="empty">Community not found.</div>';
+  const c1 = 'hsl('+k.hue+' 80% 60%)';
+  const c2 = 'hsl('+((k.hue+45)%360)+' 70% 42%)';
+  const members = DB.users.filter(u => u.id !== 'me' && u.role !== 'admin').slice(0, 6);
+  const creator = userById(k.createdBy);
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="height:160px;border-radius:26px;overflow:hidden;position:relative">'+
+      '<div style="position:absolute;inset:0;background:linear-gradient(140deg,'+c1+','+c2+')"></div>'+
+      '<img src="'+img('club-'+k.id,800,400)+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">'+
+      '<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(10,18,32,.72) 100%)"></div>'+
+      '<div style="position:absolute;left:18px;right:18px;bottom:16px;color:#fff">'+
+        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">'+
+          (k.verified === 'approved' ? '✓ VERIFIED COMMUNITY' : '⏳ PENDING VERIFICATION')+
+        '</div>'+
+        '<div style="font-size:20px;font-weight:900;letter-spacing:-.04em;margin-top:6px">'+k.name+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-top:14px;line-height:1.5">'+k.desc+'</div>'+
+    '<div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap">'+
+      '<span class="badge badge--green">'+k.members.toLocaleString()+' members</span>'+
+      '<span class="badge badge--soft">'+k.dist+' m away</span>'+
+      (creator ? '<span class="badge badge--soft">Led by '+creator.name.split(' ')[0]+'</span>' : '')+
+      (k.monthlyFee ? '<span class="fee-tag fee-tag--light">'+money(k.monthlyFee)+'/mo</span>' : '')+
+    '</div>'+
+    '<div class="sec-title">Members nearby</div>'+
+    members.map(u =>
+      '<div class="row" data-act="player" data-id="'+u.id+'">'+
+        avatarHTML(u, 'av--sm')+
+        '<div class="row__main">'+
+          '<div class="row__title">'+u.name+'<span class="lvl">'+u.level+'</span></div>'+
+          '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+' · '+u.dist+' m</div>'+
+        '</div>'+
+        '<button class="btn btn--sm btn--primary" data-act="request" data-id="'+u.id+'">Wave · $'+PRICES.requestPlayer+'</button>'+
+      '</div>').join('')+
+    '<div class="sticky-bar">'+
+      '<div class="sticky-bar__price" style="flex:1">'+
+        (k.monthlyFee ? '<b>'+money(k.monthlyFee)+'</b><span>monthly + '+money(k.monthlyFee * PRICES.communityPct / 100)+' fee</span>' : '<b>Free</b><span>to join the community</span>')+
+      '</div>'+
+      '<button class="btn btn--primary" data-act="joinclub" data-id="'+k.id+'">Join Community</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   12. SCREENS — DASHBOARDS
+   ============================================================ */
+function screenCoachDashboard(){
+  const me = getMe();
+  const c = courtById(me.coachCourt);
+  if (!c) return '<div class="empty">No court assigned. Apply as a coach first.</div>';
+  const bookings = c.bookings || [];
+  return '<div class="admin-shell" style="background:#F3F5F0;color:var(--navy)">'+
+    '<div class="dash-hero dash-hero--coach">'+
+      '<div class="dash-hero__inner">'+
+        '<div class="dash-hero__eyebrow"><span style="width:6px;height:6px;background:var(--green);border-radius:50%"></span>COACH DASHBOARD</div>'+
+        '<h2>'+c.name+'</h2>'+
+        '<p>'+me.name+' · '+c.address+'</p>'+
+      '</div>'+
+    '</div>'+
+    '<div class="dash-stat-grid">'+
+      '<div class="dstat"><b>'+bookings.length+'</b><span>Bookings today</span></div>'+
+      '<div class="dstat"><b>'+bookings.filter(b => b.status === 'active').length+'</b><span>On court now</span></div>'+
+      '<div class="dstat"><b>'+bookings.filter(b => b.status === 'upcoming').length+'</b><span>Upcoming</span></div>'+
+    '</div>'+
+    '<div style="padding:0 18px 22px">'+
+      '<div class="court-status-card">'+
+        '<div class="court-status-card__t">Court status</div>'+
+        '<div class="court-status-opts">'+
+          '<div class="court-status-opt '+(c.courtStatus==='open'?'is-on':'')+'" data-act="setcourtstatus" data-v="open">Open</div>'+
+          '<div class="court-status-opt '+(c.courtStatus==='closed'?'is-on is-closed':'')+'" data-act="setcourtstatus" data-v="closed">Closed</div>'+
+          '<div class="court-status-opt '+(c.courtStatus==='maintenance'?'is-on is-maint':'')+'" data-act="setcourtstatus" data-v="maintenance">Maintenance</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="sec-title">Today\'s bookings <small>'+bookings.length+' total</small></div>'+
+      (bookings.length === 0
+        ? '<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:12.5px;font-weight:600">No bookings for today.</div>'
+        : bookings.map(b => {
+            const u = userById(b.userId);
+            const pillClass = 'status-pill status-pill--'+(b.status === 'completed' ? 'done' : b.status);
+            return '<div class="booking-row">'+
+              '<div class="booking-row__head">'+
+                '<div class="booking-row__time">'+b.time+'</div>'+
+                (u ? avatarHTML(u, 'av--xs') : '')+
+                '<div class="booking-row__main">'+
+                  '<div class="booking-row__who">'+(u ? u.name : 'Guest')+'</div>'+
+                  '<div class="booking-row__meta">'+b.duration+' · '+b.date+'</div>'+
+                '</div>'+
+                '<span class="'+pillClass+'">'+b.status+'</span>'+
+              '</div>'+
+              (b.status !== 'completed' && b.status !== 'cancelled'
+                ? '<div class="booking-row__actions">'+
+                    (b.status === 'upcoming' ? '<button class="btn btn--primary" data-act="bookingaction" data-court="'+c.id+'" data-b="'+b.id+'" data-s="active">Start</button>' : '')+
+                    (b.status === 'active' ? '<button class="btn btn--ok" data-act="bookingaction" data-court="'+c.id+'" data-b="'+b.id+'" data-s="completed">Complete</button>' : '')+
+                    '<button class="btn btn--danger" data-act="bookingaction" data-court="'+c.id+'" data-b="'+b.id+'" data-s="cancelled">Cancel</button>'+
+                  '</div>'
+                : '')+
+            '</div>';
+          }).join(''))+
+      '<button class="btn btn--ghost btn--block" style="margin-top:14px" data-act="back">← Back</button>'+
+    '</div>'+
+  '</div>';
+}
+function screenCommunityDashboard(){
+  const me = getMe();
+  const k = me.communityId ? commById(me.communityId) : null;
+  if (!k) return '<div class="empty">You don\'t lead a community yet.</div>';
+  const members = DB.users.filter(u => u.communityId === k.id || (u.id !== 'me' && u.id !== k.createdBy && Math.random() < 0.15)).slice(0, 8);
+  const pending = DB.users.filter(u => u.id !== 'me').slice(0, 3);
+  return '<div class="admin-shell" style="background:#F3F5F0;color:var(--navy)">'+
+    '<div class="dash-hero dash-hero--comm">'+
+      '<div class="dash-hero__inner">'+
+        '<div class="dash-hero__eyebrow"><span style="width:6px;height:6px;background:#FF8A3D;border-radius:50%"></span>COMMUNITY DASHBOARD</div>'+
+        '<h2>'+k.name+'</h2>'+
+        '<p>Managed by '+me.name+' · '+k.members.toLocaleString()+' members</p>'+
+      '</div>'+
+    '</div>'+
+    '<div class="dash-stat-grid">'+
+      '<div class="dstat"><b>'+k.members.toLocaleString()+'</b><span>Members</span></div>'+
+      '<div class="dstat"><b>'+(k.pendingMembers||0)+'</b><span>Pending</span></div>'+
+      '<div class="dstat"><b>'+(k.events||0)+'</b><span>Events</span></div>'+
+    '</div>'+
+    '<div style="padding:0 18px 22px">'+
+      '<div class="sec-title">Pending join requests <small>'+pending.length+'</small></div>'+
+      pending.map(u =>
+        '<div class="member-row">'+
+          avatarHTML(u, 'av--sm')+
+          '<div class="member-row__main">'+
+            '<div class="member-row__t">'+u.name+'</div>'+
+            '<div class="member-row__s">NTRP '+u.level+' · '+u.city+'</div>'+
+          '</div>'+
+          '<button class="btn btn--sm btn--danger" data-act="toast" data-msg="Rejected '+u.name.split(' ')[0]+'">Reject</button>'+
+          '<button class="btn btn--sm btn--primary" data-act="toast" data-msg="Approved '+u.name.split(' ')[0]+'">Approve</button>'+
+        '</div>').join('')+
+      '<div class="sec-title">Members <small>'+members.length+' shown</small></div>'+
+      members.slice(0, 5).map(u =>
+        '<div class="member-row">'+
+          avatarHTML(u, 'av--sm')+
+          '<div class="member-row__main">'+
+            '<div class="member-row__t">'+u.name+'</div>'+
+            '<div class="member-row__s">'+u.city+' · NTRP '+u.level+'</div>'+
+          '</div>'+
+          '<span class="badge badge--soft" style="font-size:9px">Member</span>'+
+        '</div>').join('')+
+      '<div class="sec-title">Community management</div>'+
+      '<div class="menu-row" data-act="toast" data-msg="Post an announcement to members">'+
+        '<div class="menu-row__ico">'+ico('megaphone')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Post announcement</div><div class="menu-row__s">Notify all members</div></div>'+
+        ico('chev')+
+      '</div>'+
+      '<div class="menu-row" data-act="toast" data-msg="Create a new community event">'+
+        '<div class="menu-row__ico">'+ico('calendar')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Create event</div><div class="menu-row__s">Schedule a meet or tournament</div></div>'+
+        ico('chev')+
+      '</div>'+
+      '<div class="menu-row" data-act="toast" data-msg="Edit community settings">'+
+        '<div class="menu-row__ico">'+ico('settings')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Community settings</div><div class="menu-row__s">Name, description, visibility</div></div>'+
+        ico('chev')+
+      '</div>'+
+      '<button class="btn btn--ghost btn--block" style="margin-top:14px" data-act="back">← Back</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   13. ADMIN SCREENS
+   ============================================================ */
+const ADMIN_TABS = [
+  {id:'overview', label:'Overview'},
+  {id:'analytics', label:'Analytics'},
+  {id:'approvals', label:'Approvals'},
+  {id:'users', label:'Users'},
+  {id:'admins', label:'Admins'},
+  {id:'national', label:'National'},
+  {id:'rankings', label:'Rankings'},
+  {id:'moderation', label:'Moderation'},
+  {id:'wallet', label:'Revenue'},
+  {id:'log', label:'Log'}
+];
+
+function adminOverview(){
+  const vendors = DB.pending.vendors.length;
+  const comms = DB.pending.communities.length;
+  const coaches = DB.pending.coaches.length;
+  const courts = DB.pending.courts.length;
+  const total = vendors + comms + coaches + courts;
+  const national = DB.users.filter(u => u.isNational).length;
+  const members = DB.users.filter(u => u.role !== 'admin' && u.id !== 'me').length;
+  const undone = ADMIN.log.filter(x => x.state === 'undone').length;
+  const openReports = DB.reports.filter(r => r.status === 'open').length;
+
+  return '<div class="admin-stat-grid">'+
+    '<div class="astat"><b>'+money(PLATFORM.revenue)+'</b><span>Platform revenue</span></div>'+
+    '<div class="astat"><b>'+total+'</b><span>Pending approvals</span></div>'+
+    '<div class="astat"><b>'+members+'</b><span>Members</span></div>'+
+    '<div class="astat"><b>'+national+'</b><span>National players</span></div>'+
+    '<div class="astat"><b>'+openReports+'</b><span>Open reports</span></div>'+
+    '<div class="astat"><b>'+ADMIN.log.length+'</b><span>Actions logged</span></div>'+
+  '</div>'+
+  '<div style="padding:0 18px 22px">'+
+    '<div style="font-size:12px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:12px">QUICK JUMP</div>'+
+    [
+      {label:'Analytics', tab:'analytics'},
+      {label:'Approvals', tab:'approvals'},
+      {label:'Moderation queue', tab:'moderation'},
+      {label:'Revenue & fees', tab:'wallet'},
+      {label:'Admins', tab:'admins'}
+    ].map(x =>
+      '<div class="admin-row" data-act="admintab" data-v="'+x.tab+'">'+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+x.label+'</div>'+
+          '<div class="admin-row__s">Open '+x.label.toLowerCase()+'</div>'+
+        '</div>'+ ico('chev', 'style="color:rgba(255,255,255,.4)"')+
+      '</div>'
+    ).join('')+
+    (undone ? '<div style="margin-top:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;font-size:12px;font-weight:600;color:rgba(255,255,255,.55);line-height:1.5">'+
+      '<b style="color:var(--green)">'+undone+'</b> reversed action'+(undone>1?'s':'')+' in the log — tap the Log tab to inspect and reapply.'+
+    '</div>' : '')+
+  '</div>';
+}
+
+function adminAnalytics(){
+  const DAU = [42,58,61,73,89,102,88];
+  const max = Math.max(...DAU);
+  const retention = 62;
+  const matchRate = 78;
+  return '<div style="padding:0 18px 22px">'+
+    '<div class="chart-card">'+
+      '<div class="chart-card__t">Daily active users · Last 7 days</div>'+
+      '<div class="chart">'+
+        DAU.map((v,i) =>
+          '<div class="chart__bar" style="height:'+Math.round(v/max*100)+'%"><span>'+['M','T','W','T','F','S','S'][i]+'</span></div>'
+        ).join('')+
+      '</div>'+
+      '<div class="chart-legend"><span>7d ago</span><span>Today</span></div>'+
+    '</div>'+
+
+    '<div class="analytics-kpi">'+
+      '<div class="analytics-kpi__main">'+
+        '<div class="analytics-kpi__t">7-day retention</div>'+
+        '<div class="analytics-kpi__s">Users who returned within a week</div>'+
+      '</div>'+
+      '<div class="analytics-kpi__v">'+retention+'%</div>'+
+    '</div>'+
+    '<div class="analytics-kpi">'+
+      '<div class="analytics-kpi__main">'+
+        '<div class="analytics-kpi__t">Match completion rate</div>'+
+        '<div class="analytics-kpi__s">Confirmed matches / requests sent</div>'+
+      '</div>'+
+      '<div class="analytics-kpi__v">'+matchRate+'%</div>'+
+    '</div>'+
+    '<div class="analytics-kpi">'+
+      '<div class="analytics-kpi__main">'+
+        '<div class="analytics-kpi__t">Avg. wallet balance</div>'+
+        '<div class="analytics-kpi__s">Across all active users</div>'+
+      '</div>'+
+      '<div class="analytics-kpi__v neutral">'+money(18.75)+'</div>'+
+    '</div>'+
+    '<div class="analytics-kpi">'+
+      '<div class="analytics-kpi__main">'+
+        '<div class="analytics-kpi__t">Court utilisation</div>'+
+        '<div class="analytics-kpi__s">Booked hours / available hours · all courts</div>'+
+      '</div>'+
+      '<div class="analytics-kpi__v">48%</div>'+
+    '</div>'+
+
+    '<div class="chart-card" style="margin-top:14px">'+
+      '<div class="chart-card__t">Top performing courts</div>'+
+      DB.courts.slice(0, 4).map(c =>
+        '<div class="admin-row" style="margin-bottom:8px">'+
+          '<div style="width:34px;height:34px;border-radius:12px;background:rgba(216,255,61,.15);color:var(--green);display:grid;place-items:center;font-size:15px;flex:0 0 auto">🎾</div>'+
+          '<div class="admin-row__main">'+
+            '<div class="admin-row__t">'+c.name+'</div>'+
+            '<div class="admin-row__s">$'+c.price+'/hr · '+c.courtCount+' courts</div>'+
+          '</div>'+
+          '<div class="analytics-kpi__v" style="font-size:14px">'+(60 + Math.floor(Math.random()*30))+'%</div>'+
+        '</div>'
+      ).join('')+
+    '</div>'+
+  '</div>';
+}
+
+function adminApprovals(){
+  const t = state.adminAppTab;
+  const chips = [
+    ['vendors','Vendors', DB.pending.vendors.length],
+    ['communities','Communities', DB.pending.communities.length],
+    ['coaches','Coaches', DB.pending.coaches.length],
+    ['courts','Courts', DB.pending.courts.length]
+  ];
+  let body = '';
+
+  if (t === 'vendors'){
+    body = DB.pending.vendors.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending vendor applications.</div>'
+      : DB.pending.vendors.map(v => {
+          const u = userById(v.userId);
+          return '<div class="approval" data-act="adminappdetail" data-type="vendor" data-id="'+v.id+'">'+
+            '<div class="approval__head">'+ avatarHTML(u, 'av--sm')+
+              '<div class="approval__main">'+
+                '<div class="approval__t">'+v.itemName+'</div>'+
+                '<div class="approval__s">'+u.name+' · '+v.category+' · $'+v.price+'</div>'+
+              '</div>'+ ico('chev', 'style="color:rgba(255,255,255,.4)"')+
+            '</div>'+
+            '<div class="approval__meta">"'+escapeHTML(v.note)+'"</div>'+
+            '<div class="approval__hint">Tap to view full application →</div>'+
+          '</div>';
+        }).join('');
+  }
+  if (t === 'communities'){
+    body = DB.pending.communities.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending community verifications.</div>'
+      : DB.pending.communities.map(k => {
+          const u = userById(k.creatorId);
+          return '<div class="approval" data-act="adminappdetail" data-type="community" data-id="'+k.id+'">'+
+            '<div class="approval__head">'+
+              '<div class="av av--sm" style="background:linear-gradient(140deg,#FF8A3D,#C25A1E)"><span class="av__ini">👥</span></div>'+
+              '<div class="approval__main">'+
+                '<div class="approval__t">'+k.name+'</div>'+
+                '<div class="approval__s">'+u.name+' · '+k.members+' members</div>'+
+              '</div>'+ ico('chev', 'style="color:rgba(255,255,255,.4)"')+
+            '</div>'+
+            '<div class="approval__meta">"'+escapeHTML(k.desc)+'"</div>'+
+            '<div class="approval__hint">Tap to view full details →</div>'+
+          '</div>';
+        }).join('');
+  }
+  if (t === 'coaches'){
+    body = DB.pending.coaches.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending coach verifications.</div>'
+      : DB.pending.coaches.map(a => {
+          const u = userById(a.userId);
+          const c = courtById(a.courtId);
+          return '<div class="approval" data-act="adminappdetail" data-type="coach" data-id="'+a.id+'">'+
+            '<div class="approval__head">'+ avatarHTML(u, 'av--sm')+
+              '<div class="approval__main">'+
+                '<div class="approval__t">'+u.name+'</div>'+
+                '<div class="approval__s">'+(c ? c.name : 'Unknown court')+'</div>'+
+              '</div>'+ ico('chev', 'style="color:rgba(255,255,255,.4)"')+
+            '</div>'+
+            '<div class="approval__meta">'+a.spec+' · '+a.exp+' · $'+a.rate+'/hr</div>'+
+            '<div class="approval__hint">Tap to view full application →</div>'+
+          '</div>';
+        }).join('');
+  }
+  if (t === 'courts'){
+    body = DB.pending.courts.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending court submissions.</div>'
+      : DB.pending.courts.map(ct => {
+          const u = userById(ct.submittedBy);
+          return '<div class="approval" data-act="adminappdetail" data-type="court" data-id="'+ct.id+'">'+
+            '<div class="approval__head">'+
+              '<div class="av av--sm" style="background:linear-gradient(140deg,#4A6B9E,#263F6B)"><span class="av__ini">🎾</span></div>'+
+              '<div class="approval__main">'+
+                '<div class="approval__t">'+ct.name+'</div>'+
+                '<div class="approval__s">📍 '+ct.address+'</div>'+
+              '</div>'+ ico('chev', 'style="color:rgba(255,255,255,.4)"')+
+            '</div>'+
+            '<div class="approval__meta">'+ct.courtCount+' courts · '+ct.surface+' · $'+ct.price+'/hr · by '+u.name+'</div>'+
+            '<div class="approval__hint">Tap to view full submission →</div>'+
+          '</div>';
+        }).join('');
+  }
+
+  return '<div style="padding:0 18px 22px">'+
+    '<div class="chips chips--pad" style="padding-left:0">'+
+      chips.map(([v,l,n]) =>
+        '<button class="chip '+(t===v?'is-on':'')+'" data-act="admingotoapp" data-v="'+v+'">'+l+(n?' · '+n:'')+'</button>'
+      ).join('')+
+    '</div>'+
+    body+
+  '</div>';
+}
+
+function adminUsers(){
+  const q = state.adminUserQuery.toLowerCase();
+  let list = DB.users.filter(u => u.id !== 'admin');
+  if (q) list = list.filter(u => u.name.toLowerCase().indexOf(q) > -1);
+  return '<div style="padding:0 18px 22px">'+
+    '<div class="search" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);box-shadow:none">'+ico('search')+
+      '<input data-input="adminUserQuery" value="'+state.adminUserQuery.replace(/"/g,'&quot;')+'" placeholder="Search users…" style="color:#fff">'+
+    '</div>'+
+    list.map(u => {
+      const roleChip = u.role === 'coach' ? '<span class="badge" style="background:rgba(216,255,61,.2);color:var(--green);font-size:9px;padding:2px 6px">COACH</span>' : '';
+      const vendChip = u.vendorStatus === 'approved' ? '<span class="badge" style="background:rgba(37,194,110,.2);color:#9BE8C2;font-size:9px;padding:2px 6px">VENDOR</span>' : '';
+      const natChip = u.isNational ? '<span class="badge" style="background:rgba(216,255,61,.2);color:var(--green);font-size:9px;padding:2px 6px">NATIONAL</span>' : '';
+      const commChip = u.communityId ? '<span class="badge" style="background:rgba(255,138,61,.2);color:#FFB27A;font-size:9px;padding:2px 6px">COMMUNITY</span>' : '';
+      return '<div class="admin-row" data-act="adminuseredit" data-id="'+u.id+'">'+
+        avatarHTML(u, 'av--sm')+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+u.name+' '+roleChip+' '+vendChip+' '+natChip+' '+commChip+'</div>'+
+          '<div class="admin-row__s">'+u.city+' · NTRP '+u.level+(u.rankN?' · Nat #'+u.rankN:'')+(u.rankG?' · Gen #'+u.rankG:'')+'</div>'+
+        '</div>'+ ico('chev')+
+      '</div>';
+    }).join('')+
+  '</div>';
+}
+
+function adminAdmins(){
+  return '<div style="padding:0 18px 22px">'+
+    '<div style="background:rgba(216,255,61,.08);border:1px solid rgba(216,255,61,.22);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">ADMIN ACCOUNTS</div>'+
+      '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Admins are separate from players, coaches and community accounts. Each has its own email and passcode.</div>'+
+    '</div>'+
+
+    ADMINS.map(a =>
+      '<div class="adm-card">'+
+        '<div class="adm-card__inner">'+
+          '<div class="adm-card__photo">'+ a.initials+
+            '<img src="'+img('admin-'+a.id,160,160)+'" alt="" onerror="this.remove()">'+
+          '</div>'+
+          '<div class="adm-card__main">'+
+            '<div class="adm-card__t">'+a.name+'</div>'+
+            '<div class="adm-card__s">'+a.email+'</div>'+
+            '<div class="adm-card__meta">'+
+              '<span>ADMIN</span>'+
+              (a.isDefault ? '<span>DEFAULT</span>' : '<span class="dim">CUSTOM</span>')+
+              (SESSION.adminId === a.id ? '<span class="dim">SIGNED IN</span>' : '')+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'
+    ).join('')+
+
+    '<button class="abtn abtn--ok" style="width:100%;padding:15px;margin-top:8px" data-act="adminadd">+ Add Admin Account</button>'+
+  '</div>';
+}
+
+function adminNational(){
+  const nat = DB.users.filter(u => u.isNational && u.role !== 'admin').sort((a,b) => a.rankN - b.rankN);
+  const pool = DB.users.filter(u => !u.isNational && u.role !== 'admin' && u.id !== 'me').sort((a,b) => b.points - a.points);
+  return '<div style="padding:0 18px 22px">'+
+    '<div style="background:rgba(216,255,61,.08);border:1px solid rgba(216,255,61,.22);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">NATIONAL TEAM ROSTER</div>'+
+      '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Only admin can add or remove players. National rankings are completely separate from the general pool.</div>'+
+    '</div>'+
+    '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:10px">CURRENT ROSTER · '+nat.length+'</div>'+
+    nat.map(u =>
+      '<div class="admin-row">'+
+        '<div style="width:28px;text-align:center;font-size:15px;font-weight:900;color:var(--green);flex:0 0 auto">'+u.rankN+'</div>'+
+        avatarHTML(u, 'av--sm')+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+u.name+'</div>'+
+          '<div class="admin-row__s">'+u.points.toLocaleString()+' pts · NTRP '+u.level+' · '+u.region+'</div>'+
+        '</div>'+
+        '<button class="abtn abtn--no" style="padding:8px 12px;font-size:11px" data-act="removenational" data-id="'+u.id+'">Remove</button>'+
+      '</div>'
+    ).join('')+
+    '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 10px">ELIGIBLE — PROMOTE TO NATIONAL</div>'+
+    pool.slice(0, 8).map(u =>
+      '<div class="admin-row">'+ avatarHTML(u, 'av--sm')+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+u.name+'</div>'+
+          '<div class="admin-row__s">'+u.points.toLocaleString()+' pts · NTRP '+u.level+' · Gen #'+u.rankG+'</div>'+
+        '</div>'+
+        '<button class="abtn abtn--ok" style="padding:8px 12px;font-size:11px" data-act="addnational" data-id="'+u.id+'">+ Add</button>'+
+      '</div>'
+    ).join('')+
+  '</div>';
+}
+
+function adminRankings(){
+  const general = DB.users.filter(u => !u.isNational && u.role !== 'admin' && u.id !== 'me')
+    .sort((a,b) => b.points - a.points);
+  return '<div style="padding:0 18px 22px">'+
+    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">GENERAL PLAYER POOL</div>'+
+      '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Adjust points ±50 per tap. Every change is reversible from the Log.</div>'+
+    '</div>'+
+    general.map((u, i) =>
+      '<div class="admin-row">'+
+        '<div style="width:28px;text-align:center;font-size:14px;font-weight:900;color:rgba(255,255,255,.4);flex:0 0 auto">'+(i+1)+'</div>'+
+        avatarHTML(u, 'av--sm')+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+u.name+'</div>'+
+          '<div class="admin-row__s">NTRP '+u.level+' · '+u.region+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;margin-right:8px">'+
+          '<div style="font-size:13px;font-weight:900;color:#fff">'+u.points.toLocaleString()+'</div>'+
+          '<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,.4)">PTS</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:4px">'+
+          '<button class="abtn abtn--ghost" style="padding:6px 10px;font-size:14px" data-act="ptsminus" data-id="'+u.id+'">−</button>'+
+          '<button class="abtn abtn--ghost" style="padding:6px 10px;font-size:14px" data-act="ptsplus" data-id="'+u.id+'">+</button>'+
+        '</div>'+
+      '</div>'
+    ).join('')+
+  '</div>';
+}
+
+function adminModeration(){
+  const f = state.adminReportFilter;
+  const list = DB.reports.filter(r => f === 'all' || r.status === f);
+  const typeLabel = {
+    harass:'Harassment', spam:'Spam', fake:'Fake profile', noshow:'No-show'
+  };
+  return '<div style="padding:0 18px 22px">'+
+    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;margin-bottom:14px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">MODERATION QUEUE</div>'+
+      '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Review user reports and take action. All decisions are reversible.</div>'+
+    '</div>'+
+    '<div class="chips chips--pad" style="padding-left:0;margin-bottom:6px">'+
+      [['open','Open'],['resolved','Resolved'],['all','All']].map(([v,l]) =>
+        '<button class="chip '+(f===v?'is-on':'')+'" data-act="reportfilter" data-v="'+v+'">'+l+'</button>').join('')+
+    '</div>'+
+    (list.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No reports in this view.</div>'
+      : list.map(r => {
+          const reporter = userById(r.reporterId);
+          const target = userById(r.targetId);
+          return '<div class="report-card">'+
+            '<div class="report-card__head">'+
+              '<span class="report-card__type report-card__type--'+r.type+'">'+ (typeLabel[r.type] || r.type) +'</span>'+
+              '<div style="flex:1"></div>'+
+              '<span style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4)">'+timeAgo(r.ts)+'</span>'+
+            '</div>'+
+            '<div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">'+
+              (reporter ? avatarHTML(reporter, 'av--xs') : '')+
+              '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6)">'+reporter.name+' → '+target.name+'</div>'+
+              (target ? avatarHTML(target, 'av--xs') : '')+
+            '</div>'+
+            '<div class="report-card__s">"'+escapeHTML(r.text)+'"</div>'+
+            (r.status === 'open'
+              ? '<div class="report-card__btns">'+
+                  '<button class="abtn abtn--ghost" data-act="reportresolve" data-id="'+r.id+'" data-action="dismiss">Dismiss</button>'+
+                  '<button class="abtn abtn--no" data-act="reportresolve" data-id="'+r.id+'" data-action="warn">Warn</button>'+
+                  '<button class="abtn abtn--no" data-act="reportresolve" data-id="'+r.id+'" data-action="ban">Ban</button>'+
+                '</div>'
+              : '<div style="font-size:10.5px;font-weight:800;color:rgba(37,194,110,.8);letter-spacing:.06em;margin-top:10px">✓ RESOLVED</div>')+
+          '</div>';
+        }).join(''))+
+  '</div>';
+}
+
+function adminWallet(){
+  const history = PLATFORM.history.slice().reverse().slice(0, 30);
+  const byKind = {};
+  PLATFORM.history.forEach(h => {
+    byKind[h.kind] = (byKind[h.kind] || 0) + h.fee;
+  });
+  const kpi = [
+    { k:'court',      l:'Court bookings',   feePct: PRICES.courtPct },
+    { k:'coach',      l:'Coach sessions',   feePct: PRICES.coachPct },
+    { k:'tournament', l:'Tournaments',      feePct: PRICES.tournamentPct },
+    { k:'chat',       l:'Chat unlocks',     fee: PRICES.chatUnlock },
+    { k:'request',    l:'Play requests',    fee: PRICES.requestPlayer },
+    { k:'vendor',     l:'Vendor listings',  fee: PRICES.vendorListing },
+    { k:'shop',       l:'Shop sales',       feePct: PRICES.shopPct }
+  ];
+  return '<div style="padding:0 18px 22px">'+
+    '<div class="wallet-hero" style="margin-bottom:14px">'+
+      '<div class="wallet-hero__inner">'+
+        '<div class="wallet-hero__label">PLATFORM REVENUE</div>'+
+        '<div class="wallet-hero__balance">'+money(PLATFORM.revenue)+'</div>'+
+        '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:14px">All-time fees collected across the platform</div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div style="font-size:11px;font-weight:900;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:10px">FEE STRUCTURE</div>'+
+    kpi.map(x =>
+      '<div class="admin-row">'+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+x.l+'</div>'+
+          '<div class="admin-row__s">'+(x.feePct != null ? x.feePct + '% of transaction' : money(x.fee) + ' flat')+'</div>'+
+        '</div>'+
+        '<div class="analytics-kpi__v" style="font-size:16px">'+money(byKind[x.k] || 0)+'</div>'+
+      '</div>'
+    ).join('')+
+
+    '<div style="font-size:11px;font-weight:900;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 10px">RECENT REVENUE EVENTS</div>'+
+    (history.length === 0
+      ? '<div style="text-align:center;padding:30px 20px;color:rgba(255,255,255,.4);font-size:12.5px;font-weight:600">No platform revenue yet.</div>'
+      : history.map(h =>
+          '<div class="admin-row" style="margin-bottom:6px">'+
+            '<div style="width:36px;height:36px;border-radius:13px;background:rgba(216,255,61,.15);color:var(--green);display:grid;place-items:center;font-size:15px;flex:0 0 auto">💵</div>'+
+            '<div class="admin-row__main">'+
+              '<div class="admin-row__t">'+h.kind+' · '+money(h.gross)+'</div>'+
+              '<div class="admin-row__s">'+timeAgo(h.ts)+' · net paid out '+money(h.net)+'</div>'+
+            '</div>'+
+            '<div class="analytics-kpi__v" style="font-size:15px">+'+money(h.fee)+'</div>'+
+          '</div>'
+        ).join(''))+
+  '</div>';
+}
+
+function adminLog(){
+  const log = ADMIN.log.slice().reverse();
+  const undone = log.filter(x => x.state === 'undone').length;
+  return '<div style="padding:0 18px 22px">'+
+    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:center">'+
+      '<div style="flex:1">'+
+        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">ACTION LOG</div>'+
+        '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Every action is reversible. Tap a log entry to reverse or reapply it.</div>'+
+      '</div>'+
+      '<div style="text-align:right">'+
+        '<div style="font-size:22px;font-weight:900;color:var(--green);line-height:1">'+log.length+'</div>'+
+        '<div style="font-size:9.5px;font-weight:800;color:rgba(255,255,255,.4);letter-spacing:.1em">ACTIONS</div>'+
+      '</div>'+
+    '</div>'+
+    (log.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No actions yet.<br><span style="opacity:.6;font-size:11px">Approve something to see it here.</span></div>'
+      : log.map((a, i) =>
+          '<div class="log-entry '+(a.state==='undone'?'undone':'')+'">'+
+            '<div class="log-entry__main">'+
+              '<div class="log-entry__t">'+(log.length - i)+'. '+a.label+'</div>'+
+              '<div class="log-entry__m">'+new Date(a.t).toLocaleTimeString()+' · by '+a.by+' · '+(a.state==='undone'?'REVERSED':'ACTIVE')+'</div>'+
+            '</div>'+
+            '<button class="log-entry__undo" data-act="adminlogtoggle" data-id="'+a.id+'">'+
+              (a.state === 'undone' ? ico('redo') + ' Reapply' : ico('undo') + ' Undo')+
+            '</button>'+
+          '</div>'
+        ).join(''))+
+  '</div>';
+}
+
+function screenAdmin(){
+  if (!SESSION.adminId){
+    return screenAdminLogin();
+  }
+  const admin = adminById(SESSION.adminId);
+  if (!admin){ SESSION.adminId = null; return screenAdminLogin(); }
+  const t = state.adminTab;
+  let body = '';
+  if (t === 'overview')   body = adminOverview();
+  if (t === 'analytics')  body = adminAnalytics();
+  if (t === 'approvals')  body = adminApprovals();
+  if (t === 'users')      body = adminUsers();
+  if (t === 'admins')     body = adminAdmins();
+  if (t === 'national')   body = adminNational();
+  if (t === 'rankings')   body = adminRankings();
+  if (t === 'moderation') body = adminModeration();
+  if (t === 'wallet')     body = adminWallet();
+  if (t === 'log')        body = adminLog();
+
+  const pendingCount = DB.pending.vendors.length + DB.pending.communities.length +
+    DB.pending.coaches.length + DB.pending.courts.length;
+  const openReports = DB.reports.filter(r => r.status === 'open').length;
+
+  return '<div class="admin-shell">'+
+    '<div class="admin-top">'+
+      '<div class="admin-top__inner">'+
+        '<div style="flex:1;min-width:0">'+
+          '<h2>Admin Console</h2>'+
+          '<div class="admin-top__who">SIGNED IN AS '+admin.name.toUpperCase()+'</div>'+
+        '</div>'+
+        '<button class="admin-top__exit" data-act="exitgate">'+ico('power')+'Exit</button>'+
+      '</div>'+
+      '<div class="admin-top__chips">'+
+        ADMIN_TABS.map(x =>
+          '<button class="achip '+(t===x.id?'is-on':'')+'" data-act="admintab" data-v="'+x.id+'">'+x.label+
+            (x.id === 'approvals' && pendingCount ? '<span class="achip__n">'+pendingCount+'</span>' : '')+
+            (x.id === 'moderation' && openReports ? '<span class="achip__n">'+openReports+'</span>' : '')+
+          '</button>'
+        ).join('')+
+      '</div>'+
+    '</div>'+
+    body+
+  '</div>';
+}
+
+function screenAdminDetail(params){
+  const type = params.type;
+  const id = params.id;
+  let item, user;
+
+  if (type === 'vendor'){
+    item = DB.pending.vendors.find(x => x.id === id);
+    if (!item) return '<div class="empty">Application not found.</div>';
+    user = userById(item.userId);
+    return '<div class="admin-shell" style="padding-bottom:0">'+
+      '<div class="detail-hdr">'+
+        '<div class="detail-hdr__inner">'+
+          '<div class="detail-hdr__eyebrow">VENDOR APPLICATION</div>'+
+          '<h2>'+item.itemName+'</h2>'+
+          '<p>Submitted '+item.submitted+' · '+item.category+' · $'+item.price+'</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Applicant</div>'+
+        '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · NTRP '+user.level+'</div>'+
+            '<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap">'+
+              '<span class="badge badge--soft" style="font-size:9px">'+user.idNumber+'</span>'+
+              (user.vendorStatus === 'approved' ? '<span class="badge badge--ok" style="font-size:9px">Already vendor</span>' : '')+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Item details</div>'+
+        '<div class="detail-field"><span class="detail-field__k">Item name</span><span class="detail-field__v">'+item.itemName+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Category</span><span class="detail-field__v">'+item.category+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Asking price</span><span class="detail-field__v">$'+item.price+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Photos attached</span><span class="detail-field__v">'+item.photos+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Weight</span><span class="detail-field__v">'+item.weight+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Shipping</span><span class="detail-field__v">'+item.shipping+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Listing fee</span><span class="detail-field__v">'+money(PRICES.vendorListing)+' · paid</span></div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Applicant note</div>'+
+        '<div class="detail-note">"'+escapeHTML(item.note)+'"</div>'+
+      '</div>'+
+      '<div class="detail-actions">'+
+        '<button class="btn btn--danger" data-act="rejectvendor" data-id="'+item.id+'">Reject</button>'+
+        '<button class="btn btn--primary" data-act="approvevendor" data-id="'+item.id+'">Approve Vendor</button>'+
+      '</div>'+
+    '</div>';
+  }
+  if (type === 'community'){
+    item = DB.pending.communities.find(x => x.id === id);
+    if (!item) return '<div class="empty">Application not found.</div>';
+    user = userById(item.creatorId);
+    return '<div class="admin-shell" style="padding-bottom:0">'+
+      '<div class="detail-hdr">'+
+        '<div class="detail-hdr__inner">'+
+          '<div class="detail-hdr__eyebrow">COMMUNITY VERIFICATION</div>'+
+          '<h2>'+item.name+'</h2>'+
+          '<p>Submitted '+item.submitted+' · '+item.members+' members · '+item.region+'</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Creator</div>'+
+        '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · NTRP '+user.level+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Community details</div>'+
+        '<div class="detail-field"><span class="detail-field__k">Name</span><span class="detail-field__v">'+item.name+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Members</span><span class="detail-field__v">'+item.members+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Region</span><span class="detail-field__v">'+item.region+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Meeting place</span><span class="detail-field__v">'+item.meetingPlace+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Schedule</span><span class="detail-field__v">'+item.schedule+'</span></div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Description</div>'+
+        '<div class="detail-note">"'+escapeHTML(item.desc)+'"</div>'+
+      '</div>'+
+      '<div class="detail-actions">'+
+        '<button class="btn btn--danger" data-act="rejectcomm" data-id="'+item.id+'">Reject</button>'+
+        '<button class="btn btn--primary" data-act="approvecomm" data-id="'+item.id+'">Verify Community</button>'+
+      '</div>'+
+    '</div>';
+  }
+  if (type === 'coach'){
+    item = DB.pending.coaches.find(x => x.id === id);
+    if (!item) return '<div class="empty">Application not found.</div>';
+    user = userById(item.userId);
+    const c = courtById(item.courtId);
+    return '<div class="admin-shell" style="padding-bottom:0">'+
+      '<div class="detail-hdr">'+
+        '<div class="detail-hdr__inner">'+
+          '<div class="detail-hdr__eyebrow">COACH VERIFICATION</div>'+
+          '<h2>'+user.name+'</h2>'+
+          '<p>Submitted '+item.submitted+' · Stationed at '+(c ? c.name : 'unknown')+'</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Coach profile</div>'+
+        '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · NTRP '+user.level+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Application details</div>'+
+        '<div class="detail-field"><span class="detail-field__k">Specialty</span><span class="detail-field__v">'+item.spec+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Experience</span><span class="detail-field__v">'+item.exp+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Certification</span><span class="detail-field__v">'+item.cert+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Hourly rate</span><span class="detail-field__v">$'+item.rate+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Availability</span><span class="detail-field__v">'+item.availability+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Platform fee</span><span class="detail-field__v">'+PRICES.coachPct+'% per lesson</span></div>'+
+      '</div>'+
+      (c
+        ? '<div class="detail-block">'+
+            '<div class="detail-block__t">Requested court</div>'+
+            '<div class="detail-field"><span class="detail-field__k">Court</span><span class="detail-field__v">'+c.name+'</span></div>'+
+            '<div class="detail-field"><span class="detail-field__k">Address</span><span class="detail-field__v">'+c.address+'</span></div>'+
+            '<div class="detail-field"><span class="detail-field__k">Surface</span><span class="detail-field__v">'+c.surface+'</span></div>'+
+          '</div>'
+        : '')+
+      '<div class="detail-actions">'+
+        '<button class="btn btn--danger" data-act="rejectcoach" data-id="'+item.id+'">Reject</button>'+
+        '<button class="btn btn--primary" data-act="approvecoach" data-id="'+item.id+'">Verify Coach</button>'+
+      '</div>'+
+    '</div>';
+  }
+  if (type === 'court'){
+    item = DB.pending.courts.find(x => x.id === id);
+    if (!item) return '<div class="empty">Submission not found.</div>';
+    user = userById(item.submittedBy);
+    return '<div class="admin-shell" style="padding-bottom:0">'+
+      '<div class="detail-hdr">'+
+        '<div class="detail-hdr__inner">'+
+          '<div class="detail-hdr__eyebrow">COURT SUBMISSION</div>'+
+          '<h2>'+item.name+'</h2>'+
+          '<p>Submitted '+item.submitted+' · '+item.courtCount+' courts · $'+item.price+'/hr</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Submitted by</div>'+
+        '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · NTRP '+user.level+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Court details</div>'+
+        '<div class="detail-field"><span class="detail-field__k">Name</span><span class="detail-field__v">'+item.name+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Address</span><span class="detail-field__v">'+item.address+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Surface</span><span class="detail-field__v">'+item.surface+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Courts</span><span class="detail-field__v">'+item.courtCount+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Price / hour</span><span class="detail-field__v">$'+item.price+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Hours</span><span class="detail-field__v">'+item.hours+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Contact</span><span class="detail-field__v">'+item.contact+'</span></div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Amenities</div>'+
+        '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
+          item.amenities.map(a => '<span style="padding:7px 12px;border-radius:11px;background:#EFF2EC;font-size:11px;font-weight:700;color:#5C6B7A">'+a+'</span>').join('')+
+        '</div>'+
+      '</div>'+
+      (item.notes
+        ? '<div class="detail-block">'+
+            '<div class="detail-block__t">Submitter notes</div>'+
+            '<div class="detail-note">"'+escapeHTML(item.notes)+'"</div>'+
+          '</div>'
+        : '')+
+      '<div class="detail-actions">'+
+        '<button class="btn btn--danger" data-act="rejectcourt" data-id="'+item.id+'">Reject</button>'+
+        '<button class="btn btn--primary" data-act="approvecourt" data-id="'+item.id+'">Approve Court</button>'+
+      '</div>'+
+    '</div>';
+  }
+  return '<div class="empty">Unknown item type.</div>';
+}
+
+function screenAdminUser(params){
+  const u = userById(params.id);
+  if (!u) return '<div class="empty">User not found.</div>';
+  const isVendor = u.vendorStatus === 'approved';
+  return '<div class="admin-shell" style="padding-bottom:40px">'+
+    '<div class="admin-top">'+
+      '<div class="admin-top__inner" style="display:flex;gap:14px;align-items:center">'+ avatarHTML(u, 'av--lg')+
+        '<div style="flex:1;min-width:0">'+
+          '<h2 style="font-size:21px">'+u.name+'</h2>'+
+          '<p>'+u.city+' · NTRP '+u.level+' · '+u.idNumber+'</p>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="padding:22px 18px">'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:12px">IDENTITY</div>'+
+      '<div class="form-field"><label class="form-label" style="color:rgba(255,255,255,.5)">Display name</label>'+
+        '<input class="form-input" id="au-name" value="'+u.name.replace(/"/g,'&quot;')+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
+      '<div class="form-row">'+
+        '<div class="form-field"><label class="form-label" style="color:rgba(255,255,255,.5)">Level</label>'+
+          '<input class="form-input" id="au-level" value="'+u.level+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
+        '<div class="form-field"><label class="form-label" style="color:rgba(255,255,255,.5)">Region</label>'+
+          '<input class="form-input" id="au-region" value="'+u.region+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
+      '</div>'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 12px">WALLET</div>'+
+      '<div class="wallet-hero" style="margin-bottom:16px">'+
+        '<div class="wallet-hero__inner">'+
+          '<div class="wallet-hero__label">CURRENT BALANCE</div>'+
+          '<div class="wallet-hero__balance" style="font-size:30px">'+money(u.wallet)+'</div>'+
+          '<div style="display:flex;gap:8px;margin-top:14px">'+
+            '<button class="abtn abtn--ok" data-act="admincredit" data-id="'+u.id+'" data-amount="10">+ $10</button>'+
+            '<button class="abtn abtn--ghost" data-act="admincredit" data-id="'+u.id+'" data-amount="-10">− $10</button>'+
+            '<button class="abtn abtn--ghost" data-act="admincredit" data-id="'+u.id+'" data-amount="25">+ $25</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 12px">ROLE</div>'+
+      '<div class="form-chips">'+
+        ['user','coach','community','admin'].map(r =>
+          '<button class="form-chip '+(u.role===r?'is-on':'')+'" data-act="adminrole" data-id="'+u.id+'" data-v="'+r+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+r.charAt(0).toUpperCase()+r.slice(1)+'</button>').join('')+
+      '</div>'+
+      (u.role === 'coach'
+        ? '<div class="form-field" style="margin-top:20px">'+
+            '<label class="form-label" style="color:rgba(255,255,255,.5)">Stationed at court</label>'+
+            '<select class="form-input" id="au-coachcourt" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+
+              '<option value="">— None —</option>'+
+              DB.courts.map(c => '<option value="'+c.id+'"'+(u.coachCourt===c.id?' selected':'')+'>'+c.name+'</option>').join('')+
+            '</select>'+
+          '</div>'
+        : '')+
+      (u.role === 'community'
+        ? '<div class="form-field" style="margin-top:20px">'+
+            '<label class="form-label" style="color:rgba(255,255,255,.5)">Leads community</label>'+
+            '<select class="form-input" id="au-comm" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+
+              '<option value="">— None —</option>'+
+              DB.communities.map(c => '<option value="'+c.id+'"'+(u.communityId===c.id?' selected':'')+'>'+c.name+'</option>').join('')+
+            '</select>'+
+          '</div>'
+        : '')+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 12px">STATUS FLAGS</div>'+
+      '<div class="toggle-row" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">'+
+        '<div><div class="toggle-row__t" style="color:#fff">Verified profile</div><div class="toggle-row__s" style="color:rgba(255,255,255,.5)">Shows the verified badge</div></div>'+
+        '<div class="toggle '+(u.verified?'is-on':'')+'" data-act="admintoggle" data-id="'+u.id+'" data-f="verified"></div>'+
+      '</div>'+
+      '<div class="toggle-row" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">'+
+        '<div><div class="toggle-row__t" style="color:#fff">Approved vendor</div><div class="toggle-row__s" style="color:rgba(255,255,255,.5)">Can list items in the shop</div></div>'+
+        '<div class="toggle '+(isVendor?'is-on':'')+'" data-act="admintoggle" data-id="'+u.id+'" data-f="vendor"></div>'+
+      '</div>'+
+      '<div class="toggle-row" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">'+
+        '<div><div class="toggle-row__t" style="color:#fff">National team</div><div class="toggle-row__s" style="color:rgba(255,255,255,.5)">Adds to national ranking</div></div>'+
+        '<div class="toggle '+(u.isNational?'is-on':'')+'" data-act="admintoggle" data-id="'+u.id+'" data-f="national"></div>'+
+      '</div>'+
+      '<button class="abtn abtn--ok" style="width:100%;padding:16px;margin-top:24px" data-act="adminusersave" data-id="'+u.id+'">Save Changes</button>'+
+      (u.id !== 'me' ? '<button class="abtn abtn--no" style="width:100%;padding:16px;margin-top:10px" data-act="admindelete" data-id="'+u.id+'">Delete User</button>' : '')+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SCREEN REGISTRY
+   ============================================================ */
+const SCREENS = {
+  entry: screenEntry,
+  discover: screenDiscover,
+  tournaments: screenTournaments,
+  tourney: screenTourney,
+  rankings: screenRankings,
+  courts: screenCourts,
+  court: screenCourt,
+  profile: screenProfile,
+  profileform: screenProfileForm,
+  idcard: screenIdCard,
+  chats: screenChats,
+  chatview: screenChatView,
+  feed: screenFeed,
+  badges: screenBadges,
+  ai: screenAI,
+  wallet: screenWallet,
+  safety: screenSafety,
+  notifprefs: screenNotifPrefs,
+  more: screenMore,
+  lostfound: screenLostFound,
+  shop: screenShop,
+  shopitem: screenShopItem,
+  coach: screenCoach,
+  club: screenClub,
+  vendorapply: screenVendorApply,
+  coachapply: screenCoachApply,
+  submitcourt: screenSubmitCourt,
+  hosttourney: screenHostTourney,
+  coachdash: screenCoachDashboard,
+  commdash: screenCommunityDashboard,
+  admin: screenAdmin,
+  admindetail: screenAdminDetail,
+  adminuser: screenAdminUser
+};
+
+/* ============================================================
+   HEADER / TABS
+   ============================================================ */
+function headerHTML(scr){
+  if (!SESSION.mode) return '';
+  if (nav.stack.length){
+    const isAdmin = scr.screen === 'admin' || scr.screen === 'admindetail' || scr.screen === 'adminuser';
+    const isChat = scr.screen === 'chatview';
+    return '<div class="hdr hdr--solid" style="'+(isAdmin?'background:#0B1220;color:#fff;border-bottom:1px solid rgba(255,255,255,.06)':'')+'">'+
+      '<button class="icon-btn" style="'+(isAdmin?'background:rgba(255,255,255,.08);color:#fff':'')+'" data-act="back">'+ico('back')+'</button>'+
+      '<div class="hdr__title" style="font-size:19px">'+
+        (scr.title || '')+
+        (isChat ? '' : '')+
+      '</div>'+
+      '<div class="hdr__spacer"></div>'+
+      (isChat ? '<button class="icon-btn" data-act="toast" data-msg="More options (demo)">'+ico('settings')+'</button>' : '')+
+    '</div>';
+  }
+  if (scr.screen === 'discover'){
+    return '<div class="hdr hdr--overlay">'+
+      '<div class="brand"><span class="brand__mark">◆</span>RUBIX TENNIS</div>'+
+      '<div class="hdr__spacer"></div>'+
+      '<button class="icon-btn" data-act="tab" data-tab="profile">'+avatarHTML(getMe(), 'av--xs')+'</button>'+
+    '</div>';
+  }
+  const titles = {
+    tournaments:'Tournaments', rankings:'Rankings', courts:'Book a Court',
+    profile:'My Profile', more:'More'
+  };
+  const right = {
+    tournaments:'<button class="icon-btn" data-act="hosttourney">'+ico('plus')+'</button>',
+    rankings:'<button class="icon-btn" data-act="toast" data-msg="Filter applied (demo)">'+ico('search')+'</button>',
+    courts:'<button class="icon-btn" data-act="toast" data-msg="Map view (demo)">'+ico('pin')+'</button>',
+    profile:'<button class="icon-btn" data-act="idcard">'+ico('shield')+'</button>',
+    more:'<button class="icon-btn" data-act="toast" data-msg="No ads. Ever. ✓">'+ico('star')+'</button>'
+  }[scr.screen] || '';
+  return '<div class="hdr hdr--solid">'+
+    '<div class="hdr__title">'+titles[scr.screen]+'</div>'+
+    '<div class="hdr__spacer"></div>'+right+
+  '</div>';
+}
+function tabsHTML(){
+  const unread = Chat.unreadCount();
+  return TABS.filter(t => VISIBLE_TABS.includes(t.id)).map(t => {
+    const on = nav.tab === t.id ? ' is-active' : '';
+    return '<button class="tab'+on+'" data-act="tab" data-tab="'+t.id+'">'+
+      '<span class="tab__ico">'+ico(t.icon)+'</span>'+
+      '<span>'+t.label+'</span>'+
+    '</button>';
+  }).join('');
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  /* GATE */
+  if (!SESSION.mode){
+    hdrEl.innerHTML = '';
+    mainEl.className = 'main';
+    mainEl.style.background = '#0A1220';
+    const top = nav.stack.length ? nav.stack[nav.stack.length - 1] : null;
+    if (top && top.screen === 'adminlogin'){
+      mainEl.innerHTML = screenAdminLogin();
+    } else {
+      mainEl.innerHTML = screenEntry();
+    }
+    tabsEl.innerHTML = '';
+    tabsEl.style.display = 'none';
+    return;
+  }
+
+  /* ADMIN MODE */
+  if (SESSION.mode === 'admin'){
+    if (!SESSION.adminId){
+      hdrEl.innerHTML = '';
+      mainEl.className = 'main';
+      mainEl.style.background = '#0A1220';
+      mainEl.innerHTML = screenAdminLogin();
+      tabsEl.innerHTML = '';
+      tabsEl.style.display = 'none';
+      return;
+    }
+    const scr = nav.stack.length ? nav.stack[nav.stack.length - 1] : { screen:'admin' };
+    hdrEl.innerHTML = '';
+    mainEl.className = 'main';
+    mainEl.style.background = '#0B1220';
+    mainEl.innerHTML = (SCREENS[scr.screen] || (() => '<div class="empty">Coming soon.</div>'))(scr.params);
+    tabsEl.innerHTML = '';
+    tabsEl.style.display = 'none';
+    return;
+  }
+
+  /* PLAYER MODE */
+  const scr = nav.stack.length ? nav.stack[nav.stack.length - 1] : { screen: nav.tab };
+  hdrEl.innerHTML = headerHTML(scr);
+  mainEl.className = 'main' +
+    ((scr.screen === 'discover' && !nav.stack.length) || scr.screen === 'chatview' ? ' main--map' : '');
+  mainEl.style.background = '';
+  mainEl.innerHTML = (SCREENS[scr.screen] || (() => '<div class="empty">Coming soon.</div>'))(scr.params);
+  tabsEl.innerHTML = tabsHTML();
+  tabsEl.style.display = nav.stack.length ? 'none' : 'flex';
+  if (scr.screen === 'discover' && !nav.stack.length) maybeProximity();
+  if (scr.screen === 'chatview'){
+    const sc = document.getElementById('chatScroll');
+    if (sc) sc.scrollTop = sc.scrollHeight;
+  }
+}
+
+/* ============================================================
+   EVENT BUS
+   ============================================================ */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act;
+  const me = getMe();
+
+  switch (act){
+    /* ---- GATE ---- */
+    case 'enterplayer':
+      SESSION.mode = 'player';
+      nav.tab = 'discover'; nav.stack = [];
+      proximityShown = false;
+      render();
+      break;
+    case 'enteradmin':
+      nav.stack = [{ screen:'adminlogin', params:{}, title:'Admin Sign-in' }];
+      render();
+      break;
+    case 'exitgate':
+      SESSION.mode = null;
+      SESSION.adminId = null;
+      nav.stack = []; nav.tab = 'discover';
+      render();
+      break;
+    case 'returnadmin':
+      SESSION.mode = 'admin';
+      nav.stack = [];
+      render();
+      break;
+    case 'adminauth': {
+      const email = (document.getElementById('adminEmail')?.value || '').trim().toLowerCase();
+      const pin = (document.getElementById('adminPin')?.value || '').trim();
+      state.gateAdminEmail = email;
+      state.gateAdminPin = pin;
+      const a = ADMINS.find(x => x.email.toLowerCase() === email && x.pin === pin);
+      if (a){
+        a.lastLogin = new Date().toISOString();
+        SESSION.mode = 'admin';
+        SESSION.adminId = a.id;
+        nav.stack = [];
+        state.adminTab = 'overview';
+        render();
+        toast('Welcome, ' + a.name + ' ✓');
+      } else {
+        toast('Invalid email or passcode');
+      }
+      break;
+    }
+
+    /* ---- NAV ---- */
+    case 'tab': setTab(el.dataset.tab); break;
+    case 'back': back(); break;
+    case 'close-layer': closeLayer(); break;
+
+    /* ---- PLAYER DISCOVERY ---- */
+    case 'dfilter': state.discoverFilter = el.dataset.v; render(); break;
+    case 'ranklist': state.rankList = el.dataset.v; render(); break;
+    case 'region': state.rankRegion = el.dataset.v; render(); break;
+    case 'level': state.rankLevel = el.dataset.v; render(); break;
+    case 'lffilter': state.lfFilter = el.dataset.v; render(); break;
+    case 'tourneyfilter': state.tourneyFilter = el.dataset.v; render(); break;
+    case 'reportfilter': state.adminReportFilter = el.dataset.v; render(); break;
+
+    /* ---- PLAYER / COURT / CLUB ---- */
+    case 'player': {
+      const id = el.dataset.id;
+      if (!id) return;
+      const u = userById(id);
+      if (!u) return;
+      if (id === 'me'){ nav.stack = []; nav.tab = 'profile'; render(); return; }
+      go('profile', { id }, u.name.split(' ')[0] + "'s Profile");
+      break;
+    }
+    case 'court': {
+      const c = courtById(el.dataset.id);
+      if (!c) return;
+      state.booking = { date:'Today', time:null };
+      go('court', { id:c.id }, c.name);
+      break;
+    }
+    case 'club': {
+      const k = commById(el.dataset.id);
+      if (!k) return;
+      go('club', { id:k.id }, 'Community');
+      break;
+    }
+
+    /* ---- REQUESTS (PAID) ---- */
+    case 'request': {
+      e.stopPropagation();
+      const u = userById(el.dataset.id);
+      if (!u) return;
+      if (state.requestsSent[u.id]){ toast('Already sent'); break; }
+      paywallPopup({
+        title: 'Send request to ' + u.name.split(' ')[0],
+        body: 'One-time fee to send a play request directly. They\'ll see your profile and can accept or decline.',
+        price: PRICES.requestPlayer,
+        platformFee: PRICES.requestPlayer,
+        cta: 'Send Request · $' + PRICES.requestPlayer,
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'request', amount: PRICES.requestPlayer,
+            note:'Play request to ' + u.name, sourceId: null,
