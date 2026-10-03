@@ -1,25 +1,21 @@
 /* ============================================================
    RUBIX TENNIS — app.js
    Full application logic.
-   Sections:
-     1. Icons
-     2. Utilities
-     3. Data models (DB, ADMINS, SEED)
-     4. Session & Wallet engine (monetization)
-     5. Tournament engine
-     6. Chat engine
-     7. Match verification engine
-     8. AI recommendations
-     9. Weather
-    10. Router + Header + Tabs
-    11. Screens (Player side)
-    12. Screens (Admin side)
-    13. Event bus
-    14. Boot
+   ────────────────────────────────────────────────────────────
+   SECTION 1 : Icons
+   SECTION 2 : Utilities
+   SECTION 3 : Data models (DB · ADMINS · seed)
+   SECTION 4 : Session · Wallet · Monetization
+   SECTION 5 : Tournament engine
+   SECTION 6 : Chat engine
+   SECTION 7 : Match verification
+   SECTION 8 : AI recommendations
+   SECTION 9 : Weather
+   [Continue with Sessions 2–5 below this file]
    ============================================================ */
 
 /* ============================================================
-   1. ICONS
+   SECTION 1 — ICONS
    ============================================================ */
 const ICONS = {
   pin:'<path d="M12 21.5s7-6 7-11.5a7 7 0 1 0-14 0c0 5.5 7 11.5 7 11.5Z"/><circle cx="12" cy="10" r="2.6"/>',
@@ -81,7 +77,7 @@ function ico(n, cls){
 }
 
 /* ============================================================
-   2. UTILITIES
+   SECTION 2 — UTILITIES
    ============================================================ */
 const $ = (sel, root) => (root || document).querySelector(sel);
 const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
@@ -103,7 +99,7 @@ const escapeHTML = (s) => String(s).replace(/[&<>"']/g, c => ({
 }[c]));
 
 /* ============================================================
-   3. DATA MODELS
+   SECTION 3 — DATA MODELS
    ============================================================ */
 function img(seed, w, h){
   return 'https://picsum.photos/seed/rubix-' + encodeURIComponent(seed) + '/' + w + '/' + h;
@@ -113,26 +109,25 @@ function img(seed, w, h){
 const PLATFORM = {
   owner: 'RUBIX Ventures',
   feePct: {
-    request: 0,        // paid flat fee
-    chat: 0,           // paid flat fee
-    court: 10,         // % of booking
-    coach: 12,         // % of lesson
-    tournament: 15,    // % of entry fee
-    vendorListing: 0,  // flat fee for listing
-    shopSale: 8,       // % of marketplace sale
-    communityJoin: 5   // % of paid community subscription
+    request: 0,
+    chat: 0,
+    court: 10,
+    coach: 12,
+    tournament: 15,
+    vendorListing: 0,
+    shopSale: 8,
+    communityJoin: 5
   },
   flatFees: {
-    requestPlayer: 0.99,     // send request to a player
-    unlockChat: 1.99,        // unlock a chat thread
-    vendorListing: 4.99,     // publish one item to shop (per listing)
-    tournamentHost: 9.99,    // host a tournament
-    communityCreate: 14.99,  // create a community
-    priorityBooking: 2.99    // priority court slot
+    requestPlayer: 0.99,
+    unlockChat: 1.99,
+    vendorListing: 4.99,
+    tournamentHost: 9.99,
+    communityCreate: 14.99,
+    priorityBooking: 2.99
   },
-  /* All-time platform revenue — visible to admin only */
   revenue: 0,
-  history: []  // { ts, kind, gross, fee, net, sourceId }
+  history: []
 };
 
 const DB = {
@@ -145,7 +140,7 @@ const DB = {
   chats: [],
   feed: [],
   reports: [],
-  transactions: [],  // wallet transactions per user
+  transactions: [],
   pending: { vendors:[], communities:[], coaches:[], courts:[] }
 };
 
@@ -383,7 +378,6 @@ DB.transactions = [
   { id:'tx4', userId:'me', kind:'tournament-entry', amount: -5, ts: now()-2*86400000, note:'Riverside Doubles Open' },
   { id:'tx5', userId:'me', kind:'topup', amount: 20, ts: now()-2*86400000, note:'Wallet top-up' }
 ];
-/* Platform history mirror */
 PLATFORM.revenue = 120.45;
 PLATFORM.history = [
   { ts: now()-6*86400000, kind:'court', gross:18, fee:1.8, net:16.2, sourceId:'c1' },
@@ -451,16 +445,15 @@ DB.users.forEach(u => {
 });
 
 /* ============================================================
-   4. SESSION + WALLET + PLATFORM FEES
+   SECTION 4 — SESSION · WALLET · MONETIZATION
    ============================================================ */
 const SESSION = {
-  mode: null,             // null | 'player' | 'admin'
+  mode: null,
   adminId: null
 };
 
 const ADMIN = { log: [] };
 
-/* Every admin action is reversible via its log entry */
 function adminDo(doFn, undoFn, label){
   const entry = {
     id: uid('a'), doFn, undoFn, label, state:'active',
@@ -478,7 +471,6 @@ function adminToggleLog(id){
   render();
 }
 
-/* -------- Wallet engine -------- */
 function walletOf(userId){
   const u = userById(userId);
   return u ? u.wallet : 0;
@@ -487,11 +479,6 @@ function txsOf(userId){
   return DB.transactions.filter(t => t.userId === userId).sort((a,b) => b.ts - a.ts);
 }
 
-/**
- * charge() — deducts from wallet and records platform fee.
- * Options: { kind, amount, note, sourceId, platformFee }
- * Returns { ok, error, fee, net }
- */
 function charge(userId, { kind, amount, note, sourceId, platformFee }){
   const user = userById(userId);
   if (!user) return { ok:false, error:'No user' };
@@ -527,7 +514,6 @@ function topup(userId, amount){
   });
 }
 
-/* -------- Paywall helpers -------- */
 const PRICES = {
   requestPlayer: PLATFORM.flatFees.requestPlayer,
   chatUnlock: PLATFORM.flatFees.unlockChat,
@@ -546,77 +532,12 @@ function coachFee(rate){ return +(rate * PRICES.coachPct / 100).toFixed(2); }
 function tourneyFee(entry){ return +(entry * PRICES.tournamentPct / 100).toFixed(2); }
 function shopFee(price){ return +(price * PRICES.shopPct / 100).toFixed(2); }
 
-/* -------- Paywall UI -------- */
-function paywallPopup(opts){
-  /* opts: { title, body, price, cta, onConfirm, allowTopUp } */
-  const me = getMe();
-  const enough = me.wallet >= opts.price;
-  layerEl.innerHTML =
-    '<div class="scrim" data-act="close-layer"></div>' +
-    '<div class="popup">' +
-      '<div class="popup__pill"><span class="pulse"></span>PAID ACTION</div>' +
-      '<h3>' + escapeHTML(opts.title) + '</h3>' +
-      '<p>' + escapeHTML(opts.body || '') + '</p>' +
-      '<div class="paywall" style="margin-top:16px;text-align:left">' +
-        '<div class="paywall__inner">' +
-          '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
-            '<div>' +
-              '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:rgba(255,255,255,.5)">AMOUNT</div>' +
-              '<div class="paywall__price" style="margin-top:6px">' + money(opts.price) + '</div>' +
-            '</div>' +
-            '<div style="text-align:right">' +
-              '<div style="font-size:10.5px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5)">WALLET</div>' +
-              '<div style="font-size:20px;font-weight:900;letter-spacing:-.04em;margin-top:6px;color:' +
-                (enough ? 'var(--green)' : '#FF9B8B') + '">' + money(me.wallet) + '</div>' +
-            '</div>' +
-          '</div>' +
-          (opts.platformFee
-            ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;font-size:11px;font-weight:700">' +
-                '<span style="color:rgba(255,255,255,.5)">Platform fee</span>' +
-                '<span style="color:var(--green)">' + money(opts.platformFee) + '</span>' +
-              '</div>'
-            : '') +
-        '</div>' +
-      '</div>' +
-      '<div class="popup__btns">' +
-        '<button class="btn btn--ghost" data-act="close-layer">Cancel</button>' +
-        (enough
-          ? '<button class="btn btn--primary" data-act="paywall-confirm">' + escapeHTML(opts.cta || 'Pay ' + money(opts.price)) + '</button>'
-          : '<button class="btn btn--gold" data-act="topup">Top up wallet</button>') +
-      '</div>' +
-    '</div>';
-
-  // stash callback
-  layerEl._paywall = opts;
-}
-function topupPopup(){
-  const amounts = [5, 10, 25, 50];
-  layerEl.innerHTML =
-    '<div class="scrim" data-act="close-layer"></div>' +
-    '<div class="popup">' +
-      '<div class="popup__pill" style="background:linear-gradient(140deg,#FFD770,#FFB020);color:#3A2500">ADD FUNDS</div>' +
-      '<h3>Top up your wallet</h3>' +
-      '<p>Funds are used for chat unlocks, tournament entries, court bookings and coach sessions.</p>' +
-      '<div class="chips chips--pad" style="padding:14px 0 0">' +
-        amounts.map(a =>
-          '<button class="chip ' + (a===25?'is-on':'') + '" data-act="topup-pick" data-v="' + a + '">' + money(a) + '</button>'
-        ).join('') +
-      '</div>' +
-      '<div class="popup__btns">' +
-        '<button class="btn btn--ghost" data-act="close-layer">Cancel</button>' +
-        '<button class="btn btn--primary" data-act="topup-confirm" data-v="25">Add $25</button>' +
-      '</div>' +
-    '</div>';
-}
-
 /* ============================================================
-   5. TOURNAMENT ENGINE
+   SECTION 5 — TOURNAMENT ENGINE
    ============================================================ */
 const Tournaments = {
-  /* Build bracket once all teams registered */
   buildBracket(t){
     const teams = t.teams.map(x => ({ id: x.id, name: x.name, members: x.members.slice() }));
-    // seed randomly
     for (let i = teams.length - 1; i > 0; i--){
       const j = Math.floor(Math.random() * (i+1));
       [teams[i], teams[j]] = [teams[j], teams[i]];
@@ -637,7 +558,6 @@ const Tournaments = {
       }
       rounds.push(matches);
       current = matches.map(m => m.teamA && !m.teamB ? m.teamA : null).filter(Boolean);
-      // seeded next round placeholders — we rebuild next round after results
       if (matches.every(m => m.status === 'bye')) break;
       current = matches.map(() => null);
     }
@@ -645,7 +565,6 @@ const Tournaments = {
     return t.bracket;
   },
 
-  /* Confirm a match result by agreement */
   recordResult(t, roundIdx, matchId, scoreA, scoreB, agreedByUser){
     if (!t.bracket) return false;
     const round = t.bracket.rounds[roundIdx];
@@ -654,7 +573,6 @@ const Tournaments = {
     m.scoreA = scoreA;
     m.scoreB = scoreB;
     m.status = 'completed';
-    // add both teams' agreeing user (simplified: one confirmation completes)
     m.agreed = true;
     advanceRound(t);
     return true;
@@ -692,7 +610,7 @@ function advanceRound(t){
 }
 
 /* ============================================================
-   6. CHAT ENGINE
+   SECTION 6 — CHAT ENGINE
    ============================================================ */
 const Chat = {
   threadWith(userId){
@@ -727,11 +645,11 @@ const Chat = {
 };
 
 /* ============================================================
-   7. MATCH VERIFICATION ENGINE
+   SECTION 7 — MATCH VERIFICATION ENGINE
    ============================================================ */
 const Verify = {
-  pending(){ return this.all().filter(x => x.status === 'awaiting-both' || x.status === 'awaiting-me'); },
   all(){ return (getMe().verifications ||= []); },
+  pending(){ return this.all().filter(x => x.status === 'awaiting-both' || x.status === 'awaiting-me'); },
   propose(opponentId, scoreMe, scoreThem, photo){
     const v = {
       id: uid('v'),
@@ -757,10 +675,9 @@ const Verify = {
 };
 
 /* ============================================================
-   8. AI RECOMMENDATIONS
+   SECTION 8 — AI RECOMMENDATIONS
    ============================================================ */
 const AI = {
-  /* Explainable simple scorer */
   matchScore(me, other){
     let s = 0;
     const lvlDiff = Math.abs(parseFloat(me.level) - parseFloat(other.level));
@@ -770,7 +687,6 @@ const AI = {
     if (other.region === me.region) s += 15;
     if (other.status === 'Available now') s += 10;
     if (other.dist <= 500) s += 10;
-    // shared interests
     const shared = (me.interests || []).filter(x => (other.interests || []).includes(x));
     s += shared.length * 5;
     return Math.min(99, Math.round(s));
@@ -786,7 +702,7 @@ const AI = {
 };
 
 /* ============================================================
-   9. WEATHER (mocked, deterministic)
+   SECTION 9 — WEATHER (mock, deterministic)
    ============================================================ */
 const Weather = {
   _hash(day){
@@ -827,10 +743,14 @@ const Weather = {
   }
 };
 
+/* ════════════════════════════════════════════════════════════
+   END OF SESSION 1
+   ════════════════════════════════════════════════════════════ */
 /* ============================================================
-   10. ROUTER + HEADER + TABS
+   SECTION 10 — ROUTER + STATE + DOM REFERENCES
    ============================================================ */
 const nav = { tab:'discover', stack:[] };
+
 const state = {
   /* discover */
   discoverFilter:'all',
@@ -840,10 +760,12 @@ const state = {
   lfFilter:'all',
   /* booking */
   booking:{ date:'Today', time:null },
-  /* vendor draft */
+  /* application drafts */
   vendorDraft:null, coachCourt:null, courtSurface:null,
+  hostFormat:null,
   /* admin */
-  adminTab:'overview', adminAppTab:'vendors', adminUserQuery:'', adminReportFilter:'open',
+  adminTab:'overview', adminAppTab:'vendors', adminUserQuery:'',
+  adminReportFilter:'open',
   /* forms */
   gateAdminEmail:'', gateAdminPin:'',
   /* shop filter */
@@ -868,13 +790,9 @@ const TABS = [
   {id:'tournaments',label:'TOURNEYS',   icon:'trophy'},
   {id:'rankings',   label:'RANKINGS',   icon:'chart'},
   {id:'courts',     label:'COURTS',     icon:'ball'},
-  {id:'chats',      label:'CHATS',      icon:'chat'},
-  {id:'profile',    label:'PROFILE',    icon:'user'},
   {id:'more',       label:'MORE',       icon:'grid'}
 ];
-/* Actually — 7 tabs is too many. We'll drop 'chats' from bottom bar and put it inside 'more',
-   but we still show the tab array as the bottom five to keep the UX tight. */
-const VISIBLE_TABS = ['discover','tournaments','rankings','courts','more'];
+const VISIBLE_TABS = TABS.map(t => t.id);
 
 function go(screen, params, title){
   nav.stack.push({ screen, params: params || {}, title: title || '' });
@@ -921,6 +839,69 @@ function toast(msg){
 function closeLayer(){ layerEl.innerHTML = ''; layerEl._paywall = null; }
 
 /* ============================================================
+   PAYWALL POPUPS
+   ============================================================ */
+function paywallPopup(opts){
+  const me = getMe();
+  const enough = me.wallet >= opts.price;
+  layerEl.innerHTML =
+    '<div class="scrim" data-act="close-layer"></div>' +
+    '<div class="popup">' +
+      '<div class="popup__pill"><span class="pulse"></span>PAID ACTION</div>' +
+      '<h3>' + escapeHTML(opts.title) + '</h3>' +
+      '<p>' + escapeHTML(opts.body || '') + '</p>' +
+      '<div class="paywall" style="margin-top:16px;text-align:left">' +
+        '<div class="paywall__inner">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+            '<div>' +
+              '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:rgba(255,255,255,.5)">AMOUNT</div>' +
+              '<div class="paywall__price" style="margin-top:6px">' + money(opts.price) + '</div>' +
+            '</div>' +
+            '<div style="text-align:right">' +
+              '<div style="font-size:10.5px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5)">WALLET</div>' +
+              '<div style="font-size:20px;font-weight:900;letter-spacing:-.04em;margin-top:6px;color:' +
+                (enough ? 'var(--green)' : '#FF9B8B') + '">' + money(me.wallet) + '</div>' +
+            '</div>' +
+          '</div>' +
+          (opts.platformFee
+            ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;font-size:11px;font-weight:700">' +
+                '<span style="color:rgba(255,255,255,.5)">Platform fee</span>' +
+                '<span style="color:var(--green)">' + money(opts.platformFee) + '</span>' +
+              '</div>'
+            : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="popup__btns">' +
+        '<button class="btn btn--ghost" data-act="close-layer">Cancel</button>' +
+        (enough
+          ? '<button class="btn btn--primary" data-act="paywall-confirm">' + escapeHTML(opts.cta || 'Pay ' + money(opts.price)) + '</button>'
+          : '<button class="btn btn--gold" data-act="topup">Top up wallet</button>') +
+      '</div>' +
+    '</div>';
+  layerEl._paywall = opts;
+}
+
+function topupPopup(){
+  const amounts = [5, 10, 25, 50];
+  layerEl.innerHTML =
+    '<div class="scrim" data-act="close-layer"></div>' +
+    '<div class="popup">' +
+      '<div class="popup__pill" style="background:linear-gradient(140deg,#FFD770,#FFB020);color:#3A2500">ADD FUNDS</div>' +
+      '<h3>Top up your wallet</h3>' +
+      '<p>Funds are used for chat unlocks, tournament entries, court bookings and coach sessions.</p>' +
+      '<div class="chips chips--pad" style="padding:14px 0 0">' +
+        amounts.map(a =>
+          '<button class="chip ' + (a===25?'is-on':'') + '" data-act="topup-pick" data-v="' + a + '">' + money(a) + '</button>'
+        ).join('') +
+      '</div>' +
+      '<div class="popup__btns">' +
+        '<button class="btn btn--ghost" data-act="close-layer">Cancel</button>' +
+        '<button class="btn btn--primary" data-act="topup-confirm" data-v="25">Add $25</button>' +
+      '</div>' +
+    '</div>';
+}
+
+/* ============================================================
    MAP SVG
    ============================================================ */
 function mapSVG(){
@@ -962,10 +943,8 @@ function mapSVG(){
 }
 
 /* ============================================================
-   11. SCREENS — PLAYER SIDE
+   SECTION 11 — ENTRY GATE + ADMIN LOGIN
    ============================================================ */
-
-/* ---------- ENTRY GATE ---------- */
 function screenEntry(){
   return '<div class="gate">'+
     '<div class="gate__inner">'+
@@ -990,12 +969,11 @@ function screenEntry(){
           ico('chev')+
         '</button>'+
       '</div>'+
-      '<div class="gate__foot">NO ADS · EVER · COMMISSION-FREE FOR YOU</div>'+
+      '<div class="gate__foot">NO ADS · EVER · v1.0</div>'+
     '</div>'+
   '</div>';
 }
 
-/* ---------- ADMIN LOGIN ---------- */
 function screenAdminLogin(){
   return '<div style="min-height:100%;background:linear-gradient(160deg,#16233A 0%,#0A1220 60%);padding:36px 24px;color:#fff;display:flex;flex-direction:column">'+
     '<div style="text-align:center;margin-bottom:32px">'+
@@ -1018,7 +996,9 @@ function screenAdminLogin(){
   '</div>';
 }
 
-/* ---------- DISCOVER ---------- */
+/* ============================================================
+   SECTION 12 — DISCOVER (MAP + SHEET)
+   ============================================================ */
 const PINS = [
   {type:'player',id:'p1',x:44,y:36},{type:'player',id:'p2',x:63,y:29},
   {type:'player',id:'p3',x:29,y:50},{type:'player',id:'p4',x:56,y:57},
@@ -1032,6 +1012,7 @@ const PINS = [
   {type:'club',id:'k1',x:46,y:46},{type:'club',id:'k2',x:27,y:57},
   {type:'club',id:'k3',x:64,y:38}
 ];
+
 function pinHTML(pin){
   if (pin.type === 'player'){
     const u = userById(pin.id);
@@ -1046,6 +1027,7 @@ function pinHTML(pin){
   if (pin.type === 'court') return '<button class="pin pin--court" style="left:'+pin.x+'%;top:'+pin.y+'%" data-act="court" data-id="'+pin.id+'">🎾</button>';
   return '<button class="pin pin--club" style="left:'+pin.x+'%;top:'+pin.y+'%" data-act="club" data-id="'+pin.id+'">👥</button>';
 }
+
 function discoverItems(){
   const f = state.discoverFilter;
   const items = [];
@@ -1057,6 +1039,7 @@ function discoverItems(){
     DB.communities.filter(k => k.verified === 'approved').forEach(k => items.push({kind:'club', dist:k.dist, ref:k}));
   return items.sort((a,b) => a.dist - b.dist);
 }
+
 function discoverRow(item){
   if (item.kind === 'player'){
     const u = item.ref;
@@ -1095,11 +1078,11 @@ function discoverRow(item){
     '<button class="btn btn--sm btn--ghost" data-act="joinclub" data-id="'+k.id+'">Join</button>'+
   '</div>';
 }
+
 function screenDiscover(){
   const f = state.discoverFilter;
   const pins = PINS.filter(p => f === 'all' || p.type === (f === 'players' ? 'player' : f === 'courts' ? 'court' : 'club'));
   const items = discoverItems();
-  const me = getMe();
   const ai = AI.topMatches(1)[0];
   return ''+
   '<div class="map">'+
@@ -1157,22 +1140,25 @@ function showProximity(u){
   '</div>';
 }
 
-/* ---------- TOURNAMENTS ---------- */
+/* ============================================================
+   SECTION 13 — TOURNAMENTS
+   ============================================================ */
 function tourneyStatusPill(t){
   if (t.completed) return '<span class="badge badge--gold">Completed</span>';
   if (t.status === 'draft') return '<span class="badge badge--soft">Draft</span>';
   if (t.teams.length >= t.maxTeams) return '<span class="badge badge--amber">Full · Starting</span>';
   return '<span class="badge badge--green">Open</span>';
 }
+
 function screenTournaments(){
   const f = state.tourneyFilter;
   const list = DB.tournaments.filter(t =>
-    f === 'all' || (f === 'open' && !t.completed && t.status !== 'draft') ||
+    f === 'all' ||
+    (f === 'open' && !t.completed && t.status !== 'draft') ||
     (f === 'mine' && t.hostId === 'me') ||
     (f === 'completed' && t.completed) ||
     (f === 'draft' && t.status === 'draft')
   );
-  const me = getMe();
 
   return '<div class="pad">'+
     '<div class="seg">'+
@@ -1244,7 +1230,6 @@ function screenTourney(params){
   const host = userById(t.hostId);
   const c1 = 'hsl('+t.hue+' 68% 55%)';
   const c2 = 'hsl('+((t.hue+45)%360)+' 62% 32%)';
-  const me = getMe();
   const joined = Tournaments.isRegistered(t, 'me');
   const daysLeft = Math.max(0, Math.ceil((t.agreeBy - now()) / 86400000));
 
@@ -1331,7 +1316,7 @@ function screenTourney(params){
             '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:12px">Agree a time with the opposing team in chat, then log the score here.</div>'+
             '<div style="display:flex;gap:9px">'+
               '<button class="btn btn--ghost btn--sm" style="flex:1" data-act="tourneybracket" data-id="'+t.id+'">See bracket</button>'+
-              '<button class="btn btn--primary btn--sm" style="flex:1" data-act="toureyreport" data-t="'+t.id+'" data-m="'+m.id+'">Submit Score</button>'+
+              '<button class="btn btn--primary btn--sm" style="flex:1" data-act="tourneyreport" data-t="'+t.id+'" data-m="'+m.id+'">Submit Score</button>'+
             '</div>'+
           '</div>';
         }).join('')
@@ -1364,7 +1349,12 @@ function screenTourney(params){
   '</div>';
 }
 
-/* ---------- RANKINGS ---------- */
+/* ════════════════════════════════════════════════════════════
+   END OF SESSION 2
+   ════════════════════════════════════════════════════════════ */
+/* ============================================================
+   SECTION 14 — RANKINGS
+   ============================================================ */
 function rankListHTML(){
   const q = state.rankQuery.trim().toLowerCase();
   let list;
@@ -1397,6 +1387,7 @@ function rankListHTML(){
     '</div>';
   }).join('');
 }
+
 function screenRankings(){
   const regions = ['All','Greater Accra','Ashanti','Central','Northern'];
   const levels = ['All','3.0','3.5','4.0','4.5','5.0+'];
@@ -1428,7 +1419,9 @@ function screenRankings(){
   '</div>';
 }
 
-/* ---------- COURTS ---------- */
+/* ============================================================
+   SECTION 15 — COURTS LIST
+   ============================================================ */
 function screenCourts(){
   const approved = DB.courts.filter(c => c.status === 'approved');
   return '<div class="pad">'+
@@ -1464,8 +1457,12 @@ function screenCourts(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 16 — COURT DETAIL
+   ============================================================ */
 const DATES = ['Today','Tomorrow','Fri 21','Sat 22','Sun 23'];
 const TIMES = ['07:00','08:30','10:00','11:30','14:00','15:30','17:00','18:30','20:00'];
+
 function screenCourt(params){
   const c = courtById(params.id);
   if (!c) return '<div class="empty">Court not found.</div>';
@@ -1570,7 +1567,9 @@ function screenCourt(params){
     '</div>';
 }
 
-/* ---------- PROFILE ---------- */
+/* ============================================================
+   SECTION 17 — PLAYER PROFILE
+   ============================================================ */
 function matchRow(m){
   return '<div class="match" data-act="player" data-id="'+(m.id||'')+'">'+
     '<div class="match__res match__res--'+m.res.toLowerCase()+'">'+m.res+'</div>'+
@@ -1581,6 +1580,7 @@ function matchRow(m){
     '<div class="match__score">'+m.score+'</div>'+
   '</div>';
 }
+
 function screenProfile(params){
   const id = (params && params.id) || 'me';
   const u = userById(id) || getMe();
@@ -1646,7 +1646,9 @@ function screenProfile(params){
   '</div>';
 }
 
-/* ---------- EDIT PROFILE ---------- */
+/* ============================================================
+   SECTION 18 — EDIT PROFILE
+   ============================================================ */
 function screenProfileForm(){
   const u = getMe();
   return '<div class="pad" style="padding-top:8px">'+
@@ -1702,7 +1704,9 @@ function screenProfileForm(){
   '</div>';
 }
 
-/* ---------- ID CARD ---------- */
+/* ============================================================
+   SECTION 19 — ID CARD
+   ============================================================ */
 function qrHTML(seed){
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
@@ -1755,11 +1759,13 @@ function screenIdCard(){
   '</div>';
 }
 
-/* ---------- CHATS LIST ---------- */
+/* ============================================================
+   SECTION 20 — CHATS LIST
+   ============================================================ */
 function screenChats(){
-  const me = getMe();
   const unlocked = DB.chats.filter(c => c.unlocked);
   const locked = DB.chats.filter(c => !c.unlocked);
+
   const renderThread = (c) => {
     const u = userById(c.withId);
     if (!u) return '';
@@ -1811,7 +1817,9 @@ function screenChats(){
   '</div>';
 }
 
-/* ---------- CHAT VIEW ---------- */
+/* ============================================================
+   SECTION 21 — CHAT VIEW
+   ============================================================ */
 function screenChatView(params){
   const u = userById(params.id);
   const c = Chat.threadWith(params.id);
@@ -1851,7 +1859,9 @@ function screenChatView(params){
   '</div>';
 }
 
-/* ---------- FEED ---------- */
+/* ============================================================
+   SECTION 22 — FEED
+   ============================================================ */
 function screenFeed(){
   const items = DB.feed.slice().sort((a,b) => b.ts - a.ts);
   const me = getMe();
@@ -1904,7 +1914,9 @@ function screenFeed(){
   '</div>';
 }
 
-/* ---------- BADGES ---------- */
+/* ============================================================
+   SECTION 23 — BADGES
+   ============================================================ */
 const ALL_BADGES = [
   { id:'first-match', name:'First Match', icon:'🎾', desc:'Play your first match' },
   { id:'5-matches', name:'5 Matches', icon:'🏅', desc:'Play 5 matches' },
@@ -1944,7 +1956,9 @@ function screenBadges(){
   '</div>';
 }
 
-/* ---------- AI RECOMMENDATIONS ---------- */
+/* ============================================================
+   SECTION 24 — AI RECOMMENDATIONS
+   ============================================================ */
 function screenAI(){
   const matches = AI.topMatches(8);
   return '<div class="pad">'+
@@ -1973,7 +1987,9 @@ function screenAI(){
   '</div>';
 }
 
-/* ---------- WALLET ---------- */
+/* ============================================================
+   SECTION 25 — WALLET
+   ============================================================ */
 function screenWallet(){
   const me = getMe();
   const txs = txsOf('me').slice(0, 20);
@@ -2062,7 +2078,9 @@ function screenWallet(){
   '</div>';
 }
 
-/* ---------- TRUST & SAFETY ---------- */
+/* ============================================================
+   SECTION 26 — TRUST & SAFETY
+   ============================================================ */
 function screenSafety(){
   const me = getMe();
   return '<div class="pad">'+
@@ -2125,7 +2143,9 @@ function screenSafety(){
   '</div>';
 }
 
-/* ---------- NOTIFICATION PREFS ---------- */
+/* ============================================================
+   SECTION 27 — NOTIFICATION PREFS
+   ============================================================ */
 function screenNotifPrefs(){
   const me = getMe();
   const rows = [
@@ -2155,7 +2175,12 @@ function screenNotifPrefs(){
   '</div>';
 }
 
-/* ---------- VENDOR / COACH / COURT APPLICATIONS ---------- */
+/* ════════════════════════════════════════════════════════════
+   END OF SESSION 3
+   ════════════════════════════════════════════════════════════ */
+/* ============================================================
+   SECTION 28 — VENDOR APPLICATION
+   ============================================================ */
 function screenVendorApply(){
   const me = getMe();
   if (me.vendorStatus === 'pending' || me.vendorStatus === 'approved'){
@@ -2196,6 +2221,9 @@ function screenVendorApply(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 29 — COACH APPLICATION
+   ============================================================ */
 function screenCoachApply(){
   const c = DB.courts.filter(x => x.status === 'approved');
   return '<div class="pad" style="padding-top:8px">'+
@@ -2223,9 +2251,13 @@ function screenCoachApply(){
         '<input class="form-input" id="co-exp" placeholder="e.g. 5 yrs"></div>'+
     '</div>'+
     '<button class="btn btn--primary btn--block" data-act="coachsubmit">Submit Application</button>'+
+    '<button class="btn btn--ghost btn--block" style="margin-top:9px" data-act="back">Cancel</button>'+
   '</div>';
 }
 
+/* ============================================================
+   SECTION 30 — COURT SUBMISSION
+   ============================================================ */
 function screenSubmitCourt(){
   return '<div class="pad" style="padding-top:8px">'+
     '<div style="background:linear-gradient(140deg,#16233A,#0A1220);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
@@ -2249,9 +2281,13 @@ function screenSubmitCourt(){
           '<button class="form-chip '+(state.courtSurface===s?'is-on':'')+'" data-act="courtsurface" data-v="'+s+'">'+s+'</button>').join('')+
       '</div></div>'+
     '<button class="btn btn--primary btn--block" data-act="courtsubmit">Submit for Review</button>'+
+    '<button class="btn btn--ghost btn--block" style="margin-top:9px" data-act="back">Cancel</button>'+
   '</div>';
 }
 
+/* ============================================================
+   SECTION 31 — HOST TOURNAMENT FORM
+   ============================================================ */
 function screenHostTourney(){
   const courts = DB.courts.filter(c => c.status === 'approved');
   return '<div class="pad" style="padding-top:8px">'+
@@ -2283,14 +2319,17 @@ function screenHostTourney(){
       '<input class="form-input" id="ht-prize" type="number" value="60"></div>'+
 
     '<div style="background:#F5F7F2;border-radius:14px;padding:14px;font-size:12px;font-weight:600;color:#3A4756;line-height:1.6;margin-bottom:16px">'+
-      '<b>How it works:</b> Players join for the entry fee. ' + PRICES.tournamentPct + '% platform fee is deducted automatically. Winners are paid instantly from the prize pool once the bracket completes.'+
+      '<b>How it works:</b> Players join for the entry fee. '+PRICES.tournamentPct+'% platform fee is deducted automatically. Winners are paid instantly from the prize pool once the bracket completes.'+
     '</div>'+
 
     '<button class="btn btn--primary btn--block" data-act="hosttourneysubmit">Pay '+money(PRICES.tournamentHost)+' & Create</button>'+
+    '<button class="btn btn--ghost btn--block" style="margin-top:9px" data-act="back">Cancel</button>'+
   '</div>';
 }
 
-/* ---------- MORE ---------- */
+/* ============================================================
+   SECTION 32 — MORE
+   ============================================================ */
 function screenMore(){
   const me = getMe();
   const unread = Chat.unreadCount();
@@ -2435,7 +2474,9 @@ function screenMore(){
   '</div>';
 }
 
-/* ---------- LOST & FOUND / SHOP / COACH / CLUB ---------- */
+/* ============================================================
+   SECTION 33 — LOST & FOUND
+   ============================================================ */
 function screenLostFound(){
   const list = DB.lostFound.filter(i => state.lfFilter === 'all' || i.type === state.lfFilter);
   return '<div class="pad" style="position:relative;min-height:100%">'+
@@ -2461,6 +2502,10 @@ function screenLostFound(){
     '<button class="fab" data-act="lfadd">+</button>'+
   '</div>';
 }
+
+/* ============================================================
+   SECTION 34 — SHOP
+   ============================================================ */
 function screenShop(){
   return '<div class="pad">'+
     '<div class="search">'+ico('search')+
@@ -2491,6 +2536,7 @@ function screenShop(){
     '</div>'+
   '</div>';
 }
+
 function screenShopItem(params){
   const it = shopById(params.id);
   if (!it) return '<div class="empty">Item not found.</div>';
@@ -2519,6 +2565,10 @@ function screenShopItem(params){
           '<div class="row__sub">📍 '+it.place+' · ⭐ 4.9 seller rating</div>'+
         '</div>'+ ico('chev')+
       '</div>'+
+      '<div class="sec-title">Buyer protection</div>'+
+      '<div style="background:#F5F7F2;border-radius:14px;padding:14px;font-size:12px;font-weight:600;color:#3A4756;line-height:1.6">'+
+        '<b>How it works:</b> Pay through RUBIX to protect your purchase. The seller receives '+ (100 - PRICES.shopPct) +'% of the sale price; '+PRICES.shopPct+'% platform fee applies.'+
+      '</div>'+
       '<div class="sticky-bar">'+
         '<div class="sticky-bar__price" style="flex:1">'+
           '<b>$'+it.price+'</b>'+
@@ -2528,6 +2578,10 @@ function screenShopItem(params){
       '</div>'+
     '</div>';
 }
+
+/* ============================================================
+   SECTION 35 — COACH DETAIL
+   ============================================================ */
 function screenCoach(params){
   const c = courtById(params.court);
   const co = c && c.coaches.find(x => x.id === params.id);
@@ -2575,6 +2629,10 @@ function screenCoach(params){
     '</div>'+
   '</div>';
 }
+
+/* ============================================================
+   SECTION 36 — CLUB / COMMUNITY DETAIL
+   ============================================================ */
 function screenClub(params){
   const k = commById(params.id);
   if (!k) return '<div class="empty">Community not found.</div>';
@@ -2621,7 +2679,7 @@ function screenClub(params){
 }
 
 /* ============================================================
-   12. SCREENS — DASHBOARDS
+   SECTION 37 — COACH DASHBOARD
    ============================================================ */
 function screenCoachDashboard(){
   const me = getMe();
@@ -2675,15 +2733,41 @@ function screenCoachDashboard(){
                 : '')+
             '</div>';
           }).join(''))+
+
+      '<div class="sec-title">Your coaching profile</div>'+
+      '<div class="menu-row" data-act="toast" data-msg="Edit your coaching profile (demo)">'+
+        '<div class="menu-row__ico">'+ico('user')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Coaching profile</div><div class="menu-row__s">Rate, specialty, availability</div></div>'+
+        ico('chev')+
+      '</div>'+
+      '<div class="menu-row" data-act="toast" data-msg="Availability editor (demo)">'+
+        '<div class="menu-row__ico">'+ico('calendar')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Availability</div><div class="menu-row__s">Set your weekly teaching hours</div></div>'+
+        ico('chev')+
+      '</div>'+
+
+      '<div class="sec-title">Earnings</div>'+
+      '<div class="wallet-hero">'+
+        '<div class="wallet-hero__inner">'+
+          '<div class="wallet-hero__label">COACHING EARNINGS</div>'+
+          '<div class="wallet-hero__balance" style="font-size:32px">'+money(me.earnings || 0)+'</div>'+
+          '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:14px">After '+PRICES.coachPct+'% platform fee · paid out weekly</div>'+
+        '</div>'+
+      '</div>'+
+
       '<button class="btn btn--ghost btn--block" style="margin-top:14px" data-act="back">← Back</button>'+
     '</div>'+
   '</div>';
 }
+
+/* ============================================================
+   SECTION 38 — COMMUNITY DASHBOARD
+   ============================================================ */
 function screenCommunityDashboard(){
   const me = getMe();
   const k = me.communityId ? commById(me.communityId) : null;
   if (!k) return '<div class="empty">You don\'t lead a community yet.</div>';
-  const members = DB.users.filter(u => u.communityId === k.id || (u.id !== 'me' && u.id !== k.createdBy && Math.random() < 0.15)).slice(0, 8);
+  const members = DB.users.filter(u => u.communityId === k.id || (u.id !== 'me' && u.id !== k.createdBy)).slice(0, 8);
   const pending = DB.users.filter(u => u.id !== 'me').slice(0, 3);
   return '<div class="admin-shell" style="background:#F3F5F0;color:var(--navy)">'+
     '<div class="dash-hero dash-hero--comm">'+
@@ -2741,22 +2825,28 @@ function screenCommunityDashboard(){
   '</div>';
 }
 
+/* ════════════════════════════════════════════════════════════
+   END OF SESSION 4
+   ════════════════════════════════════════════════════════════ */
 /* ============================================================
-   13. ADMIN SCREENS
+   SECTION 39 — ADMIN TABS
    ============================================================ */
 const ADMIN_TABS = [
-  {id:'overview', label:'Overview'},
-  {id:'analytics', label:'Analytics'},
-  {id:'approvals', label:'Approvals'},
-  {id:'users', label:'Users'},
-  {id:'admins', label:'Admins'},
-  {id:'national', label:'National'},
-  {id:'rankings', label:'Rankings'},
+  {id:'overview',   label:'Overview'},
+  {id:'analytics',  label:'Analytics'},
+  {id:'approvals',  label:'Approvals'},
+  {id:'users',      label:'Users'},
+  {id:'admins',     label:'Admins'},
+  {id:'national',   label:'National'},
+  {id:'rankings',   label:'Rankings'},
   {id:'moderation', label:'Moderation'},
-  {id:'wallet', label:'Revenue'},
-  {id:'log', label:'Log'}
+  {id:'wallet',     label:'Revenue'},
+  {id:'log',        label:'Log'}
 ];
 
+/* ============================================================
+   SECTION 40 — ADMIN · OVERVIEW
+   ============================================================ */
 function adminOverview(){
   const vendors = DB.pending.vendors.length;
   const comms = DB.pending.communities.length;
@@ -2798,6 +2888,9 @@ function adminOverview(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 41 — ADMIN · ANALYTICS
+   ============================================================ */
 function adminAnalytics(){
   const DAU = [42,58,61,73,89,102,88];
   const max = Math.max(...DAU);
@@ -2859,6 +2952,9 @@ function adminAnalytics(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 42 — ADMIN · APPROVALS
+   ============================================================ */
 function adminApprovals(){
   const t = state.adminAppTab;
   const chips = [
@@ -2951,6 +3047,9 @@ function adminApprovals(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 43 — ADMIN · USERS
+   ============================================================ */
 function adminUsers(){
   const q = state.adminUserQuery.toLowerCase();
   let list = DB.users.filter(u => u.id !== 'admin');
@@ -2975,13 +3074,15 @@ function adminUsers(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 44 — ADMIN · ADMINS
+   ============================================================ */
 function adminAdmins(){
   return '<div style="padding:0 18px 22px">'+
     '<div style="background:rgba(216,255,61,.08);border:1px solid rgba(216,255,61,.22);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
       '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">ADMIN ACCOUNTS</div>'+
       '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Admins are separate from players, coaches and community accounts. Each has its own email and passcode.</div>'+
     '</div>'+
-
     ADMINS.map(a =>
       '<div class="adm-card">'+
         '<div class="adm-card__inner">'+
@@ -3000,11 +3101,13 @@ function adminAdmins(){
         '</div>'+
       '</div>'
     ).join('')+
-
     '<button class="abtn abtn--ok" style="width:100%;padding:15px;margin-top:8px" data-act="adminadd">+ Add Admin Account</button>'+
   '</div>';
 }
 
+/* ============================================================
+   SECTION 45 — ADMIN · NATIONAL TEAM
+   ============================================================ */
 function adminNational(){
   const nat = DB.users.filter(u => u.isNational && u.role !== 'admin').sort((a,b) => a.rankN - b.rankN);
   const pool = DB.users.filter(u => !u.isNational && u.role !== 'admin' && u.id !== 'me').sort((a,b) => b.points - a.points);
@@ -3038,6 +3141,9 @@ function adminNational(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 46 — ADMIN · GENERAL RANKINGS
+   ============================================================ */
 function adminRankings(){
   const general = DB.users.filter(u => !u.isNational && u.role !== 'admin' && u.id !== 'me')
     .sort((a,b) => b.points - a.points);
@@ -3067,6 +3173,9 @@ function adminRankings(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 47 — ADMIN · MODERATION QUEUE
+   ============================================================ */
 function adminModeration(){
   const f = state.adminReportFilter;
   const list = DB.reports.filter(r => f === 'all' || r.status === f);
@@ -3111,6 +3220,9 @@ function adminModeration(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 48 — ADMIN · REVENUE
+   ============================================================ */
 function adminWallet(){
   const history = PLATFORM.history.slice().reverse().slice(0, 30);
   const byKind = {};
@@ -3162,6 +3274,9 @@ function adminWallet(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 49 — ADMIN · ACTION LOG
+   ============================================================ */
 function adminLog(){
   const log = ADMIN.log.slice().reverse();
   const undone = log.filter(x => x.state === 'undone').length;
@@ -3189,9 +3304,13 @@ function adminLog(){
             '</button>'+
           '</div>'
         ).join(''))+
+    (undone ? '' : '')+
   '</div>';
 }
 
+/* ============================================================
+   SECTION 50 — ADMIN · MAIN DISPATCHER
+   ============================================================ */
 function screenAdmin(){
   if (!SESSION.adminId){
     return screenAdminLogin();
@@ -3237,6 +3356,9 @@ function screenAdmin(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 51 — ADMIN · APPROVAL DETAIL
+   ============================================================ */
 function screenAdminDetail(params){
   const type = params.type;
   const id = params.id;
@@ -3423,6 +3545,9 @@ function screenAdminDetail(params){
   return '<div class="empty">Unknown item type.</div>';
 }
 
+/* ============================================================
+   SECTION 52 — ADMIN · USER EDIT
+   ============================================================ */
 function screenAdminUser(params){
   const u = userById(params.id);
   if (!u) return '<div class="empty">User not found.</div>';
@@ -3501,72 +3626,78 @@ function screenAdminUser(params){
 }
 
 /* ============================================================
-   SCREEN REGISTRY
+   SECTION 53 — SCREEN REGISTRY
    ============================================================ */
 const SCREENS = {
-  entry: screenEntry,
-  discover: screenDiscover,
-  tournaments: screenTournaments,
-  tourney: screenTourney,
-  rankings: screenRankings,
-  courts: screenCourts,
-  court: screenCourt,
-  profile: screenProfile,
-  profileform: screenProfileForm,
-  idcard: screenIdCard,
-  chats: screenChats,
-  chatview: screenChatView,
-  feed: screenFeed,
-  badges: screenBadges,
-  ai: screenAI,
-  wallet: screenWallet,
-  safety: screenSafety,
-  notifprefs: screenNotifPrefs,
-  more: screenMore,
-  lostfound: screenLostFound,
-  shop: screenShop,
-  shopitem: screenShopItem,
-  coach: screenCoach,
-  club: screenClub,
-  vendorapply: screenVendorApply,
-  coachapply: screenCoachApply,
-  submitcourt: screenSubmitCourt,
-  hosttourney: screenHostTourney,
-  coachdash: screenCoachDashboard,
-  commdash: screenCommunityDashboard,
-  admin: screenAdmin,
-  admindetail: screenAdminDetail,
-  adminuser: screenAdminUser
+  entry:         screenEntry,
+  discover:      screenDiscover,
+  tournaments:   screenTournaments,
+  tourney:       screenTourney,
+  rankings:      screenRankings,
+  courts:        screenCourts,
+  court:         screenCourt,
+  profile:       screenProfile,
+  profileform:   screenProfileForm,
+  idcard:        screenIdCard,
+  chats:         screenChats,
+  chatview:      screenChatView,
+  feed:          screenFeed,
+  badges:        screenBadges,
+  ai:            screenAI,
+  wallet:        screenWallet,
+  safety:        screenSafety,
+  notifprefs:    screenNotifPrefs,
+  more:          screenMore,
+  lostfound:     screenLostFound,
+  shop:          screenShop,
+  shopitem:      screenShopItem,
+  coach:         screenCoach,
+  club:          screenClub,
+  vendorapply:   screenVendorApply,
+  coachapply:    screenCoachApply,
+  submitcourt:   screenSubmitCourt,
+  hosttourney:   screenHostTourney,
+  coachdash:     screenCoachDashboard,
+  commdash:      screenCommunityDashboard,
+  admin:         screenAdmin,
+  admindetail:   screenAdminDetail,
+  adminuser:     screenAdminUser
 };
 
 /* ============================================================
-   HEADER / TABS
+   SECTION 54 — HEADER + TABS RENDERING
    ============================================================ */
 function headerHTML(scr){
   if (!SESSION.mode) return '';
-  if (nav.stack.length){
-    const isAdmin = scr.screen === 'admin' || scr.screen === 'admindetail' || scr.screen === 'adminuser';
-    const isChat = scr.screen === 'chatview';
-    return '<div class="hdr hdr--solid" style="'+(isAdmin?'background:#0B1220;color:#fff;border-bottom:1px solid rgba(255,255,255,.06)':'')+'">'+
-      '<button class="icon-btn" style="'+(isAdmin?'background:rgba(255,255,255,.08);color:#fff':'')+'" data-act="back">'+ico('back')+'</button>'+
-      '<div class="hdr__title" style="font-size:19px">'+
-        (scr.title || '')+
-        (isChat ? '' : '')+
-      '</div>'+
-      '<div class="hdr__spacer"></div>'+
-      (isChat ? '<button class="icon-btn" data-act="toast" data-msg="More options (demo)">'+ico('settings')+'</button>' : '')+
-    '</div>';
-  }
-  if (scr.screen === 'discover'){
+
+  /* Overlay header for Discover */
+  if (scr.screen === 'discover' && !nav.stack.length){
     return '<div class="hdr hdr--overlay">'+
       '<div class="brand"><span class="brand__mark">◆</span>RUBIX TENNIS</div>'+
       '<div class="hdr__spacer"></div>'+
       '<button class="icon-btn" data-act="tab" data-tab="profile">'+avatarHTML(getMe(), 'av--xs')+'</button>'+
     '</div>';
   }
+
+  /* Stack header for pushed screens */
+  if (nav.stack.length){
+    const isAdmin = scr.screen === 'admin' || scr.screen === 'admindetail' || scr.screen === 'adminuser';
+    const isChat = scr.screen === 'chatview';
+    return '<div class="hdr hdr--solid" style="'+(isAdmin?'background:#0B1220;color:#fff;border-bottom:1px solid rgba(255,255,255,.06)':'')+'">'+
+      '<button class="icon-btn" style="'+(isAdmin?'background:rgba(255,255,255,.08);color:#fff':'')+'" data-act="back">'+ico('back')+'</button>'+
+      '<div class="hdr__title" style="font-size:19px">'+(scr.title || '')+'</div>'+
+      '<div class="hdr__spacer"></div>'+
+      (isChat ? '<button class="icon-btn" data-act="toast" data-msg="More options (demo)">'+ico('settings')+'</button>' : '')+
+    '</div>';
+  }
+
+  /* Solid top-level headers */
   const titles = {
-    tournaments:'Tournaments', rankings:'Rankings', courts:'Book a Court',
-    profile:'My Profile', more:'More'
+    tournaments:'Tournaments',
+    rankings:'Rankings',
+    courts:'Book a Court',
+    profile:'My Profile',
+    more:'More'
   };
   const right = {
     tournaments:'<button class="icon-btn" data-act="hosttourney">'+ico('plus')+'</button>',
@@ -3575,27 +3706,32 @@ function headerHTML(scr){
     profile:'<button class="icon-btn" data-act="idcard">'+ico('shield')+'</button>',
     more:'<button class="icon-btn" data-act="toast" data-msg="No ads. Ever. ✓">'+ico('star')+'</button>'
   }[scr.screen] || '';
+
+  if (!titles[scr.screen]) return '';
+
   return '<div class="hdr hdr--solid">'+
     '<div class="hdr__title">'+titles[scr.screen]+'</div>'+
     '<div class="hdr__spacer"></div>'+right+
   '</div>';
 }
+
 function tabsHTML(){
   const unread = Chat.unreadCount();
   return TABS.filter(t => VISIBLE_TABS.includes(t.id)).map(t => {
     const on = nav.tab === t.id ? ' is-active' : '';
+    const badge = (t.id === 'chats' && unread) ? '<span class="icon-btn__badge">'+unread+'</span>' : '';
     return '<button class="tab'+on+'" data-act="tab" data-tab="'+t.id+'">'+
-      '<span class="tab__ico">'+ico(t.icon)+'</span>'+
+      '<span class="tab__ico">'+ico(t.icon)+badge+'</span>'+
       '<span>'+t.label+'</span>'+
     '</button>';
   }).join('');
 }
 
 /* ============================================================
-   RENDER
+   SECTION 55 — RENDER
    ============================================================ */
 function render(){
-  /* GATE */
+  /* ---- GATE ---- */
   if (!SESSION.mode){
     hdrEl.innerHTML = '';
     mainEl.className = 'main';
@@ -3611,7 +3747,7 @@ function render(){
     return;
   }
 
-  /* ADMIN MODE */
+  /* ---- ADMIN MODE ---- */
   if (SESSION.mode === 'admin'){
     if (!SESSION.adminId){
       hdrEl.innerHTML = '';
@@ -3632,7 +3768,7 @@ function render(){
     return;
   }
 
-  /* PLAYER MODE */
+  /* ---- PLAYER MODE ---- */
   const scr = nav.stack.length ? nav.stack[nav.stack.length - 1] : { screen: nav.tab };
   hdrEl.innerHTML = headerHTML(scr);
   mainEl.className = 'main' +
@@ -3641,7 +3777,9 @@ function render(){
   mainEl.innerHTML = (SCREENS[scr.screen] || (() => '<div class="empty">Coming soon.</div>'))(scr.params);
   tabsEl.innerHTML = tabsHTML();
   tabsEl.style.display = nav.stack.length ? 'none' : 'flex';
+
   if (scr.screen === 'discover' && !nav.stack.length) maybeProximity();
+
   if (scr.screen === 'chatview'){
     const sc = document.getElementById('chatScroll');
     if (sc) sc.scrollTop = sc.scrollHeight;
@@ -3649,7 +3787,7 @@ function render(){
 }
 
 /* ============================================================
-   EVENT BUS
+   SECTION 56 — EVENT BUS
    ============================================================ */
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
@@ -3658,28 +3796,34 @@ document.addEventListener('click', e => {
   const me = getMe();
 
   switch (act){
-    /* ---- GATE ---- */
+
+    /* ---------- GATE ---------- */
     case 'enterplayer':
       SESSION.mode = 'player';
       nav.tab = 'discover'; nav.stack = [];
       proximityShown = false;
       render();
       break;
+
     case 'enteradmin':
       nav.stack = [{ screen:'adminlogin', params:{}, title:'Admin Sign-in' }];
       render();
       break;
+
     case 'exitgate':
       SESSION.mode = null;
       SESSION.adminId = null;
       nav.stack = []; nav.tab = 'discover';
+      proximityShown = false;
       render();
       break;
+
     case 'returnadmin':
       SESSION.mode = 'admin';
       nav.stack = [];
       render();
       break;
+
     case 'adminauth': {
       const email = (document.getElementById('adminEmail')?.value || '').trim().toLowerCase();
       const pin = (document.getElementById('adminPin')?.value || '').trim();
@@ -3700,21 +3844,56 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---- NAV ---- */
-    case 'tab': setTab(el.dataset.tab); break;
-    case 'back': back(); break;
-    case 'close-layer': closeLayer(); break;
+    /* ---------- NAVIGATION ---------- */
+    case 'tab':
+      setTab(el.dataset.tab);
+      break;
 
-    /* ---- PLAYER DISCOVERY ---- */
-    case 'dfilter': state.discoverFilter = el.dataset.v; render(); break;
-    case 'ranklist': state.rankList = el.dataset.v; render(); break;
-    case 'region': state.rankRegion = el.dataset.v; render(); break;
-    case 'level': state.rankLevel = el.dataset.v; render(); break;
-    case 'lffilter': state.lfFilter = el.dataset.v; render(); break;
-    case 'tourneyfilter': state.tourneyFilter = el.dataset.v; render(); break;
-    case 'reportfilter': state.adminReportFilter = el.dataset.v; render(); break;
+    case 'back':
+      back();
+      break;
 
-    /* ---- PLAYER / COURT / CLUB ---- */
+    case 'close-layer':
+      closeLayer();
+      break;
+
+    /* ---------- DISCOVER ---------- */
+    case 'dfilter':
+      state.discoverFilter = el.dataset.v;
+      render();
+      break;
+
+    case 'ranklist':
+      state.rankList = el.dataset.v;
+      render();
+      break;
+
+    case 'region':
+      state.rankRegion = el.dataset.v;
+      render();
+      break;
+
+    case 'level':
+      state.rankLevel = el.dataset.v;
+      render();
+      break;
+
+    case 'lffilter':
+      state.lfFilter = el.dataset.v;
+      render();
+      break;
+
+    case 'tourneyfilter':
+      state.tourneyFilter = el.dataset.v;
+      render();
+      break;
+
+    case 'reportfilter':
+      state.adminReportFilter = el.dataset.v;
+      render();
+      break;
+
+    /* ---------- OPEN ENTITIES ---------- */
     case 'player': {
       const id = el.dataset.id;
       if (!id) return;
@@ -3724,6 +3903,7 @@ document.addEventListener('click', e => {
       go('profile', { id }, u.name.split(' ')[0] + "'s Profile");
       break;
     }
+
     case 'court': {
       const c = courtById(el.dataset.id);
       if (!c) return;
@@ -3731,6 +3911,7 @@ document.addEventListener('click', e => {
       go('court', { id:c.id }, c.name);
       break;
     }
+
     case 'club': {
       const k = commById(el.dataset.id);
       if (!k) return;
@@ -3738,7 +3919,38 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---- REQUESTS (PAID) ---- */
+    case 'coach':
+      go('coach', { id:el.dataset.id, court:el.dataset.court }, 'Coach Profile');
+      break;
+
+    case 'shopitem':
+      go('shopitem', { id:el.dataset.id }, 'Item Details');
+      break;
+
+    case 'tourney':
+      go('tourney', { id:el.dataset.id }, 'Tournament');
+      break;
+
+    /* ---------- SCREEN SHORTCUTS ---------- */
+    case 'lostfound':   go('lostfound', {}, 'Lost & Found'); break;
+    case 'shop':        go('shop', {}, 'RUBIX Shop'); break;
+    case 'idcard':      go('idcard', {}, 'My RUBIX ID'); break;
+    case 'editprofile': go('profileform', {}, 'Edit Profile'); break;
+    case 'vendorapply': go('vendorapply', {}, 'Become a Vendor'); break;
+    case 'coachapply':  go('coachapply', {}, 'Apply as Coach'); break;
+    case 'submitcourt': go('submitcourt', {}, 'Submit a Court'); break;
+    case 'coachdash':   go('coachdash', {}, 'Coach Dashboard'); break;
+    case 'commdash':    go('commdash', {}, 'Community Dashboard'); break;
+    case 'hosttourney': go('hosttourney', {}, 'Host Tournament'); break;
+    case 'wallet':      go('wallet', {}, 'RUBIX Wallet'); break;
+    case 'chats':       go('chats', {}, 'Chats'); break;
+    case 'ai':          go('ai', {}, 'AI Match Recommendations'); break;
+    case 'feed':        go('feed', {}, 'RUBIX Feed'); break;
+    case 'badges':      go('badges', {}, 'Badges & Streaks'); break;
+    case 'safety':      go('safety', {}, 'Trust & Safety'); break;
+    case 'notifprefs':  go('notifprefs', {}, 'Notifications'); break;
+
+    /* ---------- PLAY REQUESTS (PAID) ---------- */
     case 'request': {
       e.stopPropagation();
       const u = userById(el.dataset.id);
@@ -3754,3 +3966,1050 @@ document.addEventListener('click', e => {
           const res = charge('me', {
             kind:'request', amount: PRICES.requestPlayer,
             note:'Play request to ' + u.name, sourceId: null,
+            platformFee: PRICES.requestPlayer
+          });
+          if (res.ok){
+            state.requestsSent[u.id] = true;
+            Chat.ensureThread(u.id);
+            closeLayer();
+            toast('Request sent to ' + u.name.split(' ')[0] + ' ✓');
+            render();
+          } else {
+            toast('Insufficient balance');
+          }
+        }
+      });
+      break;
+    }
+
+    /* ---------- JOIN CLUB ---------- */
+    case 'joinclub': {
+      e.stopPropagation();
+      const k = commById(el.dataset.id);
+      if (!k) return;
+      if (k.monthlyFee && k.monthlyFee > 0){
+        paywallPopup({
+          title: 'Join ' + k.name,
+          body: 'First month of membership at ' + k.name + '. Renews monthly. ' + PRICES.communityPct + '% platform fee applies.',
+          price: k.monthlyFee,
+          platformFee: +(k.monthlyFee * PRICES.communityPct / 100).toFixed(2),
+          cta: 'Join · ' + money(k.monthlyFee),
+          onConfirm: () => {
+            const res = charge('me', {
+              kind:'community-join', amount: k.monthlyFee,
+              note:'Joined ' + k.name, sourceId: k.createdBy,
+              platformFee: +(k.monthlyFee * PRICES.communityPct / 100).toFixed(2)
+            });
+            if (res.ok){
+              closeLayer();
+              toast('Joined ' + k.name + ' ✓');
+              render();
+            } else toast('Insufficient balance');
+          }
+        });
+      } else {
+        me.communityId = k.id;
+        toast('Joined ' + k.name + ' ✓');
+        el.textContent = 'Joined';
+        el.classList.add('is-sent');
+        el.disabled = true;
+      }
+      break;
+    }
+
+    /* ---------- BOOKING FLOW ---------- */
+    case 'date':
+      state.booking.date = el.dataset.v;
+      render();
+      break;
+
+    case 'slot':
+      state.booking.time = (state.booking.time === el.dataset.v) ? null : el.dataset.v;
+      render();
+      break;
+
+    case 'book': {
+      const c = courtById(el.dataset.id);
+      if (!c || !state.booking.time) return;
+      const fee = courtFee(c.price);
+      const total = c.price + fee;
+      paywallPopup({
+        title: 'Confirm court booking',
+        body: c.name + ' · ' + state.booking.date + ' at ' + state.booking.time + '. ' + PRICES.courtPct + '% platform fee applies.',
+        price: total,
+        platformFee: fee,
+        cta: 'Pay ' + money(total),
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'court-booking', amount: total,
+            note: c.name + ' · ' + state.booking.time,
+            sourceId: null, platformFee: fee
+          });
+          if (res.ok){
+            (c.bookings ||= []).push({
+              id: uid('b'), userId:'me', time: state.booking.time,
+              duration:'90 min', status:'upcoming', date: state.booking.date
+            });
+            closeLayer();
+            toast('Booked · ' + c.name + ' ✓');
+            state.booking.time = null;
+            setTimeout(render, 400);
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    /* ---------- COACH BOOKING ---------- */
+    case 'coachbook': {
+      const c = courtById(el.dataset.court);
+      const co = c && c.coaches.find(x => x.id === el.dataset.coach);
+      if (!c || !co) return;
+      const fee = coachFee(co.rate);
+      const time = el.dataset.time || 'next available slot';
+      paywallPopup({
+        title: 'Book ' + co.name,
+        body: 'Lesson at ' + c.name + ' · ' + time + '. Coach receives ' + (100 - PRICES.coachPct) + '%; ' + PRICES.coachPct + '% platform fee.',
+        price: co.rate,
+        platformFee: fee,
+        cta: 'Book · $' + co.rate,
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'coach-session', amount: co.rate,
+            note: co.name + ' · ' + time, sourceId: co.userId,
+            platformFee: fee
+          });
+          if (res.ok){
+            closeLayer();
+            toast('Lesson booked with ' + co.name + ' ✓');
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    /* ---------- SHOP PURCHASE ---------- */
+    case 'shopbuy': {
+      const it = shopById(el.dataset.id);
+      if (!it) return;
+      const fee = shopFee(it.price);
+      const seller = userById(it.sellerId);
+      paywallPopup({
+        title: 'Buy ' + it.title,
+        body: 'Seller: ' + (seller ? seller.name : 'Unknown') + '. ' + PRICES.shopPct + '% platform fee · ' + (100 - PRICES.shopPct) + '% goes to seller.',
+        price: it.price,
+        platformFee: fee,
+        cta: 'Pay ' + money(it.price),
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'shop-sale', amount: it.price,
+            note:'Bought ' + it.title, sourceId: it.sellerId,
+            platformFee: fee
+          });
+          if (res.ok){
+            closeLayer();
+            toast('Purchase complete ✓');
+            DB.shop = DB.shop.filter(x => x.id !== it.id);
+            render();
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    /* ---------- PROFILE FORM ---------- */
+    case 'formfield': {
+      const f = el.dataset.field;
+      const v = el.dataset.v;
+      const me = getMe();
+      if (f === 'interests'){
+        const i = me.interests.indexOf(v);
+        if (i > -1) me.interests.splice(i,1);
+        else me.interests.push(v);
+      } else if (f === 'status'){
+        me.status = v;
+        me.avail = el.dataset.avail;
+      } else {
+        me[f] = v;
+      }
+      render();
+      break;
+    }
+
+    case 'rerollphoto':
+      getMe().photo = (Math.random()*100000)|0;
+      render();
+      toast('Photo shuffled ✓');
+      break;
+
+    case 'saveprofile': {
+      const me = getMe();
+      const name = document.getElementById('f-name')?.value.trim();
+      const bio = document.getElementById('f-bio')?.value.trim();
+      const city = document.getElementById('f-city')?.value.trim();
+      const region = document.getElementById('f-region')?.value.trim();
+      const level = document.getElementById('f-level')?.value;
+      if (name) me.name = name;
+      if (bio != null) me.bio = bio;
+      if (city) me.city = city;
+      if (region) me.region = region;
+      if (level) me.level = level;
+      me.initials = me.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+      toast('Profile saved ✓');
+      setTimeout(() => { nav.stack = []; nav.tab = 'profile'; render(); }, 500);
+      break;
+    }
+
+    /* ---------- VENDOR APPLICATION ---------- */
+    case 'vendorfield':
+      state.vendorDraft = state.vendorDraft || {};
+      state.vendorDraft.category = el.dataset.v;
+      render();
+      break;
+
+    case 'vendorsubmit': {
+      const me = getMe();
+      const item = document.getElementById('v-item')?.value.trim();
+      const price = document.getElementById('v-price')?.value;
+      const note = document.getElementById('v-note')?.value.trim();
+      if (!item || !state.vendorDraft?.category){ toast('Please fill in all fields'); break; }
+      paywallPopup({
+        title: 'Vendor listing fee',
+        body: 'One-time fee to submit your listing. ' + PRICES.shopPct + '% of any future sale also applies.',
+        price: PRICES.vendorListing,
+        platformFee: PRICES.vendorListing,
+        cta: 'Pay ' + money(PRICES.vendorListing),
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'vendor-listing', amount: PRICES.vendorListing,
+            note:'Listing: ' + item, sourceId: null,
+            platformFee: PRICES.vendorListing
+          });
+          if (res.ok){
+            DB.pending.vendors.push({
+              id:'pv'+Date.now(), userId:me.id, itemName:item,
+              category: state.vendorDraft.category,
+              price: parseInt(price)||0,
+              submitted:'just now', note: note || 'No notes.',
+              photos:0, weight:'—', shipping:'Pickup only',
+              listingFeePaid:true
+            });
+            me.vendorStatus = 'pending';
+            state.vendorDraft = null;
+            closeLayer();
+            toast('Application submitted ✓');
+            setTimeout(() => { nav.stack = []; nav.tab = 'more'; render(); }, 500);
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    /* ---------- COACH APPLICATION ---------- */
+    case 'coachcourt':
+      state.coachCourt = state.coachCourt === el.dataset.id ? null : el.dataset.id;
+      render();
+      break;
+
+    case 'coachsubmit': {
+      const me = getMe();
+      const spec = document.getElementById('co-spec')?.value.trim();
+      const rate = parseInt(document.getElementById('co-rate')?.value) || 30;
+      const exp = document.getElementById('co-exp')?.value.trim() || '5 yrs';
+      if (!state.coachCourt || !spec){ toast('Please complete all fields'); break; }
+      DB.pending.coaches.push({
+        id:'pco'+Date.now(), userId:me.id, courtId:state.coachCourt,
+        rate, spec, exp, submitted:'just now',
+        cert:'—', availability:'Weekdays 5–8pm'
+      });
+      state.coachCourt = null;
+      toast('Coach application submitted ✓');
+      setTimeout(() => { nav.stack = []; nav.tab = 'more'; render(); }, 500);
+      break;
+    }
+
+    /* ---------- COURT SUBMISSION ---------- */
+    case 'courtsurface':
+      state.courtSurface = el.dataset.v;
+      render();
+      break;
+
+    case 'courtsubmit': {
+      const me = getMe();
+      const name = document.getElementById('nc-name')?.value.trim();
+      const addr = document.getElementById('nc-addr')?.value.trim();
+      const price = parseInt(document.getElementById('nc-price')?.value) || 0;
+      const count = parseInt(document.getElementById('nc-count')?.value) || 0;
+      if (!name || !addr || !state.courtSurface){ toast('Please complete all fields'); break; }
+      DB.pending.courts.push({
+        id:'pct'+Date.now(), name, address:addr, price,
+        surface:state.courtSurface, courtCount:count,
+        amenities:['New submission'],
+        submittedBy:me.id, submitted:'just now',
+        contact:'—', hours:'—', notes:'—'
+      });
+      state.courtSurface = null;
+      toast('Court submitted for review ✓');
+      setTimeout(() => { nav.stack = []; nav.tab = 'courts'; render(); }, 500);
+      break;
+    }
+
+    /* ---------- HOST TOURNAMENT ---------- */
+    case 'hostfield':
+      state.hostFormat = el.dataset.v;
+      render();
+      break;
+
+    case 'hosttourneysubmit': {
+      const me = getMe();
+      const name = document.getElementById('ht-name')?.value.trim();
+      const court = document.getElementById('ht-court')?.value;
+      const max = parseInt(document.getElementById('ht-max')?.value) || 8;
+      const entry = parseInt(document.getElementById('ht-entry')?.value) || 5;
+      const prize = parseInt(document.getElementById('ht-prize')?.value) || 60;
+      if (!name || !state.hostFormat){ toast('Please complete all fields'); break; }
+      paywallPopup({
+        title: 'Host tournament',
+        body: 'Publishing fee for "' + name + '". ' + PRICES.tournamentPct + '% of each entry fee is retained as platform revenue.',
+        price: PRICES.tournamentHost,
+        platformFee: PRICES.tournamentHost,
+        cta: 'Pay ' + money(PRICES.tournamentHost),
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'tournament-host', amount: PRICES.tournamentHost,
+            note:'Hosting: ' + name, sourceId: null,
+            platformFee: PRICES.tournamentHost
+          });
+          if (res.ok){
+            const teamSize = state.hostFormat.startsWith('singles') ? 1 : 2;
+            DB.tournaments.push({
+              id:'t'+Date.now(), name, hostId:me.id, format:state.hostFormat,
+              entry, prize, maxTeams:max, courts:court,
+              hue: (Math.random()*360)|0, status:'open',
+              created: now(), agreeBy: now() + 7*86400000,
+              teamSize, teams:[], bracket:null, completed:false
+            });
+            state.hostFormat = null;
+            closeLayer();
+            toast('Tournament created ✓');
+            setTimeout(() => { nav.stack = []; nav.tab = 'tournaments'; render(); }, 500);
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    /* ---------- TOURNAMENT JOIN ---------- */
+    case 'tourneyjoin': {
+      const t = tourneyById(el.dataset.id);
+      if (!t) return;
+      if (t.status === 'draft'){ toast('Tournament not yet open'); break; }
+      if (Tournaments.isRegistered(t, 'me')){ toast('Already registered'); break; }
+      if (t.teams.length >= t.maxTeams){ toast('Tournament full'); break; }
+      const fee = tourneyFee(t.entry);
+      paywallPopup({
+        title: 'Join ' + t.name,
+        body: 'Entry fee $' + t.entry + ' + $' + fee + ' platform fee. Prize pool: $' + t.prize + '.',
+        price: t.entry,
+        platformFee: fee,
+        cta: 'Join · $' + t.entry,
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'tournament-entry', amount: t.entry,
+            note:'Entry: ' + t.name, sourceId: t.hostId,
+            platformFee: fee
+          });
+          if (res.ok){
+            const myTeam = {
+              id: uid('tt'), name: me.name + ' / TBD',
+              members: ['me'], joined: now()
+            };
+            t.teams.push(myTeam);
+            if (t.teams.length >= 2 && !t.bracket){
+              Tournaments.buildBracket(t);
+            }
+            closeLayer();
+            toast('Registered for ' + t.name + ' ✓');
+            render();
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    case 'tourneyreport': {
+      const t = tourneyById(el.dataset.t);
+      if (!t) return;
+      layerEl.innerHTML =
+        '<div class="scrim" data-act="close-layer"></div>'+
+        '<div class="popup">'+
+          '<div class="popup__pill">SUBMIT SCORE</div>'+
+          '<h3>Log match result</h3>'+
+          '<p>Enter the final score. The opposing team will be notified to confirm.</p>'+
+          '<div class="score-inputs" style="margin-top:16px">'+
+            '<input class="score-input" id="ms-a" type="number" min="0" max="7" placeholder="0">'+
+            '<div class="score-vs">VS</div>'+
+            '<input class="score-input" id="ms-b" type="number" min="0" max="7" placeholder="0">'+
+          '</div>'+
+          '<div class="popup__btns">'+
+            '<button class="btn btn--ghost" data-act="close-layer">Cancel</button>'+
+            '<button class="btn btn--primary" data-act="tourneyreportsave" data-t="'+t.id+'" data-m="'+el.dataset.m+'">Submit</button>'+
+          '</div>'+
+        '</div>';
+      break;
+    }
+
+    case 'tourneyreportsave': {
+      const t = tourneyById(el.dataset.t);
+      if (!t) return;
+      const a = parseInt(document.getElementById('ms-a')?.value) || 0;
+      const b = parseInt(document.getElementById('ms-b')?.value) || 0;
+      if (t.bracket){
+        Tournaments.recordResult(t, t.bracket.currentRound, el.dataset.m, a, b, 'me');
+      }
+      closeLayer();
+      toast('Result submitted · awaiting confirmation');
+      render();
+      break;
+    }
+
+    case 'tourneybracket': {
+      const t = tourneyById(el.dataset.id);
+      if (!t) return;
+      go('tourney', { id: t.id }, 'Tournament');
+      break;
+    }
+
+    /* ---------- COACH DASHBOARD ---------- */
+    case 'setcourtstatus': {
+      const c = courtById(getMe().coachCourt);
+      if (!c) break;
+      const next = el.dataset.v;
+      if (c.courtStatus === next) break;
+      c.courtStatus = next;
+      render();
+      toast('Court set to ' + next);
+      break;
+    }
+
+    case 'bookingaction': {
+      const c = courtById(el.dataset.court);
+      if (!c) break;
+      const b = (c.bookings || []).find(x => x.id === el.dataset.b);
+      if (!b) break;
+      b.status = el.dataset.s;
+      render();
+      toast('Booking ' + b.status);
+      break;
+    }
+
+    /* ---------- LOST & FOUND ---------- */
+    case 'lfadd': {
+      DB.lostFound.unshift({
+        id:'l'+Date.now(), type:'lost', title:'Green Yonex cap',
+        emoji:'🧢', hue:150, place:'Riverside Tennis Club', time:'just now',
+        note:'Added from the demo composer.'
+      });
+      render();
+      toast('Post created ✓');
+      break;
+    }
+
+    /* ---------- FEED ---------- */
+    case 'feedlike': {
+      const f = DB.feed.find(x => x.id === el.dataset.id);
+      if (!f) return;
+      if (f.likes.includes('me')){
+        f.likes = f.likes.filter(x => x !== 'me');
+      } else {
+        f.likes.push('me');
+      }
+      render();
+      break;
+    }
+    case 'feedcomment': toast('Comment composer (demo)'); break;
+    case 'feedshare': toast('Share link copied ✓'); break;
+
+    /* ---------- CHAT ---------- */
+    case 'unlockchat': {
+      const u = userById(el.dataset.id);
+      if (!u) return;
+      const thread = Chat.ensureThread(u.id);
+      if (thread.unlocked){ go('chatview', { id:u.id }, u.name); break; }
+      paywallPopup({
+        title: 'Unlock chat with ' + u.name.split(' ')[0],
+        body: 'One-time payment to open a chat thread. No subscription.',
+        price: PRICES.chatUnlock,
+        platformFee: PRICES.chatUnlock,
+        cta: 'Unlock · $' + PRICES.chatUnlock,
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'chat-unlock', amount: PRICES.chatUnlock,
+            note:'Chat with ' + u.name, sourceId: null,
+            platformFee: PRICES.chatUnlock
+          });
+          if (res.ok){
+            thread.unlocked = true;
+            closeLayer();
+            toast('Chat unlocked ✓');
+            go('chatview', { id:u.id }, u.name);
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    case 'openthread': {
+      const u = userById(el.dataset.id);
+      if (!u) return;
+      const thread = Chat.ensureThread(u.id);
+      if (!thread.unlocked){ el.dataset.act = 'unlockchat'; break; }
+      go('chatview', { id:u.id }, u.name);
+      break;
+    }
+
+    case 'chatsend': {
+      const u = userById(el.dataset.id);
+      if (!u) return;
+      const inp = document.getElementById('chatInput');
+      const text = inp?.value.trim();
+      if (!text) return;
+      const thread = Chat.threadWith(u.id);
+      if (!thread) return;
+      Chat.send(thread.id, 'me', text);
+      render();
+      break;
+    }
+
+    /* ---------- SAFETY ---------- */
+    case 'verifyid': {
+      me.idVerified = true;
+      me.verified = true;
+      render();
+      toast('ID verified ✓');
+      break;
+    }
+    case 'verifyphoto': {
+      me.photoVerified = true;
+      render();
+      toast('Photo verified ✓');
+      break;
+    }
+    case 'safetytoggle': {
+      const f = el.dataset.f;
+      me.safety[f] = !me.safety[f];
+      render();
+      break;
+    }
+    case 'emergencycontact': {
+      const v = prompt('Emergency contact name + phone:', me.safety.emergencyContact || '');
+      if (v != null) me.safety.emergencyContact = v;
+      render();
+      break;
+    }
+    case 'unblock': {
+      me.safety.blocked = me.safety.blocked.filter(id => id !== el.dataset.id);
+      render();
+      toast('Unblocked');
+      break;
+    }
+    case 'report-abuse':
+      toast('Report submitted to moderation ✓');
+      break;
+
+    /* ---------- NOTIFICATION PREFS ---------- */
+    case 'notiftoggle': {
+      const k = el.dataset.k;
+      me.notifPrefs[k] = !me.notifPrefs[k];
+      render();
+      break;
+    }
+
+    /* ---------- WALLET ---------- */
+    case 'topup':
+      topupPopup();
+      break;
+
+    case 'topup-pick': {
+      state.topupPick = parseInt(el.dataset.v);
+      const btns = layerEl.querySelectorAll('[data-act="topup-pick"]');
+      btns.forEach(b => b.classList.toggle('is-on', parseInt(b.dataset.v) === state.topupPick));
+      const confirm = layerEl.querySelector('[data-act="topup-confirm"]');
+      if (confirm){
+        confirm.dataset.v = state.topupPick;
+        confirm.textContent = 'Add ' + money(state.topupPick);
+      }
+      break;
+    }
+
+    case 'topup-confirm': {
+      const amt = parseInt(el.dataset.v || state.topupPick) || 25;
+      topup('me', amt);
+      closeLayer();
+      toast('Added ' + money(amt) + ' to wallet ✓');
+      render();
+      break;
+    }
+
+    /* ---------- PAYWALL CONFIRM ---------- */
+    case 'paywall-confirm': {
+      const opts = layerEl._paywall;
+      if (opts && opts.onConfirm) opts.onConfirm();
+      break;
+    }
+
+    /* ---------- ADMIN ---------- */
+    case 'admintab':
+      state.adminTab = el.dataset.v;
+      render();
+      mainEl.scrollTop = 0;
+      break;
+
+    case 'admingotoapp':
+      state.adminTab = 'approvals';
+      state.adminAppTab = el.dataset.v;
+      render();
+      break;
+
+    case 'adminappdetail':
+      go('admindetail', { type:el.dataset.type, id:el.dataset.id },
+        { vendor:'Vendor Application', community:'Community Verification',
+          coach:'Coach Verification', court:'Court Submission' }[el.dataset.type] || 'Details');
+      break;
+
+    case 'adminlogtoggle':
+      adminToggleLog(el.dataset.id);
+      break;
+
+    /* ---- Approvals ---- */
+    case 'approvevendor': {
+      const v = DB.pending.vendors.find(x => x.id === el.dataset.id);
+      if (!v) break;
+      const u = userById(v.userId);
+      const prevStatus = u.vendorStatus;
+      const newListing = {
+        id:'s'+Date.now(), title:v.itemName, price:v.price,
+        cond:v.category + ' · Verified', emoji:'🎾', hue:u.hue,
+        sellerId:u.id, place:u.city, status:'approved'
+      };
+      adminDo(
+        () => {
+          u.vendorStatus = 'approved';
+          DB.pending.vendors = DB.pending.vendors.filter(x => x.id !== v.id);
+          DB.shop.unshift(newListing);
+        },
+        () => {
+          u.vendorStatus = prevStatus;
+          DB.pending.vendors.push(v);
+          DB.shop = DB.shop.filter(x => x.id !== newListing.id);
+        },
+        'Approved vendor: ' + v.itemName
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      toast('✓ Approved vendor');
+      break;
+    }
+    case 'rejectvendor': {
+      const v = DB.pending.vendors.find(x => x.id === el.dataset.id);
+      if (!v) break;
+      const u = userById(v.userId);
+      const prevStatus = u.vendorStatus;
+      adminDo(
+        () => {
+          u.vendorStatus = 'rejected';
+          DB.pending.vendors = DB.pending.vendors.filter(x => x.id !== v.id);
+        },
+        () => { u.vendorStatus = prevStatus; DB.pending.vendors.push(v); },
+        'Rejected vendor: ' + v.itemName
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+
+    case 'approvecomm': {
+      const k = DB.pending.communities.find(x => x.id === el.dataset.id);
+      if (!k) break;
+      const newComm = {
+        id:'k'+Date.now(), name:k.name,
+        members: parseInt(k.members)||0,
+        dist:600, hue:30, desc:k.desc,
+        verified:'approved', createdBy:k.creatorId,
+        founded:'2025', events:0, pendingMembers:0, monthlyFee:0
+      };
+      adminDo(
+        () => {
+          DB.communities.push(newComm);
+          DB.pending.communities = DB.pending.communities.filter(x => x.id !== k.id);
+        },
+        () => {
+          DB.communities = DB.communities.filter(x => x.id !== newComm.id);
+          DB.pending.communities.push(k);
+        },
+        'Verified community: ' + k.name
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+    case 'rejectcomm': {
+      const k = DB.pending.communities.find(x => x.id === el.dataset.id);
+      if (!k) break;
+      adminDo(
+        () => { DB.pending.communities = DB.pending.communities.filter(x => x.id !== k.id); },
+        () => { DB.pending.communities.push(k); },
+        'Rejected community: ' + k.name
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+
+    case 'approvecoach': {
+      const a = DB.pending.coaches.find(x => x.id === el.dataset.id);
+      if (!a) break;
+      const u = userById(a.userId);
+      const c = courtById(a.courtId);
+      const prevRole = u.role;
+      const prevCourt = u.coachCourt;
+      const newCoachEntry = {
+        id:'co'+Date.now(), userId:u.id, name:u.name,
+        rate:a.rate, spec:a.spec, exp:a.exp, verified:true
+      };
+      adminDo(
+        () => {
+          u.role = 'coach';
+          u.coachCourt = a.courtId;
+          if (c) c.coaches.push(newCoachEntry);
+          DB.pending.coaches = DB.pending.coaches.filter(x => x.id !== a.id);
+        },
+        () => {
+          u.role = prevRole;
+          u.coachCourt = prevCourt;
+          if (c) c.coaches = c.coaches.filter(x => x.id !== newCoachEntry.id);
+          DB.pending.coaches.push(a);
+        },
+        'Verified coach: ' + u.name
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+    case 'rejectcoach': {
+      const a = DB.pending.coaches.find(x => x.id === el.dataset.id);
+      if (!a) break;
+      adminDo(
+        () => { DB.pending.coaches = DB.pending.coaches.filter(x => x.id !== a.id); },
+        () => { DB.pending.coaches.push(a); },
+        'Rejected coach application'
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+
+    case 'approvecourt': {
+      const ct = DB.pending.courts.find(x => x.id === el.dataset.id);
+      if (!ct) break;
+      const newCourt = {
+        id:'c'+Date.now(), name:ct.name, rating:4.0, price:ct.price,
+        dist:800, surface:ct.surface, courtCount:ct.courtCount, hue:200,
+        status:'approved', address:ct.address, amenities:ct.amenities,
+        coaches:[], playersHere:[], courtStatus:'open', bookings:[]
+      };
+      adminDo(
+        () => {
+          DB.courts.push(newCourt);
+          DB.pending.courts = DB.pending.courts.filter(x => x.id !== ct.id);
+        },
+        () => {
+          DB.courts = DB.courts.filter(x => x.id !== newCourt.id);
+          DB.pending.courts.push(ct);
+        },
+        'Approved court: ' + ct.name
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+    case 'rejectcourt': {
+      const ct = DB.pending.courts.find(x => x.id === el.dataset.id);
+      if (!ct) break;
+      adminDo(
+        () => { DB.pending.courts = DB.pending.courts.filter(x => x.id !== ct.id); },
+        () => { DB.pending.courts.push(ct); },
+        'Rejected court: ' + ct.name
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+
+    /* ---- National team ---- */
+    case 'addnational': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const prevNat = u.isNational;
+      const prevRank = u.rankN;
+      const nextRank = DB.users.filter(x => x.isNational).reduce((m,x) => Math.max(m, x.rankN||0), 0) + 1;
+      adminDo(
+        () => { u.isNational = true; u.rankN = nextRank; recomputeGeneralRanks(); },
+        () => { u.isNational = prevNat; u.rankN = prevRank; recomputeGeneralRanks(); },
+        'Added to National Team: ' + u.name
+      );
+      toast('Added to National Team');
+      break;
+    }
+    case 'removenational': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const prevRank = u.rankN;
+      adminDo(
+        () => { u.isNational = false; u.rankN = null; recomputeGeneralRanks(); },
+        () => { u.isNational = true; u.rankN = prevRank; recomputeGeneralRanks(); },
+        'Removed from National Team: ' + u.name
+      );
+      toast('Removed from National Team');
+      break;
+    }
+
+    /* ---- Points adjustment ---- */
+    case 'ptsplus': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const prev = u.points;
+      adminDo(
+        () => { u.points += 50; recomputeGeneralRanks(); },
+        () => { u.points = prev; recomputeGeneralRanks(); },
+        '+50 pts to ' + u.name
+      );
+      break;
+    }
+    case 'ptsminus': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const prev = u.points;
+      adminDo(
+        () => { u.points = Math.max(0, u.points - 50); recomputeGeneralRanks(); },
+        () => { u.points = prev; recomputeGeneralRanks(); },
+        '−50 pts from ' + u.name
+      );
+      break;
+    }
+
+    /* ---- User edit ---- */
+    case 'adminuseredit':
+      go('adminuser', { id:el.dataset.id }, 'Edit User');
+      break;
+
+    case 'adminrole': {
+      const u = userById(el.dataset.id);
+      const r = el.dataset.v;
+      if (!u) break;
+      const prev = u.role;
+      adminDo(
+        () => { u.role = r; },
+        () => { u.role = prev; },
+        'Changed role of ' + u.name + ' → ' + r
+      );
+      break;
+    }
+
+    case 'admintoggle': {
+      const u = userById(el.dataset.id);
+      const f = el.dataset.f;
+      if (!u) break;
+      if (f === 'verified'){
+        const prev = u.verified;
+        adminDo(
+          () => { u.verified = !prev; },
+          () => { u.verified = prev; },
+          (prev ? 'Unverified: ' : 'Verified: ') + u.name
+        );
+      } else if (f === 'vendor'){
+        const prev = u.vendorStatus;
+        adminDo(
+          () => { u.vendorStatus = prev === 'approved' ? 'none' : 'approved'; },
+          () => { u.vendorStatus = prev; },
+          (prev === 'approved' ? 'Revoked vendor: ' : 'Approved vendor: ') + u.name
+        );
+      } else if (f === 'national'){
+        const prevNat = u.isNational;
+        const prevRank = u.rankN;
+        const nextRank = DB.users.filter(x => x.isNational).reduce((m,x) => Math.max(m, x.rankN||0), 0) + 1;
+        adminDo(
+          () => { u.isNational = !prevNat; u.rankN = prevNat ? null : nextRank; recomputeGeneralRanks(); },
+          () => { u.isNational = prevNat; u.rankN = prevRank; recomputeGeneralRanks(); },
+          (prevNat ? 'Removed from National: ' : 'Added to National: ') + u.name
+        );
+      }
+      break;
+    }
+
+    case 'adminusersave': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const name = document.getElementById('au-name')?.value.trim();
+      const level = document.getElementById('au-level')?.value.trim();
+      const region = document.getElementById('au-region')?.value.trim();
+      const cc = document.getElementById('au-coachcourt')?.value;
+      const cm = document.getElementById('au-comm')?.value;
+      if (name) u.name = name;
+      if (level) u.level = level;
+      if (region) u.region = region;
+      if (cc != null) u.coachCourt = cc || null;
+      if (cm != null) u.communityId = cm || null;
+      u.initials = u.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+      toast('User saved ✓');
+      setTimeout(() => back(), 400);
+      break;
+    }
+
+    case 'admincredit': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const amt = parseFloat(el.dataset.amount);
+      const prev = u.wallet;
+      adminDo(
+        () => {
+          u.wallet = Math.max(0, u.wallet + amt);
+          DB.transactions.push({
+            id: uid('tx'), userId: u.id,
+            kind: amt > 0 ? 'admin-credit' : 'admin-debit',
+            amount: amt, note: 'Admin adjustment', ts: now()
+          });
+        },
+        () => { u.wallet = prev; },
+        (amt > 0 ? 'Credited ' : 'Debited ') + money(Math.abs(amt)) + ' · ' + u.name
+      );
+      break;
+    }
+
+    case 'admindelete': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const idx = DB.users.indexOf(u);
+      adminDo(
+        () => { DB.users.splice(idx, 1); },
+        () => { DB.users.splice(idx, 0, u); },
+        'Deleted user: ' + u.name
+      );
+      setTimeout(() => back(), 300);
+      break;
+    }
+
+    case 'adminadd': {
+      const n = ADMINS.length + 1;
+      const id = 'admin' + n;
+      const email = 'admin' + n + '@rubix.app';
+      const pin = String(1000 + Math.floor(Math.random()*9000));
+      const newAdmin = {
+        id, email, pin, name:'Admin ' + n, initials:'A' + n,
+        hue:(n*47) % 360, photo: n,
+        createdAt: new Date().toISOString(), lastLogin:null
+      };
+      adminDo(
+        () => { ADMINS.push(newAdmin); },
+        () => { ADMINS.splice(ADMINS.indexOf(newAdmin), 1); },
+        'Created admin: ' + newAdmin.name
+      );
+      toast('Admin created · ' + email + ' / ' + pin);
+      break;
+    }
+
+    /* ---- Moderation ---- */
+    case 'reportresolve': {
+      const r = DB.reports.find(x => x.id === el.dataset.id);
+      if (!r) break;
+      const prev = r.status;
+      const action = el.dataset.action;
+      adminDo(
+        () => {
+          r.status = 'resolved';
+          r.action = action;
+          if (action === 'ban'){
+            const t = userById(r.targetId);
+            if (t){ t.safety.blocked.push('admin-ban'); t.status = 'Banned'; t.avail = 'off'; }
+          }
+        },
+        () => {
+          r.status = prev;
+          r.action = null;
+          if (action === 'ban'){
+            const t = userById(r.targetId);
+            if (t) t.safety.blocked = t.safety.blocked.filter(x => x !== 'admin-ban');
+          }
+        },
+        'Report ' + action + ': ' + r.type
+      );
+      toast('Report ' + action);
+      break;
+    }
+
+    /* ---------- GENERIC TOAST ---------- */
+    case 'toast':
+      toast(el.dataset.msg || 'Done');
+      break;
+
+    default:
+      break;
+  }
+});
+
+/* ============================================================
+   SECTION 57 — INPUT HANDLERS
+   ============================================================ */
+document.addEventListener('input', e => {
+  const el = e.target.closest('[data-input]');
+  if (!el) return;
+  const key = el.dataset.input;
+
+  if (key === 'rankQuery'){
+    state.rankQuery = el.value;
+    const box = document.getElementById('rankList');
+    if (box) box.innerHTML = rankListHTML();
+  }
+
+  if (key === 'adminUserQuery'){
+    state.adminUserQuery = el.value;
+    const pos = el.selectionStart;
+    render();
+    const newInp = mainEl.querySelector('[data-input="adminUserQuery"]');
+    if (newInp){ newInp.focus(); if (pos != null) newInp.setSelectionRange(pos, pos); }
+  }
+
+  if (key === 'adminEmail') state.gateAdminEmail = el.value;
+  if (key === 'adminPin')   state.gateAdminPin = el.value;
+});
+
+/* Enter to submit admin login */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter'){
+    if (!SESSION.mode){
+      const top = nav.stack.length ? nav.stack[nav.stack.length - 1] : null;
+      if (top && top.screen === 'adminlogin'){
+        const btn = mainEl.querySelector('[data-act="adminauth"]');
+        if (btn) btn.click();
+      }
+    }
+    const chatInp = document.getElementById('chatInput');
+    if (chatInp && document.activeElement === chatInp){
+      const send = mainEl.querySelector('[data-act="chatsend"]');
+      if (send) send.click();
+    }
+  }
+  if (e.key === 'Escape'){
+    if (layerEl.innerHTML) closeLayer();
+    else if (nav.stack.length) back();
+  }
+});
+
+/* ============================================================
+   SECTION 58 — BOOT
+   ============================================================ */
+render();
+
+/* ════════════════════════════════════════════════════════════
+   END OF SESSION 5 · END OF app.js
+   ════════════════════════════════════════════════════════════ */
