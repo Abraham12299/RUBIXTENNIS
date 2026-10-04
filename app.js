@@ -1,1582 +1,538 @@
-'use strict';
+/* ============================================================
+   RUBIX HOOPS — app.js
+   ────────────────────────────────────────────────────────────
+   SECTION 1  : Icons
+   SECTION 2  : Utilities
+   SECTION 3  : Data models (DB · ADMINS · seed · posts)
+   SECTION 4  : Session · Wallet · Monetization
+   SECTION 5  : Tournament engine
+   SECTION 6  : Chat engine
+   SECTION 7  : Game verification engine
+   SECTION 8  : AI recommendations
+   SECTION 9  : Weather
+   [Sessions 3–5 continue below]
+   ============================================================ */
 
-/* 1. ICONS */
+/* ============================================================
+   SECTION 1 — ICONS
+   ============================================================ */
 const ICONS = {
-  back:'<path d="M15 18l-6-6 6-6"/>',
-  pin:'<path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>',
-  trophy:'<path d="M8 4h8v5a4 4 0 01-8 0V4z"/><path d="M8 5H5a3 3 0 003 3M16 5h3a3 3 0 01-3 3M12 13v4M9 21h6M10 17h4"/>',
-  chart:'<path d="M5 20v-6M11 20V5M17 20v-9"/><path d="M3 20h18"/>',
-  ball:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5.6 5.6c3.6 3.6 3.6 9.2 0 12.8M18.4 5.6c-3.6 3.6-3.6 9.2 0 12.8"/>',
-  grid:'<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
-  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
-  plus:'<path d="M12 5v14M5 12h14"/>',
-  lock:'<rect x="4" y="10" width="16" height="10" rx="3"/><path d="M8 10V7a4 4 0 018 0v3"/>',
-  check:'<path d="M5 13l4 4L19 7"/>',
-  x:'<path d="M6 6l12 12M18 6L6 18"/>',
-  chat:'<path d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z"/>',
-  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',
-  wallet:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14h2"/>',
-  shield:'<path d="M12 3l8 3v6c0 5-3.5 8.3-8 9.5C7.5 20.3 4 17 4 12V6l8-3z"/>',
-  bell:'<path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 004 0"/>',
-  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
-  fire:'<path d="M12 3s5 4.5 5 9a5 5 0 01-10 0c0-1.7.8-3.1 1.7-4.1.2 1.3 1.1 2.1 2.3 2.1 0-2.6 1-6.2 1-7z"/>',
-  send:'<path d="M4 12l16-8-6 16-2.5-6.5L4 12z"/>',
-  edit:'<path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="M14 6l4 4"/>',
-  calendar:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
-  clock:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4.5l3 1.5"/>',
-  arrow:'<path d="M9 6l6 6-6 6"/>',
-  sparkle:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/>',
-  users:'<circle cx="9" cy="9" r="3.2"/><path d="M3 19a6 6 0 0112 0"/><path d="M16 6.5a3 3 0 010 5.6M17 19a6 6 0 00-1.6-4.1"/>',
-  shop:'<path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 016 0v2"/>',
-  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 8h.01"/>',
-  alert:'<path d="M12 4l9 16H3l9-16z"/><path d="M12 10v4M12 17h.01"/>',
-  trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
-  refresh:'<path d="M20 12a8 8 0 11-2.3-5.6M20 4v5h-5"/>',
-  eye:'<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/>',
-  gear:'<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>',
-  star:'<path d="M12 3l2.7 5.7 6.3.9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.6l6.3-.9L12 3z"/>',
-  filter:'<path d="M3 5h18M6 12h12M10 19h4"/>',
-  logout:'<path d="M15 12H4M8 8l-4 4 4 4"/><path d="M12 4h6a2 2 0 012 2v12a2 2 0 01-2 2h-6"/>',
-  undo:'<path d="M4 10h9a5 5 0 010 10H8"/><path d="M8 6l-4 4 4 4"/>',
-  pin2:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'
+  pin:'<path d="M12 21.5s7-6 7-11.5a7 7 0 1 0-14 0c0 5.5 7 11.5 7 11.5Z"/><circle cx="12" cy="10" r="2.6"/>',
+  trophy:'<path d="M7.5 4h9v5.5a4.5 4.5 0 0 1-9 0V4Z"/><path d="M7.5 5.5H4.5v1.8a3.2 3.2 0 0 0 3.2 3.2M16.5 5.5h3v1.8a3.2 3.2 0 0 1-3.2 3.2"/><path d="M12 14v3.5M9 20.5h6M10.2 17.5h3.6"/>',
+  ball:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-3.9 3.4-6 7.5-6s7.5 2.1 7.5 6"/>',
+  grid:'<rect x="3.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2.2"/>',
+  back:'<path d="M14.5 5.5 8 12l6.5 6.5"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20.5 20.5 16.5 16.5"/>',
+  star:'<path d="m12 3.5 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17.5l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3.5Z"/>',
+  chev:'<path d="M9.5 5.5 16 12l-6.5 6.5"/>',
+  plus:'<path d="M12 5.5v13M5.5 12h13"/>',
+  minus:'<path d="M5.5 12h13"/>',
+  send:'<path d="M20.5 3.5 3.5 10.5l7 2.5 2.5 7 7.5-16.5Z"/>',
+  chat:'<path d="M20.5 12c0 4.1-3.8 7.4-8.5 7.4-1 0-2-.15-2.9-.42L4.5 20.5l1.3-3.6A6.9 6.9 0 0 1 3.5 12C3.5 7.9 7.3 4.6 12 4.6s8.5 3.3 8.5 7.4Z"/>',
+  check:'<path d="M5 12.8 9.6 17.4 19 7.5"/>',
+  calendar:'<rect x="3.5" y="5.5" width="17" height="15" rx="3.5"/><path d="M3.5 10.5h17M8.5 3.5v4M15.5 3.5v4"/>',
+  bolt:'<path d="M13.5 3 5 13.5h6L10.5 21 19 10.5h-6L13.5 3Z"/>',
+  shield:'<path d="M12 3.5 5 6.5v5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5v-5l-7-3Z"/>',
+  shield2:'<path d="M12 3.5 5 6.5v5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5v-5l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
+  gift:'<rect x="3.5" y="8.5" width="17" height="12" rx="3"/><path d="M3.5 12.5h17M12 8.5v12"/><path d="M12 8.5S10.5 4 8 4a2.2 2.2 0 0 0 0 4.5M12 8.5S13.5 4 16 4a2.2 2.2 0 0 1 0 4.5"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+  undo:'<path d="M3.5 8.5h10a6.5 6.5 0 0 1 0 13H8"/><path d="M8 4 3.5 8.5 8 13"/>',
+  redo:'<path d="M20.5 8.5h-10a6.5 6.5 0 0 0 0 13H16"/><path d="M16 4l4.5 4.5L16 13"/>',
+  trash:'<path d="M4.5 6.5h15M9.5 6.5V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v1.5M6.5 6.5 7.5 20a2 2 0 0 0 2 1.9h5a2 2 0 0 0 2-1.9l1-13.5"/>',
+  edit:'<path d="M12 20.5h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7.5 18.5l-4 1 1-4 12-12Z"/>',
+  camera:'<path d="M4.5 7.5h3l2-2.5h5l2 2.5h3a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V9a1.5 1.5 0 0 1 1.5-1.5Z"/><circle cx="12" cy="13" r="3.5"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/><circle cx="17" cy="9" r="3"/><path d="M22 19c0-2.8-2.2-4.5-5-4.5"/>',
+  lock:'<rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+  compass:'<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/>',
+  power:'<path d="M18.4 6.6a9 9 0 1 1-12.8 0"/><path d="M12 3v9"/>',
+  clipboard:'<rect x="5.5" y="4.5" width="13" height="16" rx="2.5"/><path d="M9 4.5V3.5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 3.5v1M9 10.5h6M9 14.5h4"/>',
+  megaphone:'<path d="M3.5 11v2a1.5 1.5 0 0 0 1.5 1.5h1.5L11 18v-12L6.5 9.5H5A1.5 1.5 0 0 0 3.5 11Z"/><path d="M15 8.5a4.5 4.5 0 0 1 0 7M18 6a8 8 0 0 1 0 12"/>',
+  wallet:'<rect x="3.5" y="6.5" width="17" height="13" rx="3"/><path d="M3.5 10.5h17M16 15h1.5"/>',
+  cloud:'<path d="M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18H7Z"/>',
+  fire:'<path d="M12 21c3.9 0 7-2.6 7-6.5 0-3-2-4.5-3-6.5-1 3-2.5 3.5-3 2 .5-3-1-5.5-3-7-.5 3-3 4-3 6.5S5.5 14 5 15c0 3.5 3.1 6 7 6Z"/>',
+  image:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.7"/><path d="m4.5 17 5-5 4 4 3-2.5 3.5 3.5"/>',
+  filter:'<path d="M3.5 6.5h17M6.5 12h11M10 17.5h4"/>',
+  alert:'<path d="M12 3.5 3 20h18L12 3.5Z"/><path d="M12 9.5v4M12 17h0"/>',
+  heart:'<path d="M12 20.5s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10.5c0 5.5-7 10-7 10Z"/>',
+  comment:'<path d="M20.5 12c0 4.1-3.8 7.4-8.5 7.4-1 0-2-.15-2.9-.42L4.5 20.5l1.3-3.6A6.9 6.9 0 0 1 3.5 12C3.5 7.9 7.3 4.6 12 4.6s8.5 3.3 8.5 7.4Z"/>',
+  share:'<circle cx="6" cy="12" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 10.5 15.5 7M8.5 13.5l7 3.5"/>',
+  block:'<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>',
+  flag:'<path d="M5 21V4M5 4h13l-2.5 4L18 12H5"/>',
+  chart:'<path d="M3.5 20.5h17"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="7" width="3" height="11" rx="1"/><rect x="15.5" y="3" width="3" height="15" rx="1"/>',
+  smartphone:'<rect x="6.5" y="3.5" width="11" height="17" rx="2.5"/><path d="M11 18h2"/>',
+  mail:'<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="m4.5 7.5 7.5 5 7.5-5"/>',
+  bell:'<path d="M18 16V11a6 6 0 1 0-12 0v5l-2 3h16l-2-3ZM10 21h4"/>',
+  moon:'<path d="M20 15A8 8 0 0 1 9 4a9 9 0 1 0 11 11Z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  rainfall:'<path d="M7 14a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 14"/><path d="M8 18l-1 2M12 18l-1 2M16 18l-1 2"/>',
+  key:'<circle cx="8" cy="14.5" r="3.5"/><path d="m10.5 12 8-8M16.5 6l2 2M14.5 8l2 2"/>',
+  briefcase:'<rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M9 7.5v-2a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5.5v2M3.5 13h17"/>',
+  crown:'<path d="M3 8.5l3 9h12l3-9-5 3-4-6-4 6-5-3Z"/>',
+  gift2:'<rect x="3.5" y="8.5" width="17" height="12" rx="2.5"/><path d="M3.5 13h17M12 8.5v12M12 8.5S10.5 4 8 4a2.2 2.2 0 0 0 0 4.5M12 8.5S13.5 4 16 4a2.2 2.2 0 0 1 0 4.5"/>',
+  image2:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.7"/><path d="m4.5 17 5-5 4 4 3-2.5 3.5 3.5"/>',
+  crop:'<path d="M6.5 2v15.5H22M2 6.5h15.5V22"/>',
+  sphere:'<circle cx="12" cy="12" r="9"/><path d="M4 12c0-1.5 3.6-3 8-3s8 1.5 8 3-3.6 3-8 3-8-1.5-8-3Z"/><path d="M12 3v18"/>',
+  tag:'<path d="M12 3.5 3.5 12v8.5H12l8.5-8.5L12 3.5Z"/><circle cx="8" cy="12" r="1.4"/>',
+  dots:'<circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/>',
+  close:'<path d="M6 6l12 12M18 6 6 18"/>',
+  back2:'<path d="M15 5.5 8.5 12 15 18.5"/>'
 };
 function ico(n, cls){
-  return '<svg class="ic ' + (cls||'') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-    'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    (ICONS[n]||'') + '</svg>';
+  return '<svg class="'+(cls||'')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[n]||'')+'</svg>';
 }
 
-/* 2. UTILITIES */
-const $  = (s,r)=>(r||document).querySelector(s);
-const $$ = (s,r)=>Array.from((r||document).querySelectorAll(s));
-const fmt = n => Number(n).toLocaleString('en-US');
-const money = n => '$' + (Math.round(Number(n)*100)/100).toFixed(2);
-const round2 = n => Math.round(Number(n)*100)/100;
+/* ============================================================
+   SECTION 2 — UTILITIES
+   ============================================================ */
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+const fmt = (n) => n.toLocaleString();
+const money = (n) => '$' + (Math.round(n*100)/100).toFixed(2).replace(/\.00$/, '');
 const now = () => Date.now();
-let _uidc = 0;
-const uid = p => (p||'x') + '_' + (++_uidc).toString(36) + Math.random().toString(36).slice(2,6);
-function timeAgo(ts){
-  const s = Math.floor((Date.now()-ts)/1000);
-  if (s<60) return 'now';
-  const m=Math.floor(s/60); if (m<60) return m+'m';
-  const h=Math.floor(m/60); if (h<24) return h+'h';
-  const d=Math.floor(h/24); if (d<7) return d+'d';
-  const w=Math.floor(d/7); if (w<5) return w+'w';
-  return Math.floor(d/30)+'mo';
-}
-const escapeHTML = s => String(s==null?'':s)
-  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const img = (seed,w,h) => 'https://picsum.photos/seed/' + encodeURIComponent(seed) + '/' + w + '/' + h;
-const initials = name => { const p=String(name).trim().split(/\s+/); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||''); };
-function hash(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
-function rngFrom(seed){ let h=hash(String(seed)); return function(){ h^=h<<13; h>>>=0; h^=h>>17; h^=h<<5; h>>>=0; return h/4294967296; }; }
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const uid = (p) => (p || 'x') + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4);
+const daysFromNow = (d) => new Date(now() + d*86400000);
+const fmtDate = (d) => new Date(d).toLocaleDateString('en', {month:'short', day:'numeric'});
+const timeAgo = (ts) => {
+  const s = Math.floor((now() - ts)/1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+};
+const escapeHTML = (s) => String(s).replace(/[&<>"']/g, c => ({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+}[c]));
+const truncate = (s, n) => s.length > n ? s.slice(0, n-1) + '…' : s;
 
-/* 3. DATA MODELS + SEED */
-const DB = { me:null, users:[], courts:[], crews:[], shop:[], lost:[], tourneys:[], chats:[], feed:[], reports:[], pending:{vendors:[],crews:[],trainers:[],courts:[]} };
-const ADMINS = [{ id:'admin', name:'Rubix Operations', initials:'RO', hue:22, email:'admin@rubix.app', pin:'1234', isDefault:true }];
+/* ============================================================
+   SECTION 3 — DATA MODELS
+   ============================================================ */
+function img(seed, w, h){
+  return 'https://picsum.photos/seed/hoops-' + encodeURIComponent(seed) + '/' + w + '/' + h;
+}
+
+/* -------- Platform owner config -------- */
+const PLATFORM = {
+  owner: 'RUBIX Hoops',
+  feePct: {
+    request: 0,
+    chat: 0,
+    court: 10,
+    trainer: 12,
+    tournament: 15,
+    vendorListing: 0,
+    shopSale: 8,
+    crewJoin: 5
+  },
+  flatFees: {
+    requestPlayer: 0.99,
+    unlockChat: 1.99,
+    vendorListing: 4.99,
+    tournamentHost: 9.99,
+    crewCreate: 14.99,
+    priorityBooking: 2.99
+  },
+  revenue: 0,
+  history: []
+};
+
+const DB = {
+  users: [],
+  courts: [],
+  crews: [],
+  shop: [],
+  lostFound: [],
+  tournaments: [],
+  chats: [],
+  feed: [],
+  posts: [],
+  reports: [],
+  transactions: [],
+  pending: { vendors:[], crews:[], trainers:[], courts:[] }
+};
+
+const ADMINS = [
+  { id:'admin', email:'admin@rubix.app', pin:'1234', name:'Administrator',
+    initials:'AD', hue:0, photo:42, isDefault:true, createdAt:'2024-01-01', lastLogin:null }
+];
 
 function mkUser(o){
-  const u = Object.assign({
-    id:'', name:'', initials:'', hue:200, skill:3.0, position:'SG', dominant:'Right',
-    preferredCourt:'Outdoor', region:'Greater Accra', city:'Accra', points:800, dist:2.0,
-    status:'available', avail:'Evenings', stats:{games:0,wins:0,losses:0,ppg:0,apg:0,rpg:0},
-    matches:[], rankN:null, rankG:null, roles:[], wallet:0, tx:[], verified:false,
-    badges:[], streaks:{current:0,longest:0}, bio:'', playstyle:[],
-    seed:'', trainerRate:0, specialty:'', crews:[]
+  const initials = (o.name || '? ?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+  return Object.assign({
+    id: o.id, name: o.name, initials,
+    hue: o.hue != null ? o.hue : 22,
+    city: o.city || 'Accra', region: o.region || 'Greater Accra',
+    skill: o.skill || '3.5', position: o.position || 'SG', dominant: o.dominant || 'Right',
+    preferredCourt: o.preferredCourt || 'Indoor',
+    status: o.status || 'Available now', avail: o.avail || 'on',
+    role:'user', vendorStatus:'none',
+    verified:false, idVerified:false, photoVerified:false,
+    bio:'', interests:['Pickup runs','Social'],
+    playstyle:['Playmaker'],
+    memberSince: o.memberSince || '2024',
+    idNumber: o.idNumber || 'RH-' + String(1000 + Math.floor(Math.random()*8999)),
+    points: o.points || 800, dist: o.dist || 500,
+    isNational:false, rankN:null, rankG:null,
+    move:'up', moveBy:1,
+    trainerCourt:null, crewId:null,
+    wallet: o.wallet != null ? o.wallet : 0,
+    earnings: 0,
+    streaks:{ current:0, longest:0 },
+    badges:[],
+    profileComplete: o.profileComplete !== false,
+    avatarDataUrl: null,
+    coverDataUrl: null,
+    posts: o.posts || [],
+    notifPrefs:{ push:true, email:false, nearby:true, invites:true, chat:true,
+      bookings:true, crew:true, quietHours:false },
+    safety:{ emergencyContact:'', shareLocationBeforeMatch:true, blocked:[] },
+    stats:{ games:0, wins:0, losses:0, ppg:0, apg:0, rpg:0 },
+    matches:[],
+    photo:(Math.random()*1000)|0
   }, o);
-  u.initials = u.initials || initials(u.name);
-  u.seed = u.seed || u.id;
-  return u;
 }
 
-const OPPONENTS = ['Riverside Runners','Osu Kings','East Legon Elite','Labone Ballers','Airport Hawks','Teshie Titans','Madina Hoops','Kumasi Storm'];
-const SCORES = ['78-72','65-70','88-81','59-63','91-84','74-77','82-69','69-71'];
-function genMatches(seed){
-  const r = rngFrom('m'+seed); const out=[];
-  for (let i=0;i<5;i++){
-    const sc = SCORES[Math.floor(r()*SCORES.length)];
-    const parts = sc.split('-');
-    const wl = Number(parts[0])>Number(parts[1]) ? 'W' : 'L';
-    out.push({ opp:OPPONENTS[Math.floor(r()*OPPONENTS.length)], score:sc, result:wl,
-      ts:Date.now()-(i*5+2)*86400000, court:['Indoor','Outdoor','Street'][Math.floor(r()*3)], verified:r()>0.35 });
+/* -------- ME -------- */
+DB.users.push(mkUser({
+  id:'me', name:'Marcus Bell', hue:22, city:'Accra', region:'Greater Accra',
+  skill:'4.0', position:'SG', dominant:'Right', preferredCourt:'Indoor',
+  status:'Available now', avail:'on',
+  bio:'Sharpshooter from deep. Always up for a run — indoor or street. Let\'s work.',
+  interests:['Pickup runs','3v3','Training','Social'], playstyle:['Sharpshooter','Playmaker'],
+  memberSince:'Mar 2024', idNumber:'RH-0001',
+  points:2140, dist:0, verified:true, idVerified:true, photoVerified:true,
+  wallet: 24.50, earnings: 0,
+  streaks:{ current: 3, longest: 8 },
+  badges:['first-game','10-games','sharp-shooter'],
+  profileComplete: true
+}));
+
+/* -------- Players -------- */
+const RAW = [
+  {id:'b1',name:'Jaylen Carter',hue:150,skill:'4.5',dist:120,status:'Available now',avail:'on',position:'PG',preferredCourt:'Indoor',region:'Greater Accra',city:'East Legon',points:2450,isNational:true,rankN:4,move:'up',moveBy:3,crewId:'c1'},
+  {id:'b2',name:'Devin Osei',hue:18,skill:'4.0',dist:240,status:'In 1 hour',avail:'soon',position:'SG',preferredCourt:'Outdoor',region:'Greater Accra',city:'Osu',points:1980,isNational:true,rankN:6,move:'up',moveBy:1},
+  {id:'b3',name:'Tyler Nakamura',hue:280,skill:'5.0',dist:480,status:'Available now',avail:'on',position:'SF',preferredCourt:'Indoor',region:'Greater Accra',city:'Airport Hills',points:3120,isNational:true,rankN:2,move:'down',moveBy:1},
+  {id:'b4',name:'Sam Okafor',hue:210,skill:'3.5',dist:90,status:'Busy',avail:'off',position:'PF',preferredCourt:'Street',region:'Central',city:'Cape Coast',points:1120,move:'down',moveBy:2,role:'trainer',trainerCourt:'h1'},
+  {id:'b5',name:'Zion Mensah',hue:330,skill:'4.5',dist:350,status:'Available now',avail:'on',position:'PG',preferredCourt:'Indoor',region:'Greater Accra',city:'Labone',points:2510,isNational:true,rankN:3,move:'up',moveBy:4,crewId:'c3'},
+  {id:'b6',name:'Kwame Boateng',hue:96,skill:'4.0',dist:620,status:'Tomorrow',avail:'soon',position:'C',preferredCourt:'Indoor',region:'Ashanti',city:'Kumasi',points:1740,isNational:true,rankN:7,move:'up',moveBy:2},
+  {id:'b7',name:'Priya Sharma',hue:255,skill:'3.5',dist:180,status:'Available now',avail:'on',position:'SG',preferredCourt:'Outdoor',region:'Greater Accra',city:'Madina',points:1290,move:'down',moveBy:1},
+  {id:'b8',name:'Andre Williams',hue:195,skill:'5.5',dist:900,status:'Available now',avail:'on',position:'SF',preferredCourt:'Indoor',region:'Greater Accra',city:'Cantonments',points:3880,isNational:true,rankN:1,move:'up',moveBy:1},
+  {id:'b9',name:'Zara Diallo',hue:42,skill:'4.0',dist:430,status:'In 30 min',avail:'soon',position:'PG',preferredCourt:'Indoor',region:'Northern',city:'Tamale',points:1830,isNational:true,rankN:8,move:'down',moveBy:3},
+  {id:'b10',name:'Tomás Reyes',hue:6,skill:'3.0',dist:760,status:'Available now',avail:'on',position:'PF',preferredCourt:'Street',region:'Central',city:'Winneba',points:860,move:'up',moveBy:5},
+  {id:'b11',name:'Ivy Chen',hue:310,skill:'4.5',dist:250,status:'Busy',avail:'off',position:'SG',preferredCourt:'Indoor',region:'Ashanti',city:'Obuasi',points:2290,isNational:true,rankN:5,move:'down',moveBy:1},
+  {id:'b12',name:'Omar Bello',hue:170,skill:'3.5',dist:150,status:'Available now',avail:'on',position:'C',preferredCourt:'Outdoor',region:'Greater Accra',city:'Teshie',points:1350,move:'up',moveBy:2}
+];
+RAW.forEach(p => DB.users.push(mkUser(p)));
+
+function recomputeGeneralRanks(){
+  const g = DB.users.filter(u => u.role !== 'admin' && !u.isNational && u.id !== 'me')
+    .sort((a,b) => b.points - a.points);
+  g.forEach((u,i) => u.rankG = i + 1);
+}
+recomputeGeneralRanks();
+
+/* -------- Courts -------- */
+DB.courts = [
+  {id:'h1',name:'Riverside Basketball Club',rating:4.8,price:18,dist:400,surface:'Indoor',courtCount:6,hue:22,
+   status:'approved',address:'12 Riverside Drive, East Legon',
+   amenities:['Indoor AC','Scoreboard','Bleachers','Locker rooms','Café','Free parking'],
+   trainers:[
+     {id:'tr1',userId:'b4',name:'Coach Sam O.',rate:35,spec:'Shooting mechanics · Post moves',exp:'12 yrs',verified:true},
+     {id:'tr2',userId:'b6',name:'Coach Kwame B.',rate:42,spec:'Ball handling · Game IQ',exp:'9 yrs',verified:true}
+   ], playersHere:['b1','b5','b7'], courtStatus:'open',
+   bookings:[
+     {id:'bk1',userId:'me', time:'07:00', duration:'90 min', status:'upcoming', date:'Today'},
+     {id:'bk2',userId:'b1', time:'09:00', duration:'60 min', status:'active', date:'Today'},
+     {id:'bk3',userId:'b2', time:'11:30', duration:'60 min', status:'upcoming', date:'Today'},
+     {id:'bk4',userId:'b5', time:'15:00', duration:'90 min', status:'completed', date:'Today'}
+   ]},
+  {id:'h2',name:'Northgate Outdoor Courts',rating:4.3,price:10,dist:700,surface:'Outdoor',courtCount:4,hue:96,
+   status:'approved',address:'Northgate Park, Osu',
+   amenities:['Lighting','Public access','Water fountain','Restrooms'],
+   trainers:[{id:'tr3',userId:'b10',name:'Coach Tomás R.',rate:28,spec:'Cardio hoops · Fundamentals',exp:'6 yrs',verified:true}],
+   playersHere:['b2','b9'], courtStatus:'open', bookings:[]},
+  {id:'h3',name:'Prime Hardwood Academy',rating:4.9,price:26,dist:1200,surface:'Indoor',courtCount:8,hue:18,
+   status:'approved',address:'7 Akosombo Rd, Labone',
+   amenities:['Hardwood floors','Film room','Physio','Lounge','Locker rooms','Pro shop'],
+   trainers:[
+     {id:'tr4',userId:'b3',name:'Coach Tyler N.',rate:55,spec:'Pro-level skill work · Scouting',exp:'16 yrs',verified:true},
+     {id:'tr5',userId:'b11',name:'Coach Ivy C.',rate:40,spec:'Conditioning · Footwork',exp:'10 yrs',verified:true}
+   ], playersHere:['b3','b6'], courtStatus:'open', bookings:[]},
+  {id:'h4',name:'Sunset Hoops Center',rating:4.6,price:22,dist:900,surface:'Indoor',courtCount:5,hue:330,
+   status:'approved',address:'88 Ring Road Central',
+   amenities:['Indoor AC','Scoreboard','Bar','Showers','Sound system'],
+   trainers:[{id:'tr6',userId:'b7',name:'Coach Priya S.',rate:45,spec:'Shooting form · Video analysis',exp:'11 yrs',verified:true}],
+   playersHere:['b8','b11','b12'], courtStatus:'open', bookings:[]},
+  {id:'h5',name:'Harborview Street Courts',rating:4.1,price:14,dist:1600,surface:'Outdoor',courtCount:3,hue:195,
+   status:'approved',address:'Harbour Rd, Tema',
+   amenities:['Sea view','Lighting','Free parking'],
+   trainers:[{id:'tr7',userId:'b12',name:'Coach Omar B.',rate:30,spec:'Street ball · Beginners',exp:'5 yrs',verified:false}],
+   playersHere:['b4','b10'], courtStatus:'open', bookings:[]}
+];
+
+/* -------- Crews -------- */
+DB.crews = [
+  {id:'c1',name:'RUBIX Hoops Community',members:1240,dist:300,hue:22,desc:'Weekly runs · All levels',
+   verified:'approved',createdBy:'b1',founded:'2023', events:3, pendingMembers:2, monthlyFee:2.99},
+  {id:'c2',name:'Downtown 3v3 League',members:480,dist:800,hue:255,desc:'Competitive 3v3 ladder · Season 4',
+   verified:'approved',createdBy:'b3',founded:'2024', events:1, pendingMembers:0, monthlyFee:0},
+  {id:'c3',name:'Weekend Run Crew',members:156,dist:1100,hue:30,desc:'Sat & Sun morning runs only',
+   verified:'approved',createdBy:'b5',founded:'2024', events:2, pendingMembers:1, monthlyFee:0}
+];
+
+/* -------- Shop -------- */
+DB.shop = [
+  {id:'sh1',title:'Nike LeBron 21 (US 10.5)',price:95,cond:'Used · Excellent',emoji:'👟',hue:22,sellerId:'b1',place:'East Legon · 120 m',status:'approved'},
+  {id:'sh2',title:'Adidas Harden Vol. 8',price:75,cond:'Used · Good',emoji:'👟',hue:255,sellerId:'b2',place:'Osu · 240 m',status:'approved'},
+  {id:'sh3',title:'Spalding NBA Official Ball',price:45,cond:'New · Boxed',emoji:'🏀',hue:30,sellerId:'b4',place:'Cape Coast',status:'approved'},
+  {id:'sh4',title:'Wilson Evolution Indoor',price:60,cond:'New',emoji:'🏀',hue:18,sellerId:'b3',place:'Airport Hills',status:'approved'},
+  {id:'sh5',title:'Mitchell & Ness Kobe Rookie',price:120,cond:'Used · Great',emoji:'👕',hue:280,sellerId:'b5',place:'Labone · 350 m',status:'approved'},
+  {id:'sh6',title:'Nike Shooting Sleeve',price:15,cond:'New',emoji:'💪',hue:200,sellerId:'b6',place:'Kumasi',status:'approved'},
+  {id:'sh7',title:'Ankle Brace (pair)',price:20,cond:'Used',emoji:'🦶',hue:180,sellerId:'b7',place:'Madina · 180 m',status:'approved'},
+  {id:'sh8',title:'Under Armour Compression Tights',price:30,cond:'New',emoji:'🩳',hue:340,sellerId:'b9',place:'Tamale',status:'approved'}
+];
+
+/* -------- Lost & Found -------- */
+DB.lostFound = [
+  {id:'l1',type:'lost',title:'Spalding NBA ball (scuffed)',emoji:'🏀',hue:30,place:'Riverside Basketball Club',time:'2h ago',note:'Left it on court 3 after the run. Reward!'},
+  {id:'l2',type:'found',title:'Black Nike drawstring bag',emoji:'🎒',hue:210,place:'Court 1, Northgate Outdoor',time:'5h ago',note:'Handed to the front desk.'},
+  {id:'l3',type:'lost',title:'LeBron 21s (left shoe only)',emoji:'👟',hue:22,place:'Sunset Hoops Center',time:'1d ago',note:'Weird, I know. But it happened.'},
+  {id:'l4',type:'found',title:'Gold chain with cross',emoji:'📿',hue:42,place:'Prime Hardwood Academy',time:'2d ago',note:'Turned into reception.'}
+];
+
+/* -------- Tournaments -------- */
+function seedTourneys(){
+  const d = (days) => now() + days*86400000;
+  DB.tournaments = [
+    { id:'t1', name:'Riverside 3v3 Open', hostId:'b1', format:'3v3',
+      entry:5, prize:60, maxTeams:8, courts:'h1', hue:22, status:'open',
+      created: now() - 2*86400000, agreeBy: d(7),
+      teamSize:3,
+      teams:[
+        { id:'tt1', name:'Carter / Mensah / Chen', members:['b1','b5','b11'], joined: now()-1*86400000 },
+        { id:'tt2', name:'Osei / Sharma / Diallo', members:['b2','b7','b9'], joined: now()-1*86400000 + 3600000 },
+        { id:'tt3', name:'Nakamura / Boateng / Reyes', members:['b3','b6','b10'], joined: now()-1*86400000 + 7200000 }
+      ],
+      bracket:null,
+      completed:false
+    },
+    { id:'t2', name:'Weekend 5v5 League', hostId:'b5', format:'5v5',
+      entry:3, prize:75, maxTeams:6, courts:'h3', hue:330, status:'open',
+      created: now() - 1*86400000, agreeBy: d(6),
+      teamSize:5,
+      teams:[
+        { id:'tt4', name:'Mensah / Williams / Okafor', members:['b5','b8','b4'], joined: now()-12*3600000 }
+      ],
+      bracket:null, completed:false },
+    { id:'t3', name:'Sunset 1v1 Ladder', hostId:'b8', format:'1v1',
+      entry:4, prize:40, maxTeams:8, courts:'h4', hue:195, status:'draft',
+      created: now() - 4*3600000, agreeBy: d(7),
+      teamSize:1,
+      teams:[],
+      bracket:null, completed:false }
+  ];
+}
+seedTourneys();
+
+/* -------- Chats -------- */
+function seedChats(){
+  const d = (m) => now() - m*60000;
+  DB.chats = [
+    { id:'ch1', withId:'b1', unlocked:true,
+      messages:[
+        { id:uid('m'), from:'me',  text:'Yo Jaylen! Saw you\'re nearby — up for a run this week?', ts: d(180) },
+        { id:'m2',        from:'b1',text:'Yo Marcus! Yeah for sure. Thursday 6pm at Riverside?', ts: d(175) },
+        { id:'m3',        from:'me', text:'Perfect, booking us a court now.', ts: d(170) }
+      ], lastRead: now() - 3600000 },
+    { id:'ch2', withId:'b3', unlocked:false,
+      messages:[
+        { id:'m4', from:'b3', text:'Hey Marcus — I can work with you on your shot. First session free?', ts: d(240) }
+      ], lastRead: 0 },
+    { id:'ch3', withId:'b5', unlocked:true,
+      messages:[
+        { id:'m5', from:'b5', text:'Run crew is short one — Sunday 10am at Harborview?', ts: d(60) }
+      ], lastRead: 0 }
+  ];
+}
+seedChats();
+
+/* -------- Feed (legacy short posts — kept for compatibility) -------- */
+function seedFeed(){
+  DB.feed = [
+    { id:'f1', authorId:'b1', type:'win',
+      text:'Won 21-18 against Devin at Riverside last night. Buckets were falling 🔥',
+      media:true, likes:['b2','b5','b7','b11'], comments:3, ts: now()-1800000 },
+    { id:'f2', authorId:'b5', type:'joined',
+      text:'Joined Weekend Run Crew — looking for a 5th for Saturday!',
+      media:false, likes:['me','b1'], comments:1, ts: now()-10800000 },
+    { id:'f3', authorId:'b8', type:'achievement',
+      text:'Just hit a 12-game winning streak 🏆',
+      media:false, likes:['b1','b2','b3','b5','b7','b11'], comments:8, ts: now()-21600000 },
+    { id:'f4', authorId:'b3', type:'post',
+      text:'Sunrise session at Prime Hardwood. Floors are immaculate — 10/10 recommend.',
+      media:true, likes:['b1','b5'], comments:2, ts: now()-43200000 }
+  ];
+}
+seedFeed();
+
+/* -------- User-authored posts -------- */
+function seedPosts(){
+  DB.posts = [
+    { id:'p1', authorId:'b1', text:'Won 21-18 against Devin at Riverside last night. Buckets were falling 🔥',
+      imageUrl: img('post-riverside', 800, 500), imageDataUrl: null,
+      likes:['b2','b5','b7','b11'], comments:[
+        { id:'cm1', fromId:'b2', text:'GG brother, rematch next week?', ts: now()-1700000 }
+      ],
+      createdAt: now()-1800000, editedAt: null, isEdited:false, visibility:'public' },
+    { id:'p2', authorId:'b5', text:'Just copped the LeBron 21s — fresh off the court, size 10.5. Straight flames.',
+      imageUrl: img('post-lebron', 800, 500), imageDataUrl: null,
+      likes:['me','b1','b3'], comments:[],
+      createdAt: now()-7200000, editedAt: null, isEdited:false, visibility:'public' },
+    { id:'p3', authorId:'b8', text:'5v5 tonight at Prime Hardwood 8pm. Need 2 more — hit me in the DMs.',
+      imageUrl: null, imageDataUrl: null,
+      likes:['b1','b2','b3','b5','b7','b11'], comments:[
+        { id:'cm2', fromId:'b6', text:'I\'m in if you still need one', ts: now()-20000000 },
+        { id:'cm3', fromId:'b10', text:'Count me in too', ts: now()-19000000 }
+      ],
+      createdAt: now()-21600000, editedAt: null, isEdited:false, visibility:'public' },
+    { id:'p4', authorId:'b3', text:'Working on the step-back all week. Progress is real.',
+      imageUrl: img('post-stepback', 800, 500), imageDataUrl: null,
+      likes:['b1','b5'], comments:[],
+      createdAt: now()-43200000, editedAt: null, isEdited:false, visibility:'public' },
+    { id:'p5', authorId:'b2', text:'Lost my Spalding at Northgate last night — if anyone sees it please DM me 🙏',
+      imageUrl: null, imageDataUrl: null,
+      likes:['b7'], comments:[],
+      createdAt: now()-54000000, editedAt: null, isEdited:false, visibility:'public' },
+    { id:'p6', authorId:'b5', text:'Sunday runs at Harborview are back. 10am, weather permitting. All levels welcome.',
+      imageUrl: img('post-harborview', 800, 500), imageDataUrl: null,
+      likes:['me','b1','b2','b3','b8'], comments:[
+        { id:'cm4', fromId:'b11', text:'I\'ll be there', ts: now()-60000000 }
+      ],
+      createdAt: now()-72000000, editedAt: null, isEdited:false, visibility:'public' },
+    { id:'p7', authorId:'b8', text:'12-game win streak. Legs tired but I\'m not stopping.',
+      imageUrl: null, imageDataUrl: null,
+      likes:['b1','b5','b11'], comments:[],
+      createdAt: now()-86400000, editedAt: null, isEdited:false, visibility:'public' },
+    { id:'p8', authorId:'b1', text:'Anyone got a good hardwood court in East Legon? Tired of driving 30 mins every time.',
+      imageUrl: null, imageDataUrl: null,
+      likes:['b2','b7'], comments:[
+        { id:'cm5', fromId:'b5', text:'Riverside is your best bet, they open early', ts: now()-100000000 }
+      ],
+      createdAt: now()-108000000, editedAt: null, isEdited:false, visibility:'public' }
+  ];
+  /* Cross-link: put posts into each user's array for quick access */
+  DB.users.forEach(u => {
+    u.posts = DB.posts.filter(p => p.authorId === u.id);
+  });
+}
+seedPosts();
+
+/* -------- Reports -------- */
+DB.reports = [
+  { id:'r1', reporterId:'b5', targetId:'b10', type:'noshow',
+    text:'Didn\'t show up for confirmed run on 15 Jun. No message.',
+    ts: now()-3600000, status:'open' },
+  { id:'r2', reporterId:'b3', targetId:'b12', type:'fake',
+    text:'Profile photo doesn\'t match the person I met at the court.',
+    ts: now()-7200000, status:'open' }
+];
+
+/* -------- Transactions -------- */
+DB.transactions = [
+  { id:'tx1', userId:'me', kind:'topup', amount: 30,  ts: now()-7*86400000, note:'Wallet top-up' },
+  { id:'tx2', userId:'me', kind:'court-booking', amount: -18, ts: now()-6*86400000, note:'Riverside · 90 min' },
+  { id:'tx3', userId:'me', kind:'chat-unlock', amount: -1.99, ts: now()-3*86400000, note:'Unlock chat with Jaylen' },
+  { id:'tx4', userId:'me', kind:'tournament-entry', amount: -5, ts: now()-2*86400000, note:'Riverside 3v3 Open' },
+  { id:'tx5', userId:'me', kind:'topup', amount: 20, ts: now()-2*86400000, note:'Wallet top-up' }
+];
+PLATFORM.revenue = 120.45;
+PLATFORM.history = [
+  { ts: now()-6*86400000, kind:'court', gross:18, fee:1.8, net:16.2, sourceId:'h1' },
+  { ts: now()-3*86400000, kind:'chat', gross:1.99, fee:1.99, net:0, sourceId:'ch1' },
+  { ts: now()-2*86400000, kind:'tournament', gross:5, fee:0.75, net:4.25, sourceId:'t1' }
+];
+
+/* -------- Pending approvals -------- */
+DB.pending.vendors = [
+  { id:'pv1', userId:'b7', itemName:'Nike Zoom Freak 5', category:'Sneakers',
+    price:88, submitted:'2h ago', note:'Worn twice, basically new. Comes with box.',
+    photos:2, weight:'1.1 kg', shipping:'Local pickup only', listingFeePaid:true },
+  { id:'pv2', userId:'b10', itemName:'Wilson Evolution Indoor', category:'Balls',
+    price:55, submitted:'5h ago', note:'Barely used — I play outdoor mostly.',
+    photos:4, weight:'0.6 kg', shipping:'Pickup or meet-up', listingFeePaid:true }
+];
+DB.pending.crews = [
+  { id:'pc1', creatorId:'b4', name:'Sunrise Run Club',
+    desc:'Early morning runs. 6–8am, 5v5 focus.', members:'42', submitted:'6h ago',
+    region:'Central', meetingPlace:'Cape Coast Sports Complex', schedule:'Mon, Wed, Fri · 6:00am' },
+  { id:'pc2', creatorId:'b9', name:'Ladies Hoops Ghana',
+    desc:'Women-only pickups and skills clinics.', members:'88', submitted:'1d ago',
+    region:'Northern', meetingPlace:'Tamale Central Courts', schedule:'Saturdays · 4:00pm' }
+];
+DB.pending.trainers = [
+  { id:'ptr1', userId:'b6', courtId:'h2', rate:32, spec:'Baseline consistency · Post play',
+    exp:'7 yrs', submitted:'3h ago', cert:'USA Basketball Level 2', availability:'Weekdays 5–8pm' },
+  { id:'ptr2', userId:'b12', courtId:'h4', rate:38, spec:'Defensive footwork · Rebounding',
+    exp:'5 yrs', submitted:'1d ago', cert:'NESTA Certified', availability:'Weekends all day' }
+];
+DB.pending.courts = [
+  { id:'pct1', name:'Eastside Hoops Hub', address:'24 Spintex Rd, Accra', price:20, surface:'Indoor',
+    courtCount:4, amenities:['Indoor AC','Scoreboard','Pro shop'], submittedBy:'b3', submitted:'4h ago',
+    contact:'+233 55 123 4567', hours:'6:00am – 10:00pm', notes:'Brand new facility, 4 courts all lit.' },
+  { id:'pct2', name:'Achimota Street Courts', address:'Achimota, Accra', price:8, surface:'Outdoor',
+    courtCount:2, amenities:['Public access','Lighting'], submittedBy:'b2', submitted:'1d ago',
+    contact:'+233 24 998 1122', hours:'7:00am – 7:00pm', notes:'Public courts, first-come basis mostly.' }
+];
+
+/* -------- Match history generator -------- */
+const SCORES_W = ['21-18','18-14','21-9','24-22','19-15'];
+const SCORES_L = ['18-21','14-18','9-21','22-24','15-19'];
+function genMatches(u, n){
+  const pool = DB.users.filter(x => x.id !== u.id && x.role !== 'admin');
+  const out = [];
+  for (let i = 0; i < n; i++){
+    const opp = pool[(i*5 + u.name.length) % pool.length];
+    const w = (i*7 + u.name.length) % 3 !== 0;
+    out.push({
+      vs: opp.name, id: opp.id, res: w ? 'W' : 'L',
+      score: w ? SCORES_W[i % SCORES_W.length] : SCORES_L[i % SCORES_L.length],
+      date: (2 + i*5) + ' Jun',
+      surface: i % 2 ? 'Outdoor' : u.preferredCourt,
+      verified: i < 3
+    });
   }
   return out;
 }
+DB.users.forEach(u => {
+  if (u.role === 'admin') return;
+  const played = 20 + (u.points % 22);
+  const wins = Math.round(played * (0.38 + (parseFloat(u.skill)-3)/6));
+  u.stats = {
+    games: played, wins: Math.min(wins, played-4), losses: 0,
+    ppg: +(12 + Math.random() * 10).toFixed(1),
+    apg: +(3 + Math.random() * 6).toFixed(1),
+    rpg: +(4 + Math.random() * 6).toFixed(1)
+  };
+  u.stats.losses = u.stats.games - u.stats.wins;
+  u.matches = genMatches(u, 5);
+});
 
-function seed(){
-  /* ME */
-  DB.me = mkUser({
-    id:'me', name:'Marcus Bell', initials:'MB', hue:22, skill:4.0, position:'SG', dominant:'Right',
-    preferredCourt:'Indoor', city:'Accra', region:'Greater Accra', points:2140, dist:0,
-    wallet:24.50, verified:true, rankG:3, roles:['player'],
-    streaks:{current:3,longest:8}, badges:['first-game','10-games','sharp-shooter'],
-    stats:{games:42,wins:27,losses:15,ppg:18.4,apg:5.2,rpg:6.1},
-    bio:'Two-guard out of Accra. Catch me at Riverside most evenings. Pull-up is automatic.',
-    playstyle:['Sharpshooter','Playmaker'], avail:'Weekday evenings',
-    tx:[
-      { ts:Date.now()-86400000*2, kind:'topup', amount:20.00, fee:0, note:'Wallet top-up' },
-      { ts:Date.now()-86400000*3, kind:'requestPlayer', amount:-0.99, fee:0, note:'Run invite · Jaylen Carter' },
-      { ts:Date.now()-86400000*5, kind:'court', amount:-19.80, fee:1.80, note:'Riverside Basketball Club' }
-    ]
-  });
-  DB.me.matches = genMatches('me');
-
-  const P = [
-    {id:'b1',name:'Jaylen Carter',hue:205,skill:4.5,position:'PG',city:'East Legon',points:3210,dist:0.4,rankN:4,roles:['player']},
-    {id:'b2',name:'Devin Osei',hue:12,skill:4.0,position:'SG',city:'Osu',points:2880,dist:1.1,rankN:6,roles:['player']},
-    {id:'b3',name:'Tyler Nakamura',hue:268,skill:5.0,position:'SF',city:'Airport Hills',points:4020,dist:2.6,rankN:2,roles:['player']},
-    {id:'b4',name:'Sam Okafor',hue:150,skill:3.5,position:'PF',city:'Cape Coast',region:'Central',points:1420,dist:4.2,rankG:8,roles:['trainer'],trainerRate:30,specialty:'Post moves · Rebounding',coachCourt:'h1'},
-    {id:'b5',name:'Zion Mensah',hue:320,skill:4.5,position:'PG',city:'Labone',points:3120,dist:0.9,rankN:3,roles:['player']},
-    {id:'b6',name:'Kwame Boateng',hue:40,skill:4.0,position:'C',city:'Kumasi',region:'Ashanti',points:2540,dist:6.4,rankN:7,roles:['player','crewleader'],crewId:'c1'},
-    {id:'b7',name:'Priya Sharma',hue:340,skill:3.5,position:'SG',city:'Madina',points:1180,dist:3.1,rankG:11,roles:['player']},
-    {id:'b8',name:'Andre Williams',hue:230,skill:5.5,position:'SF',city:'Cantonments',points:4480,dist:1.8,rankN:1,roles:['player']},
-    {id:'b9',name:'Zara Diallo',hue:285,skill:4.0,position:'PG',city:'Tamale',region:'Northern',points:2260,dist:8.9,rankN:8,roles:['player']},
-    {id:'b10',name:'Tomás Reyes',hue:100,skill:3.0,position:'PF',city:'Winneba',region:'Central',points:760,dist:5.5,rankG:16,roles:['player','vendor']},
-    {id:'b11',name:'Ivy Chen',hue:180,skill:4.5,position:'SG',city:'Obuasi',region:'Ashanti',points:2980,dist:7.2,rankN:5,roles:['player']},
-    {id:'b12',name:'Omar Bello',hue:55,skill:3.5,position:'C',city:'Teshie',points:1340,dist:2.2,rankG:9,roles:['player','trainer'],trainerRate:35,specialty:'Shot blocking · Footwork',coachCourt:'h4'}
-  ];
-  P.forEach(p => {
-    const u = mkUser(p); u.matches = genMatches(u.id);
-    const r = rngFrom(u.id);
-    const games = 20 + Math.floor(r()*40);
-    const wins = Math.floor(games * (0.35 + u.skill/12));
-    u.stats = { games, wins, losses:games-wins,
-      ppg: Math.round((8+u.skill*3+r()*4)*10)/10,
-      apg: Math.round((1.5+u.skill*1.1+r()*2)*10)/10,
-      rpg: Math.round((2+u.skill*1.4+r()*2)*10)/10 };
-    u.avail = ['Weekday evenings','Weekends','Mornings','Nights'][Math.floor(r()*4)];
-    u.status = r()>0.5 ? 'available' : 'busy';
-    u.wallet = Math.round(r()*60*100)/100;
-    u.badges = ['first-game','10-games'];
-    if (u.skill>=4.5) u.badges.push('sharp-shooter');
-    if (u.stats.wins>25) u.badges.push('50-games');
-    u.bio = u.position+' · '+u.city+'. '+u.avail+' runs.';
-    u.playstyle = [['Sharpshooter','Playmaker','Defender','Post'][Math.floor(r()*4)]];
-    u.verified = r()>0.4;
-    DB.users.push(u);
-  });
-  DB.users.push(DB.me);
-
-  /* COURTS */
-  DB.courts = [
-    {id:'h1',name:'Riverside Basketball Club',rating:4.8,price:18,dist:0.6,surface:'Indoor',courtCount:6,hue:22,status:'approved',
-      address:'14 Riverside Drive, East Legon, Accra',courtStatus:'open',
-      amenities:['Indoor AC','Scoreboard','Bleachers','Showers','Locker rooms','Parking','Pro shop'],
-      trainers:['b4'],playersHere:['b1','b5','b7'],bookings:[]},
-    {id:'h2',name:'Northgate Outdoor Courts',rating:4.3,price:10,dist:1.9,surface:'Outdoor',courtCount:4,hue:200,status:'approved',
-      address:'Northgate Ave, Madina, Accra',courtStatus:'open',
-      amenities:['Lighting','Water fountain','Parking','Bleachers'],trainers:[],playersHere:['b2','b9'],bookings:[]},
-    {id:'h3',name:'Prime Hardwood Academy',rating:4.9,price:26,dist:3.4,surface:'Indoor',courtCount:8,hue:268,status:'approved',
-      address:'7 Aviation Rd, Airport Hills, Accra',courtStatus:'open',
-      amenities:['Indoor AC','Scoreboard','Locker rooms','Showers','Sound system','Pro shop','Parking'],
-      trainers:[],playersHere:['b3','b8'],bookings:[]},
-    {id:'h4',name:'Sunset Hoops Center',rating:4.6,price:22,dist:2.7,surface:'Indoor',courtCount:5,hue:12,status:'approved',
-      address:'22 Boundary Rd, Labone, Accra',courtStatus:'open',
-      amenities:['Indoor AC','Scoreboard','Bleachers','Showers','Water fountain'],
-      trainers:['b12'],playersHere:['b5','b6','b11'],bookings:[]},
-    {id:'h5',name:'Harborview Street Courts',rating:4.1,price:14,dist:4.8,surface:'Street',courtCount:3,hue:150,status:'approved',
-      address:'Harborview Ln, Teshie, Accra',courtStatus:'open',
-      amenities:['Lighting','Water fountain','Sound system'],trainers:[],playersHere:['b12','b10'],bookings:[]}
-  ];
-
-  /* CREWS */
-  DB.crews = [
-    {id:'c1',name:'RUBIX Hoops Community',members:1240,fee:2.99,dist:0.8,leader:'b6',hue:22,status:'approved',verified:true,
-      desc:'The flagship RUBIX run crew. Weekly 5v5 at Riverside, monthly ladder nights, and open runs every Saturday morning. All skill levels welcome — we ball, we build.'},
-    {id:'c2',name:'Downtown 3v3 League',members:480,fee:0,dist:2.3,leader:'b3',hue:268,status:'approved',verified:true,
-      desc:'Competitive 3v3 league running Tuesday and Thursday nights. Draft-based teams, live stat tracking, season standings.'},
-    {id:'c3',name:'Weekend Run Crew',members:156,fee:0,dist:4.1,leader:'b7',hue:150,status:'approved',verified:false,
-      desc:'Casual weekend pickup. Show up, get a game, no egos. We run at Northgate and Harborview depending on weather.'}
-  ];
-
-  /* SHOP */
-  DB.shop = [
-    {id:'s1',title:'Nike LeBron 21',price:95,condition:'Good',seller:'b10',category:'Sneakers',place:'Winneba',status:'approved',seed:'lebron21'},
-    {id:'s2',title:'Adidas Harden Vol. 8',price:75,condition:'Like new',seller:'b7',category:'Sneakers',place:'Madina',status:'approved',seed:'harden8'},
-    {id:'s3',title:'Spalding NBA Official',price:45,condition:'Good',seller:'b12',category:'Balls',place:'Teshie',status:'approved',seed:'spalding'},
-    {id:'s4',title:'Wilson Evolution',price:60,condition:'New',seller:'b4',category:'Balls',place:'Cape Coast',status:'approved',seed:'wilsonEvo'},
-    {id:'s5',title:'Mitchell & Ness Kobe Rookie',price:120,condition:'New',seller:'b1',category:'Jerseys',place:'East Legon',status:'approved',seed:'kobeJersey'},
-    {id:'s6',title:'Shooting Sleeve (L)',price:15,condition:'Good',seller:'b9',category:'Gear',place:'Tamale',status:'approved',seed:'sleeve'},
-    {id:'s7',title:'Ankle Braces (Pair)',price:20,condition:'New',seller:'b11',category:'Gear',place:'Obuasi',status:'approved',seed:'ankleBrace'},
-    {id:'s8',title:'Compression Tights',price:30,condition:'Like new',seller:'b2',category:'Gear',place:'Osu',status:'approved',seed:'tights'}
-  ];
-
-  /* LOST & FOUND */
-  DB.lost = [
-    {id:'lf1',type:'lost',title:'Spalding NBA ball',emoji:'🏀',place:'Riverside Basketball Club',ts:Date.now()-3600e3*5,seed:'lostball',note:'Left it on court 3 after the 8pm run. Has my initials MB in marker.'},
-    {id:'lf2',type:'lost',title:'Black Kyrie 7 sneakers',emoji:'👟',place:'Northgate Outdoor Courts',ts:Date.now()-86400e3*2,seed:'lostsneaker',note:'Size 10.5, black and orange. Bench side near the water fountain.'},
-    {id:'lf3',type:'found',title:'Blue Lakers jersey #23',emoji:'👕',place:'Sunset Hoops Center',ts:Date.now()-86400e3*1,seed:'foundjersey',note:'Found in the locker room after league night. Hanging at the front desk.'},
-    {id:'lf4',type:'found',title:'Stainless water bottle',emoji:'🍶',place:'Prime Hardwood Academy',ts:Date.now()-3600e3*20,seed:'foundbottle',note:'Grey bottle with a RUBIX sticker on it. Front desk has it.'}
-  ];
-
-  /* TOURNAMENTS */
-  DB.tourneys = [
-    {id:'t1',name:'Riverside 3v3 Open',format:'3v3',entry:5,prize:60,court:'h1',
-      teams:['East Legon Elite','Osu Kings','Labone Ballers'],maxTeams:8,
-      agreeBy:Date.now()+86400e3*7,status:'open',host:'b1',seed:'t1'},
-    {id:'t2',name:'Weekend 5v5 League',format:'5v5',entry:3,prize:25,court:'h4',
-      teams:['Riverside Runners'],maxTeams:6,
-      agreeBy:Date.now()+86400e3*11,status:'open',host:'b5',seed:'t2'},
-    {id:'t3',name:'Sunset 1v1 Ladder',format:'1v1',entry:4,prize:40,court:'h4',
-      teams:[],maxTeams:8,
-      agreeBy:Date.now()+86400e3*4,status:'draft',host:'b8',seed:'t3'}
-  ];
-  DB.tourneys.forEach(t => { t.bracket = Tournaments.buildBracket(t.teams); });
-
-  /* CHATS */
-  DB.chats = [
-    {id:'ch1',with:'b1',unlocked:true,msgs:[
-      {from:'b1',text:'Yo Marcus — you running at Riverside tonight?',ts:Date.now()-3600e3*6},
-      {from:'me',text:'Yeah, 7pm court 2. Bring the squad.',ts:Date.now()-3600e3*5},
-      {from:'b1',text:'Bet. I got two more coming.',ts:Date.now()-3600e3*4}
-    ]},
-    {id:'ch2',with:'b3',unlocked:false,msgs:[
-      {from:'b3',text:'Saw your name on the 1v1 ladder. Let’s set it up.',ts:Date.now()-3600e3*30}
-    ]},
-    {id:'ch3',with:'b5',unlocked:true,msgs:[
-      {from:'b5',text:'Court 4 is free at 9. You in?',ts:Date.now()-3600e3*20}
-    ]}
-  ];
-
-  /* FEED */
-  DB.feed = [
-    {id:'f1',user:'b1',type:'Win',text:'Buzzer beater from the wing to close out Riverside 5v5. 78-76. Squad showed up tonight. 🔥',ts:Date.now()-3600e3*2,seed:'feed1',likes:24,comments:6},
-    {id:'f2',user:'b7',type:'Crew',text:'Weekend Run Crew just hit 156 members. Saturday morning runs at Northgate, 7am. Free, no egos, all levels.',ts:Date.now()-3600e3*9,seed:'feed2',likes:41,comments:12},
-    {id:'f3',user:'b8',type:'Achievement',text:'Fifth straight win. The jumper is finally falling at a rate I can live with.',ts:Date.now()-3600e3*26,seed:'feed3',likes:63,comments:9},
-    {id:'f4',user:'b4',type:'Post',text:'Open training session at Riverside this Sunday, 9am. Working on pick-and-roll reads and closeouts. Two spots left.',ts:Date.now()-3600e3*40,seed:'feed4',likes:18,comments:4}
-  ];
-
-  /* REPORTS */
-  DB.reports = [
-    {id:'r1',type:'No-show',reporter:'b2',target:'b12',status:'open',ts:Date.now()-3600e3*8,
-      text:'Booked a court share, confirmed twice, never showed. Left us short a player for the whole run.'},
-    {id:'r2',type:'Fake profile',reporter:'b5',target:'b10',status:'open',ts:Date.now()-86400e3*1,
-      text:'Stats and skill rating look inflated. Photos appear to be of a different player entirely.'}
-  ];
-
-  /* PENDING */
-  DB.pending.vendors = [
-    {id:'pv1',name:'Yonex Ezone Court Sneakers',category:'Sneakers',price:88,condition:'New',
-      seller:'b7',notes:'Size 10.5, worn twice indoors only. Original box and receipt included.',t:Date.now()-86400e3*2},
-    {id:'pv2',name:'Wilson Evolution Official',category:'Balls',price:55,condition:'Like new',
-      seller:'b10',notes:'Official size 7, indoor only. Holds air perfectly, no scuffs.',t:Date.now()-86400e3*1}
-  ];
-  DB.pending.crews = [
-    {id:'pc1',name:'Sunrise Run Club',leader:'b6',members:38,region:'Greater Accra',fee:'Free',
-      notes:'Early morning runs, Monday/Wednesday/Friday at 6am. Aimed at working players.',contact:'sunrise@rubix.app',t:Date.now()-86400e3*3},
-    {id:'pc2',name:'Ladies Hoops Ghana',leader:'b11',members:62,region:'Ashanti',fee:'$1.99/mo',
-      notes:'Women-first crew with weekly skills clinics and a monthly 3v3 ladder.',contact:'ladieshoops@rubix.app',t:Date.now()-86400e3*4}
-  ];
-  DB.pending.trainers = [
-    {id:'pt1',name:'Coach Jaylen',user:'b1',court:'h2',specialty:'Shooting mechanics · Ball handling',
-      rate:35,exp:'6 years coaching. Former university guard. 40+ players trained.',certs:'FIBA Level 1, CPR certified',
-      contact:'jaylen@rubix.app',t:Date.now()-86400e3*2},
-    {id:'pt2',name:'Coach Omar',user:'b12',court:'h4',specialty:'Shot blocking · Footwork',
-      rate:32,exp:'4 years coaching bigs. Specialises in defensive positioning.',certs:'CPR certified',
-      contact:'omar@rubix.app',t:Date.now()-86400e3*5}
-  ];
-  DB.pending.courts = [
-    {id:'ph1',name:'Eastside Hoops Hub',address:'31 Spintex Rd, Accra',surface:'Indoor',price:20,
-      courtCount:4,amenities:['Indoor AC','Scoreboard','Showers','Parking'],contact:'eastside@rubix.app',t:Date.now()-86400e3*3},
-    {id:'ph2',name:'Achimota Street Courts',address:'Achimota Mile 7, Accra',surface:'Street',price:8,
-      courtCount:2,amenities:['Lighting','Water fountain'],contact:'achimota@rubix.app',t:Date.now()-86400e3*6}
-  ];
-}
-
-/* 4. SESSION · WALLET · MONETIZATION */
-const SESSION = { mode:null, adminId:null };
-const PLATFORM = { revenue:1842.60, history:[] };
-const PRICES = {
-  requestPlayer:{flat:0.99,label:'Run invite',body:'Send a direct run invite to a nearby baller.'},
-  unlockChat:{flat:1.99,label:'Chat unlock',body:'Unlock this conversation permanently. One-time per person.'},
-  vendorListing:{flat:4.99,label:'Vendor listing',body:'Publish one listing to the RUBIX marketplace.'},
-  tournamentHost:{flat:9.99,label:'Tournament host',body:'Host a tournament and open team registration.'},
-  crewCreate:{flat:14.99,label:'Crew creation',body:'Create and lead your own pickup run crew.'},
-  priorityBooking:{flat:2.99,label:'Priority booking',body:'Jump the queue on popular court slots.'}
-};
-const RATES = {
-  court:{rate:0.10,label:'Court booking'},
-  trainer:{rate:0.12,label:'Trainer session'},
-  tourney:{rate:0.15,label:'Tournament entry'},
-  shop:{rate:0.08,label:'Shop sale'},
-  crew:{rate:0.05,label:'Crew membership'}
+/* ============================================================
+   SECTION 4 — SESSION · WALLET · MONETIZATION
+   ============================================================ */
+const SESSION = {
+  mode: null,
+  adminId: null
 };
 
-function userById(id){
-  if (id === 'me') return DB.me;
-  return DB.users.find(u => u.id === id) || null;
-}
-function charge(userId, opts){
-  const o = opts || {};
-  const u = userById(userId);
-  if (!u) return { ok:false, error:'User not found', fee:0, net:0, total:0 };
-  const total = round2(o.amount || 0);
-  if (u.wallet < total) return { ok:false, error:'Insufficient balance', fee:0, net:0, total };
-  const rate = o.rate || 0;
-  const fee = o.sourceId ? round2(total * rate) : total;
-  const net = round2(total - fee);
-  u.wallet = round2(u.wallet - total);
-  u.tx = u.tx || [];
-  u.tx.unshift({ ts:Date.now(), kind:o.kind, amount:-total, fee, note:o.note || o.kind });
-  PLATFORM.revenue = round2(PLATFORM.revenue + fee);
-  PLATFORM.history.unshift({ ts:Date.now(), kind:o.kind, gross:total, fee, net, sourceId:o.sourceId||null, userId });
-  if (o.sourceId && net > 0){
-    const p = userById(o.sourceId);
-    if (p){
-      p.wallet = round2((p.wallet||0) + net);
-      p.tx = p.tx || [];
-      p.tx.unshift({ ts:Date.now(), kind:o.kind, amount:net, fee:0, note:'Payout · '+(o.note||o.kind) });
-    }
-  }
-  return { ok:true, fee, net, total };
-}
+const ADMIN = { log: [] };
 
-/* 5. TOURNAMENT ENGINE */
-const Tournaments = {
-  nextPow2(n){ let p=2; while (p<n) p*=2; return p; },
-  buildBracket(teams){
-    const list = (teams||[]).slice();
-    const size = Math.max(2, Tournaments.nextPow2(list.length || 2));
-    const slots = [];
-    for (let i=0;i<size;i++) slots.push(list[i]||null);
-    const rounds = [];
-    const first = { games:[] };
-    for (let i=0;i<size;i+=2){
-      const a = slots[i], b = slots[i+1];
-      first.games.push({ a, b, sa:null, sb:null,
-        status:(a&&b)?'pending':((a||b)?'bye':'empty') });
-    }
-    rounds.push(first);
-    let count = size/2;
-    while (count > 1){
-      count = count/2;
-      const r = { games:[] };
-      for (let i=0;i<count;i++) r.games.push({ a:null,b:null,sa:null,sb:null,status:'empty' });
-      rounds.push(r);
-    }
-    Tournaments.advanceRound({ bracket:rounds });
-    return rounds;
-  },
-  advanceRound(t){
-    const rounds = t.bracket;
-    for (let r=0;r<rounds.length-1;r++){
-      const cur = rounds[r], nxt = rounds[r+1];
-      cur.games.forEach((g,i) => {
-        const slot = Math.floor(i/2);
-        const target = nxt.games[slot];
-        if (!target) return;
-        let winner = null;
-        if (g.status === 'bye') winner = g.a || g.b;
-        else if (g.status === 'done') winner = (g.sa > g.sb) ? g.a : g.b;
-        if (winner){
-          if (i%2===0) target.a = winner; else target.b = winner;
-          if (target.a && target.b) target.status = 'pending';
-          else if (target.a || target.b) target.status = 'bye';
-        }
-      });
-    }
-  },
-  recordResult(t, ri, gi, sa, sb){
-    const g = t.bracket[ri].games[gi];
-    if (!g || g.status === 'bye' || g.status === 'empty') return false;
-    g.sa = Number(sa); g.sb = Number(sb); g.status = 'done';
-    Tournaments.advanceRound(t);
-    return true;
-  }
-};
-
-/* 6. CHAT ENGINE */
-const Chat = {
-  threadWith(id){ return DB.chats.find(c => c.with === id) || null; },
-  ensureThread(id){
-    let c = Chat.threadWith(id);
-    if (!c){ c = { id:uid('ch'), with:id, unlocked:false, msgs:[] }; DB.chats.unshift(c); }
-    return c;
-  },
-  send(id, text){
-    const c = Chat.ensureThread(id);
-    c.msgs.push({ from:'me', text, ts:Date.now() });
-    return c;
-  },
-  unreadCount(){
-    return DB.chats.filter(c => c.unlocked && c.msgs.length && c.msgs[c.msgs.length-1].from !== 'me').length;
-  },
-  last(c){ return c.msgs.length ? c.msgs[c.msgs.length-1] : { text:'No messages yet', ts:Date.now() }; }
-};
-
-/* 7. VERIFY */
-const Verify = {
-  propose(g){ g.verified=false; g.vstate='proposed'; return g; },
-  confirm(g){ g.verified=true; g.vstate='confirmed'; return g; },
-  dispute(g){ g.verified=false; g.vstate='disputed'; return g; }
-};
-
-/* 8. AI */
-const AI = {
-  matchScore(me, u){
-    let s = 40;
-    s += clamp(22 - Math.abs(me.skill-u.skill)*16, -14, 22);
-    if (u.position !== me.position) s += 8;
-    if (u.preferredCourt === me.preferredCourt) s += 10; else s += 3;
-    if (u.region === me.region) s += 11;
-    if (u.city === me.city) s += 6;
-    if (u.avail && me.avail && u.avail === me.avail) s += 9;
-    if (u.status === 'available') s += 7;
-    s += clamp(10 - u.dist*1.6, -6, 10);
-    return clamp(Math.round(s), 30, 99);
-  },
-  topMatches(n){
-    return DB.users.filter(u => u.id !== 'me')
-      .map(u => ({ u, score:AI.matchScore(DB.me, u) }))
-      .sort((a,b) => b.score - a.score)
-      .slice(0, n||6);
-  }
-};
-
-/* 9. WEATHER */
-const Weather = {
-  forCourt(c){
-    if (c.surface === 'Indoor') return null;
-    const r = rngFrom(c.id + new Date().toDateString());
-    const conds = [['☀️','Sunny'],['⛅','Partly cloudy'],['🌤️','Clear skies'],['🌦️','Passing showers'],['🌧️','Light rain'],['🌬️','Breezy']];
-    const pick = conds[Math.floor(r()*conds.length)];
-    const temp = 24 + Math.floor(r()*9);
-    const days = [];
-    const names = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    const today = new Date().getDay();
-    for (let i=0;i<5;i++){
-      const c2 = conds[Math.floor(r()*conds.length)];
-      days.push({ d:names[(today+i)%7], e:c2[0], t:23+Math.floor(r()*10) });
-    }
-    return { temp, cond:pick[1], emoji:pick[0], days };
-  }
-};
-
-/* 10. STATE */
-const state = {
-  gateScreen:'entry',
-  discoverFilter:'all',
-  rankList:'national', rankQuery:'', rankRegion:'All', rankLevel:'All',
-  lfFilter:'all',
-  booking:{ date:'Today', time:null },
-  vendorDraft:null, coachCourt:null, courtSurface:null, hostFormat:null,
-  adminTab:'overview', adminAppTab:'vendors', adminUserQuery:'',
-  adminReportFilter:'open',
-  gateAdminEmail:'', gateAdminPin:'',
-  shopFilter:'all', shopQuery:'', courtQuery:'',
-  tourneyFilter:'open',
-  requestsSent:{},
-  topupPick:25,
-  feedLikes:{},
-  form:{},
-  notifs:{ push:true, email:false, nearby:true, invites:true, chat:true, bookings:true, crew:false, quiet:false },
-  safety:{ idVerified:true, photoVerified:false, shareLocation:true },
-  activeChat:null, chatMsg:'',
-  _nearbyShown:false
-};
-
-const nav = { tab:'discover', stack:[] };
-const TABS = [
-  {id:'discover',label:'DISCOVER',icon:'pin'},
-  {id:'tourneys',label:'TOURNEYS',icon:'trophy'},
-  {id:'rankings',label:'RANKINGS',icon:'chart'},
-  {id:'courts',label:'COURTS',icon:'ball'},
-  {id:'more',label:'MORE',icon:'grid'}
-];
-const TAB_TITLES = { discover:'Discover', tourneys:'Tournaments', rankings:'Rankings', courts:'Courts', more:'More', admin:'Admin Console' };
-const DARK_SCREENS = new Set(['admin','adminappdetail','adminuseredit']);
-
-function currentScreen(){
-  if (nav.stack.length) return nav.stack[nav.stack.length-1];
-  return { screen:nav.tab, params:{}, title:TAB_TITLES[nav.tab]||'' };
-}
-function go(screen, params, title){
-  nav.stack.push({ screen, params:params||{}, title:title||'' });
-  render();
-  const m = $('#main'); if (m) m.scrollTop = 0;
-}
-function back(){ nav.stack.pop(); render(); }
-function setTab(id){
-  nav.tab = id; nav.stack = []; render();
-  const m = $('#main'); if (m) m.scrollTop = 0;
-}
-
-/* SHARED PARTIALS */
-function avatar(u, size, extra){
-  if (!u) return '';
-  const cls = 'av av-' + (size||'md') + ' ' + (extra||'');
-  return '<div class="' + cls + '" style="--h:' + (u.hue||200) + '">' +
-    '<span>' + escapeHTML(u.initials||'') + '</span>' +
-    '<img src="' + img(u.seed||u.id, 160, 160) + '" alt="" loading="lazy" onerror="this.remove()">' +
-  '</div>';
-}
-function avatarStack(ids, size){
-  return '<div class="av-stack">' + ids.map(id => avatar(userById(id), size||'xs')).join('') + '</div>';
-}
-function headerHTML(cur, dark){
-  const isPushed = nav.stack.length > 0;
-  let right = '';
-  if (!isPushed && cur.screen === 'more') right = '<button class="hdr-btn" data-act="wallet">' + ico('wallet','ic-sm') + '</button>';
-  else if (!isPushed && cur.screen === 'tourneys') right = '<button class="hdr-btn" data-act="host">' + ico('plus','ic-sm') + '</button>';
-  else if (!isPushed && cur.screen === 'courts') right = '<button class="hdr-btn" data-act="courtsubmit">' + ico('plus','ic-sm') + '</button>';
-  const left = isPushed ? '<button class="hdr-back" data-act="back">' + ico('back','ic-sm') + '</button>' : '';
-  return '<header class="hdr' + (dark?' dark':'') + '">' + left +
-    '<div class="hdr-title">' + escapeHTML(cur.title || TAB_TITLES[cur.screen] || '') + '</div>' + right + '</header>';
-}
-function tabbarHTML(){
-  return '<nav class="tabbar">' + TABS.map(t =>
-    '<button class="tab' + (nav.tab===t.id && !nav.stack.length ? ' on':'') + '" data-act="tab" data-v="' + t.id + '">' +
-    ico(t.icon) + '<span>' + t.label + '</span></button>').join('') + '</nav>';
-}
-
-/* 11. ENTRY GATE + ADMIN LOGIN */
-function entryGateScreen(){
-  return '<div class="gate">' +
-    '<div class="gate-brand"><div class="logo">R</div>' +
-    '<h1>RUBIX<span>HOOPS</span></h1><p>Find runs. Book courts. Ball out.</p></div>' +
-    '<div class="gate-cards">' +
-      '<button class="gate-card" data-act="enterplayer">' +
-        '<div class="gc-ico">' + ico('user','ic-lg') + '</div>' +
-        '<div class="gc-txt"><b>Continue as Player</b><span>Find courts, crews &amp; runs near you</span></div>' +
-        ico('arrow','gc-arrow') + '</button>' +
-      '<button class="gate-card admin" data-act="enteradmin">' +
-        '<div class="gc-ico orange">' + ico('shield','ic-lg') + '</div>' +
-        '<div class="gc-txt"><b>Enter Admin Console</b><span>Approvals · Users · Revenue</span></div>' +
-        '<span class="badge-restr">RESTRICTED</span></button>' +
-    '</div>' +
-    '<div class="gate-foot">NO ADS · EVER · v1.0</div></div>';
-}
-function adminLoginScreen(){
-  return '<div class="login-wrap">' +
-    '<button class="hdr-back" data-act="gateback" style="background:#1c2029;color:#fff">' + ico('back','ic-sm') + '</button>' +
-    '<h2>Admin Console</h2>' +
-    '<p class="sub">Restricted access. Operator credentials required to manage approvals, users, rankings and revenue.</p>' +
-    '<div class="field dark"><label>Operator email</label>' +
-    '<input data-input="gateAdminEmail" data-live="1" type="email" autocomplete="off" placeholder="admin@rubix.app" value="' + escapeHTML(state.gateAdminEmail) + '"></div>' +
-    '<div class="field dark"><label>Passcode</label>' +
-    '<input data-input="gateAdminPin" type="password" autocomplete="off" placeholder="••••" value="' + escapeHTML(state.gateAdminPin) + '"></div>' +
-    '<div id="loginErr"></div>' +
-    '<div style="margin-top:18px"><button class="btn btn-primary btn-block" data-act="adminauth">Sign in to console</button></div>' +
-    '<p class="hint">Demo credentials — admin@rubix.app / 1234</p></div>';
-}
-
-/* 12. DISCOVER */
-function pinPos(id){ const r = rngFrom('pos'+id); return { x:10+Math.round(r()*80), y:8+Math.round(r()*78) }; }
-function mapHTML(){
-  const me = pinPos('me_center'); let pins = '';
-  DB.users.filter(u => u.id !== 'me' && u.dist < 6).slice(0,7).forEach(u => {
-    const p = pinPos(u.id);
-    pins += '<button class="pin pin-player" style="left:' + p.x + '%;top:' + p.y + '%;background:linear-gradient(135deg,hsl(' + u.hue + ' 78% 56%),hsl(' + (u.hue+42) + ' 78% 44%))" data-act="player" data-id="' + u.id + '"><span>' + escapeHTML(u.initials) + '</span></button>';
-  });
-  DB.courts.forEach(c => { const p = pinPos(c.id); pins += '<button class="pin pin-court" style="left:' + p.x + '%;top:' + p.y + '%" data-act="court" data-id="' + c.id + '">🏀</button>'; });
-  DB.crews.forEach(c => { const p = pinPos(c.id); pins += '<button class="pin pin-crew" style="left:' + p.x + '%;top:' + p.y + '%" data-act="crew" data-id="' + c.id + '">👥</button>'; });
-  pins += '<div class="pin pin-me" style="left:' + me.x + '%;top:' + me.y + '%"></div>';
-  return '<div class="map"><svg class="map-svg" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">' +
-    '<rect width="400" height="400" fill="#dfe4dc"/>' +
-    '<path d="M0 90h400M0 210h400M0 320h400M70 0v400M190 0v400M300 0v400" stroke="#cdd4c9" stroke-width="14" fill="none"/>' +
-    '<path d="M0 150h400M0 265h400M130 0v400M250 0v400" stroke="#e6ebe1" stroke-width="7" fill="none"/>' +
-    '<rect x="20" y="20" width="90" height="60" rx="6" fill="#d3dacd"/>' +
-    '<rect x="230" y="230" width="120" height="70" rx="6" fill="#d3dacd"/>' +
-    '<rect x="300" y="30" width="80" height="90" rx="6" fill="#cbd3c6"/>' +
-    '<rect x="30" y="250" width="80" height="110" rx="6" fill="#cbd3c6"/>' +
-    '<circle cx="200" cy="200" r="42" fill="#e9ede5" stroke="#c6cec1" stroke-width="3"/>' +
-    '<rect x="178" y="178" width="44" height="44" rx="4" fill="none" stroke="#b9c2b4" stroke-width="2.5"/>' +
-    '<circle cx="200" cy="200" r="9" fill="none" stroke="#b9c2b4" stroke-width="2.5"/></svg>' +
-    pins + '<div class="map-fade"></div></div>';
-}
-function discoverEntities(){
-  const f = state.discoverFilter; const out = [];
-  if (f === 'all' || f === 'ballers'){
-    DB.users.filter(u => u.id !== 'me').forEach(u => out.push({ kind:'baller', id:u.id, dist:u.dist, u,
-      title:u.name, sub:u.position+' · '+u.city+' · '+u.skill.toFixed(1)+' skill' }));
-  }
-  if (f === 'all' || f === 'courts'){
-    DB.courts.forEach(c => out.push({ kind:'court', id:c.id, dist:c.dist, court:c,
-      title:c.name, sub:c.surface+' · '+c.courtCount+' courts · $'+c.price+'/hr' }));
-  }
-  if (f === 'all' || f === 'crews'){
-    DB.crews.forEach(c => out.push({ kind:'crew', id:c.id, dist:c.dist, crew:c,
-      title:c.name, sub:fmt(c.members)+' members · '+(c.fee?'$'+c.fee.toFixed(2)+'/mo':'Free') }));
-  }
-  return out.sort((a,b) => a.dist - b.dist).slice(0, 14);
-}
-function discoverScreen(){
-  const top = AI.topMatches(1)[0];
-  const list = discoverEntities();
-  const chips = [{id:'all',label:'All'},{id:'ballers',label:'Ballers'},{id:'courts',label:'Courts'},{id:'crews',label:'Crews'}];
-  let rows = '';
-  list.forEach(e => {
-    if (e.kind === 'baller'){
-      rows += '<button class="lrow" data-act="player" data-id="' + e.id + '">' + avatar(e.u,'md') +
-        '<div class="grow"><div class="t">' + escapeHTML(e.title) + '</div><div class="s">' + escapeHTML(e.sub) + '</div></div>' +
-        '<div class="col" style="align-items:flex-end"><b class="tiny mono">' + e.dist.toFixed(1) + ' km</b>' +
-        (e.u.verified ? '<span class="badge ok" style="margin-top:4px">✓</span>' : '') + '</div></button>';
-    } else if (e.kind === 'court'){
-      rows += '<button class="lrow" data-act="court" data-id="' + e.id + '">' +
-        '<div class="av av-md" style="--h:' + e.court.hue + ';background:linear-gradient(135deg,hsl(' + e.court.hue + ' 70% 52%),hsl(' + (e.court.hue+40) + ' 70% 42%))"><span>🏀</span></div>' +
-        '<div class="grow"><div class="t">' + escapeHTML(e.title) + '</div><div class="s">' + escapeHTML(e.sub) + '</div></div>' +
-        '<b class="tiny mono">' + e.dist.toFixed(1) + ' km</b></button>';
-    } else {
-      rows += '<button class="lrow" data-act="crew" data-id="' + e.id + '">' +
-        '<div class="av av-md" style="--h:' + e.crew.hue + ';background:linear-gradient(135deg,hsl(' + e.crew.hue + ' 70% 52%),hsl(' + (e.crew.hue+40) + ' 70% 42%))"><span>👥</span></div>' +
-        '<div class="grow"><div class="t">' + escapeHTML(e.title) + '</div><div class="s">' + escapeHTML(e.sub) + '</div></div>' +
-        '<b class="tiny mono">' + e.dist.toFixed(1) + ' km</b></button>';
-    }
-  });
-  return mapHTML() +
-    '<div class="sheet-bottom"><div class="sheet-grab"></div><div class="sheet-body">' +
-    (top ? '<button class="lrow" style="background:linear-gradient(135deg,#FFF4EC,#FFF9F4);border:1px solid #FFDCC6" data-act="player" data-id="' + top.u.id + '">' +
-      '<span class="badge orange badge-lg">' + ico('sparkle','ic-sm') + ' ' + top.score + '% match</span>' +
-      '<div class="grow"><div class="t">Best run today · ' + escapeHTML(top.u.name) + '</div>' +
-      '<div class="s">' + top.u.position + ' · ' + top.u.skill.toFixed(1) + ' skill · ' + top.u.dist.toFixed(1) + ' km away</div></div>' +
-      ico('arrow','ic-sm') + '</button>' : '') +
-    '<div class="chips" style="margin:10px 0 12px">' +
-      chips.map(c => '<button class="chip orange' + (state.discoverFilter===c.id?' on':'') + '" data-act="dfilter" data-v="' + c.id + '">' + c.label + '</button>').join('') +
-    '</div>' + rows + '</div></div>';
-}
-function discoverFloatHeader(){
-  return '<div class="hdr-float"><div class="brand-pill"><div class="dot">R</div><div><b>RUBIX</b> <span>· ' + escapeHTML(DB.me.city) + '</span></div></div>' +
-    '<button class="hdr-btn" style="width:42px;height:42px" data-act="profile" data-id="me">' + avatar(DB.me,'sm') + '</button></div>';
-}
-
-/* 13. TOURNAMENTS */
-function tourneyListScreen(){
-  const f = state.tourneyFilter;
-  const filters = [{id:'open',label:'Open'},{id:'hosted',label:'Hosted by me'},{id:'completed',label:'Completed'},{id:'all',label:'All'}];
-  let list = DB.tourneys.slice();
-  if (f === 'open') list = list.filter(t => t.status === 'open' || t.status === 'draft');
-  else if (f === 'hosted') list = list.filter(t => t.host === 'me');
-  else if (f === 'completed') list = list.filter(t => t.status === 'completed');
-
-  let html = '<div class="chips" style="margin-bottom:12px">' +
-    filters.map(x => '<button class="chip orange' + (f===x.id?' on':'') + '" data-act="tourneyfilter" data-v="' + x.id + '">' + x.label + '</button>').join('') + '</div>';
-  html += '<button class="card card-dark" style="text-align:left;width:100%" data-act="host">' +
-    '<div class="row-between"><span class="badge gold">' + ico('trophy','ic-sm') + ' HOST</span><span class="badge" style="background:rgba(255,255,255,.1);color:#c9d2df">$9.99</span></div>' +
-    '<h3 style="font-size:18px;font-weight:900;letter-spacing:-.035em;margin-top:12px;color:#fff">Host a 3v3 tournament at your nearest court</h3>' +
-    '<p style="font-size:12.5px;color:#98a3b3;margin-top:6px;line-height:1.55">Open registration, auto-generated bracket, and a 15% entry split that feeds the prize pool.</p>' +
-    '<div class="row" style="margin-top:14px;color:#FFB020;font-weight:900;font-size:13px">Create tournament ' + ico('arrow','ic-sm') + '</div></button>';
-  if (!list.length) html += '<div class="empty"><div class="e">🏆</div><b>No tournaments here yet</b><span>Host one and invite your crew — brackets build themselves.</span></div>';
-  list.forEach(t => {
-    const court = DB.courts.find(c => c.id === t.court);
-    const days = Math.max(0, Math.ceil((t.agreeBy - Date.now())/86400000));
-    const pct = Math.round((t.teams.length / t.maxTeams)*100);
-    html += '<button class="card card-flush" style="width:100%;text-align:left" data-act="tourney" data-id="' + t.id + '">' +
-      '<div class="banner" style="border-radius:0;height:118px">' +
-        '<img src="' + img(t.seed+'_b',600,300) + '" alt="" onerror="this.remove()">' +
-        '<div class="b-grad"></div>' +
-        '<div class="b-top"><span class="badge orange badge-lg">' + t.format + '</span>' +
-        '<span class="badge ink badge-lg">' + (t.status==='draft'?'DRAFT':'OPEN') + '</span></div></div>' +
-      '<div style="padding:15px">' +
-        '<div class="row-between"><h3 style="font-size:16px;font-weight:900;letter-spacing:-.03em">' + escapeHTML(t.name) + '</h3>' +
-        '<span style="font-size:15px;font-weight:900;color:#a06a00">💰 $' + t.prize + '</span></div>' +
-        '<div class="tiny" style="margin-top:5px">' + escapeHTML(court?court.name:'Court TBD') + ' · $' + t.entry + ' entry</div>' +
-        '<div class="progress" style="margin-top:12px"><i style="width:' + pct + '%"></i></div>' +
-        '<div class="row-between" style="margin-top:8px"><span class="tiny">' + t.teams.length + '/' + t.maxTeams + ' teams</span>' +
-        '<span class="tiny" style="color:' + (days<=3?'var(--red)':'var(--muted)') + '">' + days + 'd to agree</span></div>' +
-      '</div></button>';
-  });
-  return html;
-}
-function tourneyDetailScreen(p){
-  const t = DB.tourneys.find(x => x.id === p.id);
-  if (!t) return missingScreen();
-  const court = DB.courts.find(c => c.id === t.court);
-  const days = Math.max(0, Math.ceil((t.agreeBy - Date.now())/86400000));
-  const joined = t.teams.indexOf('Marcus Bell') >= 0;
-  const roundNames = ['Round 1','Quarterfinals','Semifinals','Final'];
-  let bracketHTML = '<div class="bracket">';
-  t.bracket.forEach((rd, ri) => {
-    const name = t.bracket.length === 1 ? 'Final' : roundNames[Math.max(0, roundNames.length - t.bracket.length + ri)];
-    bracketHTML += '<div class="bround"><h4>' + name + '</h4>';
-    rd.games.forEach(g => {
-      const cls = g.status === 'done' ? 'done' : (g.status === 'bye' ? 'bye' : 'pending');
-      const aWin = g.status === 'done' && g.sa > g.sb;
-      const bWin = g.status === 'done' && g.sb > g.sa;
-      bracketHTML += '<div class="bgame ' + cls + '">' +
-        '<div class="side' + (aWin?' win':'') + '"><span class="nm">' + escapeHTML(g.a||'BYE') + '</span><span class="sc">' + (g.sa==null?'–':g.sa) + '</span></div>' +
-        '<div class="side' + (bWin?' win':'') + '"><span class="nm">' + escapeHTML(g.b||'BYE') + '</span><span class="sc">' + (g.sb==null?'–':g.sb) + '</span></div></div>';
-    });
-    bracketHTML += '</div>';
-  });
-  bracketHTML += '</div>';
-
-  const myGames = [];
-  t.bracket.forEach((rd, ri) => rd.games.forEach((g, gi) => {
-    if (g.status === 'pending' && (g.a === 'Riverside Runners' || g.a === 'East Legon Elite' || joined))
-      myGames.push({ ri, gi, g });
-  }));
-
-  const entryFee = t.entry;
-  const platformCut = round2(entryFee * RATES.tourney.rate);
-  const prizeCut = round2(entryFee - platformCut);
-
-  return '<div class="hero hero-sm">' +
-      '<img src="' + img(t.seed+'_h',700,400) + '" alt="" onerror="this.remove()">' +
-      '<div class="hero-grad"></div><div class="hero-txt">' +
-      '<span class="badge orange badge-lg">' + t.format + '</span>' +
-      '<h2 style="margin-top:8px">' + escapeHTML(t.name) + '</h2>' +
-      '<p>' + escapeHTML(court?court.name+' · '+court.address:'Court to be confirmed') + '</p></div></div>' +
-    '<div class="stat-grid" style="margin-top:16px">' +
-      '<div class="stat"><b>$' + t.prize + '</b><span>Prize</span></div>' +
-      '<div class="stat"><b>' + t.teams.length + '/' + t.maxTeams + '</b><span>Teams</span></div>' +
-      '<div class="stat"><b>' + days + '</b><span>Days</span></div>' +
-      '<div class="stat"><b>$' + t.entry + '</b><span>Entry</span></div></div>' +
-    '<div class="notice warn" style="margin-top:14px">' + ico('clock','ic-sm') +
-      ' Agreement window closes in ' + days + ' days. All registered teams must confirm their roster before the bracket locks.</div>' +
-    '<div class="sec-title">Your active games</div>' +
-    (myGames.length ? myGames.map(g => '<div class="card"><div class="row-between">' +
-      '<div><b style="font-size:13.5px">vs ' + escapeHTML(g.g.b||'TBD') + '</b>' +
-      '<div class="tiny" style="margin-top:3px">' + (g.ri===0?'Round 1':'Round '+(g.ri+1)) + ' · Game ' + (g.gi+1) + '</div></div>' +
-      '<button class="btn btn-primary btn-sm" data-act="submit-score" data-id="' + t.id + '" data-r="' + g.ri + '" data-g="' + g.gi + '">Submit score</button></div></div>').join('')
-      : '<div class="card"><div class="tiny">No games scheduled for you yet. Join the tournament to enter the bracket.</div></div>') +
-    '<div class="sec-title">Bracket</div>' + bracketHTML +
-    '<div class="sec-title">Registered teams</div>' +
-    '<div class="card">' + (t.teams.length
-      ? '<div class="row">' + avatarStack(t.teams.map((_,i) => 'b'+((i%12)+1))) +
-        '<div class="grow tiny">' + t.teams.map(escapeHTML).join(' · ') + '</div></div>'
-      : '<div class="tiny">No teams registered yet. Be the first — registration is open.</div>') + '</div>' +
-    '<div class="sec-title">Entry &amp; split</div><div class="card">' +
-      '<div class="pay-line"><span>Entry fee</span><b>' + money(entryFee) + '</b></div>' +
-      '<div class="pay-line"><span>Prize pool allocation</span><b>' + money(prizeCut) + '</b></div>' +
-      '<div class="pay-line"><span>Platform fee (15%)</span><b>' + money(platformCut) + '</b></div>' +
-      '<div class="pay-line total"><span>Total at checkout</span><b>' + money(entryFee) + '</b></div></div>' +
-    '<div class="stickybar"><div class="row-between">' +
-      '<div><div class="tiny">Entry</div><div class="amt">' + money(entryFee) + '</div></div>' +
-      '<div style="text-align:right"><div class="tiny">Wallet</div><b class="mono">' + money(DB.me.wallet) + '</b></div></div>' +
-      '<button class="btn btn-primary" data-act="join-tourney" data-id="' + t.id + '">' +
-        (joined ? 'Join another team' : 'Join tournament · ' + money(entryFee)) + '</button></div>';
-}
-
-/* 14. RANKINGS */
-function rankingsScreen(){
-  const isNat = state.rankList === 'national';
-  let pool = DB.users.filter(u => u.id !== 'me');
-  if (isNat) pool = pool.filter(u => u.rankN != null).sort((a,b) => a.rankN - b.rankN);
-  else {
-    pool = pool.slice().sort((a,b) => b.points - a.points);
-    if (state.rankRegion !== 'All') pool = pool.filter(u => u.region === state.rankRegion);
-    if (state.rankLevel !== 'All') pool = pool.filter(u => {
-      if (state.rankLevel === 'Elite') return u.skill >= 4.5;
-      if (state.rankLevel === 'Advanced') return u.skill >= 3.8 && u.skill < 4.5;
-      if (state.rankLevel === 'Intermediate') return u.skill >= 3.0 && u.skill < 3.8;
-      return u.skill < 3.0;
-    });
-  }
-  if (state.rankQuery.trim()){
-    const q = state.rankQuery.toLowerCase();
-    pool = pool.filter(u => u.name.toLowerCase().includes(q) || u.city.toLowerCase().includes(q));
-  }
-  const regions = ['All','Greater Accra','Ashanti','Central','Northern'];
-  const levels = ['All','Elite','Advanced','Intermediate','Developing'];
-
-  let html = '<div class="chips" style="margin-bottom:12px">' +
-    '<button class="chip orange' + (isNat?' on':'') + '" data-act="ranklist" data-v="national">National Squad</button>' +
-    '<button class="chip orange' + (!isNat?' on':'') + '" data-act="ranklist" data-v="general">General Pool</button></div>';
-  html += '<div class="notice info" style="margin-bottom:14px">' +
-    (isNat ? 'The National Squad is the top 8 ranked players in Ghana. Squad spots are managed by RUBIX admins.'
-           : 'The general pool ranks every active RUBIX player by points earned through verified games, tournament results and streaks.') + '</div>';
-  html += '<div class="field" style="margin-top:0"><input data-input="rankQuery" data-live="1" placeholder="Search players or cities" value="' + escapeHTML(state.rankQuery) + '"></div>';
-  if (!isNat){
-    html += '<div class="chips" style="margin-top:12px">' + regions.map(r =>
-      '<button class="chip' + (state.rankRegion===r?' on':'') + '" data-act="rankregion" data-v="' + r + '">' + r + '</button>').join('') + '</div>';
-    html += '<div class="chips" style="margin-top:8px">' + levels.map(l =>
-      '<button class="chip' + (state.rankLevel===l?' on':'') + '" data-act="ranklevel" data-v="' + l + '">' + l + '</button>').join('') + '</div>';
-  }
-  html += '<div class="sec-title">' + (isNat ? 'National Squad · Top 8' : 'General Pool · ' + pool.length + ' players') + '</div>';
-  if (!pool.length){
-    html += '<div class="empty"><div class="e">📊</div><b>No players match those filters</b><span>Try widening your region or skill tier.</span></div>';
-    return html;
-  }
-  pool.forEach((u,i) => {
-    const rank = isNat ? u.rankN : (i+1);
-    const delta = ((hash(u.id) % 7) - 3);
-    html += '<button class="lrow" data-act="player" data-id="' + u.id + '">' +
-      '<div style="width:30px;text-align:center;flex:none"><b style="font-size:16px;font-weight:900;letter-spacing:-.05em;font-variant-numeric:tabular-nums">' + rank + '</b></div>' +
-      avatar(u,'md') +
-      '<div class="grow"><div class="t">' + escapeHTML(u.name) + (u.rankN?' <span class="badge gold" style="margin-left:4px">NAT</span>':'') + '</div>' +
-      '<div class="s">' + escapeHTML(u.region) + ' · ' + u.position + ' · ' + u.skill.toFixed(1) + ' skill</div></div>' +
-      '<div style="text-align:right;flex:none"><b style="font-size:14px;font-weight:900;font-variant-numeric:tabular-nums">' + fmt(u.points) + '</b>' +
-      '<div class="tiny" style="color:' + (delta>=0?'var(--ok)':'var(--red)') + '">' + (delta>=0?'▲':'▼') + ' ' + Math.abs(delta) + '</div></div></button>';
-  });
-  return html;
-}
-
-/* 15. COURTS LIST */
-function courtsScreen(){
-  let list = DB.courts.slice();
-  if (state.courtQuery.trim()){
-    const q = state.courtQuery.toLowerCase();
-    list = list.filter(c => c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q));
-  }
-  let html = '<div class="field" style="margin-top:0"><input data-input="courtQuery" data-live="1" placeholder="Search courts and gyms" value="' + escapeHTML(state.courtQuery) + '"></div>';
-  html += '<div class="chips" style="margin-top:12px">' + ['All','Indoor','Outdoor','Street'].map(s =>
-    '<button class="chip' + ((state.courtSurface||'All')===s?' on':'') + '" data-act="courtsurface" data-v="' + s + '">' + s + '</button>').join('') + '</div>';
-  if (state.courtSurface && state.courtSurface !== 'All') list = list.filter(c => c.surface === state.courtSurface);
-  html += '<div class="sec-title">' + list.length + ' courts near you</div>';
-  list.forEach(c => {
-    html += '<button class="card card-flush" style="width:100%;text-align:left" data-act="court" data-id="' + c.id + '">' +
-      '<div class="banner" style="height:132px;border-radius:0">' +
-        '<img src="' + img(c.id+'_court',600,340) + '" alt="" onerror="this.remove()">' +
-        '<div class="b-grad"></div>' +
-        '<div class="b-top"><span class="badge orange badge-lg">$' + c.price + '/hr</span>' +
-        '<span class="badge ink badge-lg">' + c.surface + '</span></div></div>' +
-      '<div style="padding:14px">' +
-        '<div class="row-between"><h3 style="font-size:15.5px;font-weight:900;letter-spacing:-.03em">' + escapeHTML(c.name) + '</h3>' +
-        '<span class="badge gold">★ ' + c.rating.toFixed(1) + '</span></div>' +
-        '<div class="row" style="margin-top:7px;gap:14px">' +
-          '<span class="tiny">' + ico('pin','ic-sm') + ' ' + c.dist.toFixed(1) + ' km</span>' +
-          '<span class="tiny">' + ico('ball','ic-sm') + ' ' + c.courtCount + ' courts</span>' +
-          '<span class="tiny">' + (c.playersHere.length?'🔥 '+c.playersHere.length+' here now':'Quiet right now') + '</span></div></div></button>';
-  });
-  if (!list.length) html += '<div class="empty"><div class="e">🏀</div><b>No courts found</b><span>Try a different search term or surface type.</span></div>';
-  return html;
-}
-
-/* 16. COURT DETAIL */
-function courtDetailScreen(p){
-  const c = DB.courts.find(x => x.id === p.id);
-  if (!c) return missingScreen();
-  const dates = ['Today','Tomorrow','Fri','Sat','Sun'];
-  const times = ['6:00 AM','7:30 AM','9:00 AM','12:00 PM','3:00 PM','5:00 PM','6:30 PM','8:00 PM','9:30 PM'];
-  const r = rngFrom(c.id + state.booking.date);
-  const booked = {};
-  times.forEach(t => { if (r() > 0.62) booked[t] = true; });
-  const selected = state.booking.time;
-  const courtFee = c.price;
-  const platformFee = round2(courtFee * RATES.court.rate);
-  const total = round2(courtFee + platformFee);
-  const w = Weather.forCourt(c);
-  const trainers = c.trainers.map(id => userById(id)).filter(Boolean);
-
-  let html = '<div class="hero"><img src="' + img(c.id+'_hero',800,500) + '" alt="" onerror="this.remove()">' +
-    '<div class="hero-grad"></div><div class="hero-txt">' +
-    '<span class="badge ' + (c.courtStatus==='open'?'ok':'red') + ' badge-lg">' + c.courtStatus.toUpperCase() + '</span>' +
-    '<h2 style="margin-top:8px">' + escapeHTML(c.name) + '</h2>' +
-    '<p>' + escapeHTML(c.address) + '</p></div></div>' +
-    '<div class="pill-row" style="margin-top:14px">' +
-      '<span class="badge gold badge-lg">★ ' + c.rating.toFixed(1) + '</span>' +
-      '<span class="badge badge-lg">' + c.surface + '</span>' +
-      '<span class="badge badge-lg">' + c.courtCount + ' courts</span>' +
-      '<span class="badge orange badge-lg">$' + c.price + '/hr</span>' +
-      '<span class="badge badge-lg">10% platform fee</span></div>' +
-    '<div class="sec-title">Amenities</div>' +
-    '<div class="pill-row">' + c.amenities.map(a => '<span class="badge badge-lg">' + escapeHTML(a) + '</span>').join('') + '</div>';
-
-  if (w){
-    html += '<div class="sec-title">Weather</div><div class="weather">' +
-      '<div class="row-between"><div><div class="wt">' + w.temp + '°</div><div class="wc">' + w.emoji + ' ' + w.cond + '</div></div>' +
-      '<div style="text-align:right"><div class="tiny" style="color:#8fb0d8">Outdoor court</div>' +
-      '<b style="font-size:12.5px;color:#cfe0f5">' + (w.cond.indexOf('rain')>=0||w.cond.indexOf('shower')>=0?'Play may be affected':'Great conditions') + '</b></div></div>' +
-      '<div class="wdays">' + w.days.map(d => '<div class="wday"><b>' + d.d + '</b><i>' + d.e + '</i><span>' + d.t + '°</span></div>').join('') + '</div></div>';
-  } else {
-    html += '<div class="sec-title">Conditions</div>' +
-      '<div class="climate">' + ico('check','ic-sm') + ' Climate controlled — this is an indoor facility, weather never affects play.</div>';
-  }
-
-  html += '<div class="sec-title">Trainers stationed here</div>';
-  if (trainers.length){
-    trainers.forEach(t => {
-      html += '<button class="lrow" data-act="trainer" data-id="' + t.id + '">' + avatar(t,'md') +
-        '<div class="grow"><div class="t">' + escapeHTML(t.name) + ' <span class="badge ok">✓ VERIFIED</span></div>' +
-        '<div class="s">' + escapeHTML(t.specialty||'Skills training') + ' · $' + (t.trainerRate||30) + '/session</div></div>' +
-        ico('arrow','ic-sm') + '</button>';
-    });
-  } else {
-    html += '<div class="card"><div class="tiny">No trainers stationed at this court yet. Courts can onboard trainers through the admin console.</div></div>';
-  }
-
-  html += '<div class="sec-title">Players here now</div>';
-  if (c.playersHere.length){
-    html += '<div class="card">';
-    c.playersHere.forEach(id => {
-      const u = userById(id);
-      if (!u) return;
-      const sent = state.requestsSent[u.id];
-      html += '<div class="lrow flat">' + avatar(u,'sm') +
-        '<div class="grow"><div class="t">' + escapeHTML(u.name) + '</div>' +
-        '<div class="s">' + u.position + ' · ' + u.skill.toFixed(1) + ' skill</div></div>' +
-        '<button class="btn btn-sm ' + (sent?'btn-soft':'btn-primary') + '" data-act="request" data-id="' + u.id + '">' +
-        (sent?'Invited':'Invite · $0.99') + '</button></div>';
-    });
-    html += '</div>';
-  } else {
-    html += '<div class="card"><div class="tiny">Court is empty right now. Book a slot and invite ballers from Discover.</div></div>';
-  }
-
-  html += '<div class="sec-title">Pick a date</div><div class="chips">' + dates.map(d =>
-    '<button class="chip orange' + (state.booking.date===d?' on':'') + '" data-act="bookdate" data-v="' + d + '">' + d + '</button>').join('') + '</div>' +
-    '<div class="sec-title">Available slots</div><div class="slots">' + times.map(t => {
-      const off = !!booked[t];
-      return '<button class="slot' + (off?' off':'') + (selected===t?' on':'') + '" data-act="bookslot" data-v="' + t + '">' + t + '</button>';
-    }).join('') + '</div>';
-
-  html += '<div class="notice" style="margin-top:16px">RUBIX charges a 10% platform fee on court bookings. The remaining 90% is paid out to the venue.</div>';
-  html += '<div class="stickybar"><div class="row-between">' +
-    '<div><div class="tiny">' + (selected?escapeHTML(state.booking.date)+' · '+selected:'Select a slot') + '</div>' +
-    '<div class="amt">' + (selected?money(total):'—') + '</div></div>' +
-    '<div style="text-align:right"><div class="tiny">Court ' + money(courtFee) + ' + fee ' + money(platformFee) + '</div>' +
-    '<b class="mono">Wallet ' + money(DB.me.wallet) + '</b></div></div>' +
-    '<button class="btn btn-primary" data-act="book" data-id="' + c.id + '">' +
-    (selected?'Book for ' + money(total):'Select a time slot') + '</button></div>';
-  return html;
-}
-
-/* 17. PLAYER PROFILE */
-function playerScreen(p){
-  const u = userById(p.id);
-  if (!u) return missingScreen();
-  const s = u.stats;
-  const winPct = s.games ? Math.round((s.wins/s.games)*100) : 0;
-  const isMe = u.id === 'me';
-  const score = isMe ? null : AI.matchScore(DB.me, u);
-  const thread = Chat.threadWith(u.id);
-
-  let html = '<div class="prof-hero">' +
-    '<img src="' + img(u.id+'_cover',800,400) + '" alt="" onerror="this.remove()">' +
-    '<div class="p-grad"></div><div class="prof-av">' + avatar(u,'hero') + '</div></div>' +
-    '<div class="prof-head"><div class="row-between">' +
-    '<div><h2 style="font-size:23px;font-weight:900;letter-spacing:-.04em">' + escapeHTML(u.name) + '</h2>' +
-    '<div class="tiny" style="margin-top:4px">' + ico('pin','ic-sm') + ' ' + escapeHTML(u.city+', '+u.region) + '</div></div>' +
-    (score?'<span class="badge orange badge-lg">' + ico('sparkle','ic-sm') + ' ' + score + '%</span>':'') + '</div>' +
-    '<div class="pill-row" style="margin-top:12px">' +
-      '<span class="badge ink badge-lg">' + u.position + '</span>' +
-      '<span class="badge orange badge-lg">' + u.skill.toFixed(1) + ' skill</span>' +
-      '<span class="badge badge-lg">' + u.preferredCourt + '</span>' +
-      (u.verified?'<span class="badge ok badge-lg">✓ VERIFIED</span>':'') +
-      (u.rankN?'<span class="badge gold badge-lg">NATIONAL #'+u.rankN+'</span>':'') +
-      (u.roles.indexOf('trainer')>=0?'<span class="badge blue badge-lg">TRAINER</span>':'') +
-      (u.roles.indexOf('vendor')>=0?'<span class="badge blue badge-lg">VENDOR</span>':'') + '</div>' +
-    (u.bio?'<p style="font-size:13px;line-height:1.6;color:#4a545f;margin-top:14px;font-weight:500">'+escapeHTML(u.bio)+'</p>':'') + '</div>';
-
-  if (!isMe){
-    html += '<div class="btn-row" style="margin-top:16px">' +
-      '<button class="btn btn-primary" data-act="request" data-id="' + u.id + '">' +
-        (state.requestsSent[u.id]?'Invite sent':'Invite to run · $0.99') + '</button>' +
-      '<button class="btn btn-ghost" data-act="chat" data-id="' + u.id + '">' +
-        (thread&&thread.unlocked?'Chat':'Chat · $1.99') + '</button></div>';
-  } else {
-    html += '<div class="btn-row" style="margin-top:16px">' +
-      '<button class="btn btn-primary" data-act="profileedit">Edit profile</button>' +
-      '<button class="btn btn-ghost" data-act="idcard">ID card</button></div>';
-  }
-
-  html += '<div class="sec-title">Career stats</div><div class="stat-grid">' +
-    '<div class="stat"><b>' + s.games + '</b><span>Games</span></div>' +
-    '<div class="stat"><b>' + s.wins + '</b><span>Wins</span></div>' +
-    '<div class="stat"><b>' + s.losses + '</b><span>Losses</span></div>' +
-    '<div class="stat"><b>' + winPct + '%</b><span>Win %</span></div></div>' +
-    '<div class="stat-grid" style="margin-top:9px">' +
-    '<div class="stat"><b>' + (s.ppg||0).toFixed(1) + '</b><span>PPG</span></div>' +
-    '<div class="stat"><b>' + (s.apg||0).toFixed(1) + '</b><span>APG</span></div>' +
-    '<div class="stat"><b>' + (s.rpg||0).toFixed(1) + '</b><span>RPG</span></div>' +
-    '<div class="stat"><b>' + fmt(u.points) + '</b><span>Points</span></div></div>';
-
-  html += '<div class="sec-title">Win rate</div><div class="card">' +
-    '<div class="winbar"><i class="w" style="width:' + winPct + '%"></i><i class="l" style="width:' + (100-winPct) + '%"></i></div>' +
-    '<div class="row-between" style="margin-top:9px">' +
-      '<span class="tiny" style="color:var(--ok)">' + s.wins + ' wins</span>' +
-      '<span class="tiny" style="color:var(--red)">' + s.losses + ' losses</span></div></div>';
-
-  html += '<div class="sec-title">Game log</div><div class="card">';
-  (u.matches||[]).forEach(m => {
-    html += '<div class="game"><div class="wl ' + (m.result==='W'?'w':'l') + '">' + m.result + '</div>' +
-      '<div class="grow"><div style="font-size:13px;font-weight:800">vs ' + escapeHTML(m.opp) + '</div>' +
-      '<div class="tiny" style="margin-top:2px">' + m.court + ' · ' + timeAgo(m.ts) + ' ago</div></div>' +
-      '<div style="text-align:right"><div class="score">' + m.score + '</div>' +
-      (m.verified?'<div class="tiny" style="color:var(--ok)">✓ verified</div>':'<div class="tiny">unverified</div>') + '</div></div>';
-  });
-  if (!(u.matches||[]).length) html += '<div class="tiny">No games logged yet.</div>';
-  html += '</div>';
-  return html;
-}
-
-/* 18. PROFILE EDIT */
-function profileEditScreen(){
-  const f = Object.assign({
-    name:DB.me.name, bio:DB.me.bio, city:DB.me.city, region:DB.me.region,
-    skill:String(DB.me.skill), position:DB.me.position, preferredCourt:DB.me.preferredCourt
-  }, state.form);
-  const positions = ['PG','SG','SF','PF','C'];
-  const courts = ['Indoor','Outdoor','Street'];
-  const avails = ['Mornings','Weekday evenings','Weekends','Nights'];
-  const styles = ['Sharpshooter','Playmaker','Defender','Post'];
-
-  return '<div class="card"><div class="row">' + avatar(DB.me,'lg') +
-      '<div class="grow"><b style="font-size:14px;font-weight:800">Profile photo</b>' +
-      '<div class="tiny" style="margin-top:3px">Shuffle to change your placeholder photo</div></div>' +
-      '<button class="btn btn-ghost btn-sm" data-act="shuffle-photo">' + ico('refresh','ic-sm') + ' Shuffle</button></div></div>' +
-    '<div class="field"><label>Name</label><input data-input="form.name" value="' + escapeHTML(f.name) + '"></div>' +
-    '<div class="field"><label>Bio</label><textarea data-input="form.bio">' + escapeHTML(f.bio) + '</textarea></div>' +
-    '<div class="field"><label>City</label><input data-input="form.city" value="' + escapeHTML(f.city) + '"></div>' +
-    '<div class="field"><label>Region</label><input data-input="form.region" value="' + escapeHTML(f.region) + '"></div>' +
-    '<div class="field"><label>Skill rating</label><select data-input="form.skill">' +
-      ['1.0','1.5','2.0','2.5','3.0','3.5','4.0','4.5','5.0','5.5'].map(v =>
-        '<option value="' + v + '"' + (f.skill===v?' selected':'') + '>' + v + '</option>').join('') + '</select></div>' +
-    '<div class="sec-title">Position</div><div class="chips chips-wrap">' + positions.map(p =>
-      '<button class="chip orange' + (f.position===p?' on':'') + '" data-act="form-position" data-v="' + p + '">' + p + '</button>').join('') + '</div>' +
-    '<div class="sec-title">Preferred court</div><div class="chips chips-wrap">' + courts.map(c =>
-      '<button class="chip orange' + (f.preferredCourt===c?' on':'') + '" data-act="form-court" data-v="' + c + '">' + c + '</button>').join('') + '</div>' +
-    '<div class="sec-title">Availability</div><div class="chips chips-wrap">' + avails.map(a =>
-      '<button class="chip orange' + (state.form.avail===a?' on':'') + '" data-act="form-avail" data-v="' + a + '">' + a + '</button>').join('') + '</div>' +
-    '<div class="sec-title">Playstyle</div><div class="chips chips-wrap">' + styles.map(s =>
-      '<button class="chip orange' + ((state.form.playstyle||[]).indexOf(s)>=0?' on':'') + '" data-act="form-style" data-v="' + s + '">' + s + '</button>').join('') + '</div>' +
-    '<div class="stickybar"><button class="btn btn-primary" data-act="profile-save">Save changes</button></div>';
-}
-
-/* 19. ID CARD */
-function qrHTML(seed){
-  const r = rngFrom(seed); let cells = '';
-  for (let i=0;i<169;i++) cells += '<i class="' + (r()>0.48?'on':'') + '"></i>';
-  return '<div class="qr">' + cells + '</div>';
-}
-function idCardScreen(){
-  const u = DB.me;
-  return '<div class="idcard">' +
-    '<div class="ic-brand"><div class="lg">R</div><b>RUBIX HOOPS</b></div>' +
-    '<div class="row" style="margin-top:18px">' + avatar(u,'lg') +
-    '<div class="grow"><div style="font-size:19px;font-weight:900;letter-spacing:-.035em">' + escapeHTML(u.name) + '</div>' +
-    '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:#FF6B35;margin-top:4px">VERIFIED PLAYER</div>' +
-    '<div class="tiny" style="color:#8b95a5;margin-top:4px">ID · RBX-' + String(hash(u.id)%900000+100000) + '</div></div>' +
-    qrHTML(u.id) + '</div>' +
-    '<div class="id-grid">' +
-      '<div class="id-cell"><span>Skill</span><b>' + u.skill.toFixed(1) + '</b></div>' +
-      '<div class="id-cell"><span>Position</span><b>' + u.position + '</b></div>' +
-      '<div class="id-cell"><span>Home court</span><b>' + u.preferredCourt + '</b></div>' +
-      '<div class="id-cell"><span>Region</span><b>' + escapeHTML(u.region) + '</b></div></div>' +
-    '<div class="row-between" style="margin-top:16px">' +
-      '<span class="tiny" style="color:#8b95a5">Member since Jan 2024</span>' +
-      '<span class="badge orange">ACTIVE</span></div></div>' +
-    '<div class="notice info" style="margin-top:16px">Show this card at partner courts to check in without a booking reference. The QR code encodes your RUBIX player ID.</div>';
-}
-
-/* 20. CHATS LIST */
-function chatsScreen(){
-  const unlocked = DB.chats.filter(c => c.unlocked);
-  const locked = DB.chats.filter(c => !c.unlocked);
-  let html = '<div class="sec-title">Conversations</div>';
-  if (!unlocked.length) html += '<div class="card"><div class="tiny">No unlocked conversations yet.</div></div>';
-  unlocked.forEach(c => {
-    const u = userById(c.with); const last = Chat.last(c);
-    html += '<button class="lrow" data-act="chat" data-id="' + c.with + '">' + avatar(u,'md') +
-      '<div class="grow"><div class="t">' + escapeHTML(u.name) + '</div>' +
-      '<div class="s">' + (last.from==='me'?'You: ':'') + escapeHTML(last.text) + '</div></div>' +
-      '<div style="text-align:right"><div class="tiny">' + timeAgo(last.ts) + '</div>' +
-      (last.from!=='me'?'<span class="badge orange" style="margin-top:5px">1</span>':'') + '</div></button>';
-  });
-  html += '<div class="sec-title">Locked · unlock to message</div>';
-  locked.forEach(c => {
-    const u = userById(c.with);
-    html += '<button class="lrow" data-act="chat" data-id="' + c.with + '" style="background:#FBFAF6">' + avatar(u,'md') +
-      '<div class="grow"><div class="t">' + escapeHTML(u.name) + ' ' + ico('lock','ic-sm') + '</div>' +
-      '<div class="s">' + escapeHTML(c.msgs.length?c.msgs[0].text.slice(0,54)+'…':'Locked conversation') + '</div></div>' +
-      '<span class="badge gold">$1.99</span></button>';
-  });
-  if (!locked.length) html += '<div class="card"><div class="tiny">All your conversations are unlocked.</div></div>';
-  return html;
-}
-
-/* 21. CHAT VIEW */
-function chatViewScreen(p){
-  const u = userById(p.id);
-  if (!u) return missingScreen();
-  const c = Chat.ensureThread(u.id);
-  if (!c.unlocked){
-    return '<div class="locked-card">' +
-      '<div class="lk">' + ico('lock','ic-lg') + '</div>' +
-      '<h3 style="font-size:20px;font-weight:900;letter-spacing:-.035em">This conversation is locked</h3>' +
-      '<p style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px">' +
-      escapeHTML(u.name) + ' sent you a message. Unlock this thread to read it and reply — one-time fee, permanent access.</p>' +
-      '<div class="card" style="margin-top:18px;text-align:left"><div class="row">' + avatar(u,'sm') +
-      '<div class="grow"><div class="t" style="font-size:13px;font-weight:800">' + escapeHTML(u.name) + '</div>' +
-      '<div class="s" style="font-size:11.5px;color:var(--muted)">' +
-      escapeHTML(c.msgs.length?c.msgs[0].text.slice(0,70)+'…':'No preview available') + '</div></div></div></div>' +
-      '<div class="stickybar" style="margin-left:-24px;margin-right:-24px;padding-left:24px;padding-right:24px">' +
-      '<button class="btn btn-gold" data-act="unlock-chat" data-id="' + u.id + '">Unlock for $1.99</button></div></div>';
-  }
-  let html = '<div class="chat-wrap"><div class="chat-scroll" id="chatScroll">';
-  c.msgs.forEach(m => {
-    html += '<div class="bub ' + (m.from==='me'?'me':'them') + '">' + escapeHTML(m.text) +
-      '<span class="ts">' + timeAgo(m.ts) + '</span></div>';
-  });
-  if (!c.msgs.length) html += '<div class="tiny center" style="margin:auto">No messages yet. Say something.</div>';
-  html += '</div><div class="chat-input">' +
-    '<input data-input="chatMsg" placeholder="Message ' + escapeHTML(u.name.split(' ')[0]) + '…" value="' + escapeHTML(state.chatMsg) + '">' +
-    '<button data-act="send-msg" data-id="' + u.id + '">' + ico('send','ic-sm') + '</button></div></div>';
-  return html;
-}
-
-/* 22. FEED */
-function feedScreen(){
-  let html = '<button class="card card-dark" style="width:100%;text-align:left" data-act="ai">' +
-    '<span class="badge gold">' + ico('sparkle','ic-sm') + ' AI</span>' +
-    '<h3 style="font-size:17px;font-weight:900;letter-spacing:-.035em;margin-top:10px;color:#fff">What your hoop circle is up to</h3>' +
-    '<p style="font-size:12.5px;color:#98a3b3;margin-top:6px;line-height:1.55">Runs forming nearby, crew news and verified results from players in your region.</p></button>';
-  DB.feed.forEach(f => {
-    const u = userById(f.user);
-    const liked = !!state.feedLikes[f.id];
-    html += '<div class="card"><div class="post-head">' + avatar(u,'md') +
-      '<div class="grow"><div class="t" style="font-size:13.5px;font-weight:800">' + escapeHTML(u.name) + '</div>' +
-      '<div class="s tiny">' + timeAgo(f.ts) + ' ago · ' + escapeHTML(u.city) + '</div></div>' +
-      '<span class="badge orange">' + escapeHTML(f.type) + '</span></div>' +
-      '<p class="post-body">' + escapeHTML(f.text) + '</p>' +
-      '<div class="post-img"><img src="' + img(f.seed,600,340) + '" alt="" loading="lazy" onerror="this.remove()"></div>' +
-      '<div class="post-acts">' +
-        '<button class="pact' + (liked?' on':'') + '" data-act="like" data-id="' + f.id + '">' + ico('star','ic-sm') + ' ' + (f.likes+(liked?1:0)) + '</button>' +
-        '<button class="pact" data-act="noop">' + ico('chat','ic-sm') + ' ' + f.comments + '</button>' +
-        '<button class="pact" data-act="noop">' + ico('send','ic-sm') + ' Share</button></div></div>';
-  });
-  return html;
-}
-
-/* 23. BADGES */
-const BADGE_DEFS = [
-  {id:'first-game',e:'🏀',n:'First Bucket'},{id:'10-games',e:'🔟',n:'10 Games'},
-  {id:'50-games',e:'5️⃣',n:'50 Games'},{id:'100-games',e:'💯',n:'100 Games'},
-  {id:'triple-double',e:'📊',n:'Triple-Double'},{id:'sharp-shooter',e:'🎯',n:'Sharp Shooter'},
-  {id:'playmaker',e:'🎩',n:'Playmaker'},{id:'rim-protector',e:'🛡️',n:'Rim Protector'},
-  {id:'win-5',e:'🔥',n:'5-Win Streak'},{id:'win-10',e:'⚡',n:'10-Win Streak'},
-  {id:'crew-champ',e:'👥',n:'Crew Champion'},{id:'tourney-mvp',e:'🏆',n:'Tournament MVP'}
-];
-function badgesScreen(){
-  const owned = DB.me.badges || [];
-  return '<div class="streak-hero"><div class="fire">🔥</div>' +
-    '<div><div class="t">Current win streak</div><div class="n">' + DB.me.streaks.current + '</div></div>' +
-    '<div style="margin-left:auto;text-align:right"><div class="t">Longest</div><div class="n" style="font-size:26px">' + DB.me.streaks.longest + '</div></div></div>' +
-    '<div class="notice ok" style="margin-top:14px">Win 2 more games in a row to unlock the 5-Win Streak badge and 150 bonus points.</div>' +
-    '<div class="sec-title">Badges · ' + owned.length + ' of ' + BADGE_DEFS.length + '</div>' +
-    '<div class="badge-grid">' + BADGE_DEFS.map(b => {
-      const has = owned.indexOf(b.id) >= 0;
-      return '<div class="bdg' + (has?'':' locked') + '"><div class="e">' + b.e + '</div><b>' + b.n + '</b></div>';
-    }).join('') + '</div>';
-}
-
-/* 24. AI */
-function aiScreen(){
-  const list = AI.topMatches(8);
-  let html = '<div class="card card-dark" style="background:linear-gradient(150deg,#0A0A0A,#241a12)">' +
-    '<span class="badge gold">' + ico('sparkle','ic-sm') + ' RUBIX AI</span>' +
-    '<h3 style="font-size:20px;font-weight:900;letter-spacing:-.04em;margin-top:12px;color:#fff">Your best runs today</h3>' +
-    '<p style="font-size:12.5px;color:#98a3b3;margin-top:6px;line-height:1.55">Scored on skill fit, position balance, court preference, region and availability.</p></div>';
-  html += '<div class="notice info" style="margin-bottom:14px">You are a ' + DB.me.skill.toFixed(1) + ' ' + DB.me.position +
-    ' who prefers ' + DB.me.preferredCourt.toLowerCase() + ' courts in ' + escapeHTML(DB.me.region) + '.</div>';
-  list.forEach(m => {
-    const u = m.u;
-    html += '<button class="lrow" data-act="player" data-id="' + u.id + '">' + avatar(u,'md') +
-      '<div class="grow"><div class="t">' + escapeHTML(u.name) + '</div>' +
-      '<div class="s">' + u.position + ' · ' + u.skill.toFixed(1) + ' skill · ' + escapeHTML(u.city) + ' · ' + u.dist.toFixed(1) + ' km</div></div>' +
-      '<span class="badge orange badge-lg">' + m.score + '%</span></button>';
-  });
-  return html;
-}
-
-/* 25. WALLET */
-function walletScreen(){
-  const tx = (DB.me.tx || []).slice(0,14);
-  const feeList = [
-    {k:'Run invite',v:'$0.99 flat'},{k:'Chat unlock',v:'$1.99 flat'},
-    {k:'Vendor listing',v:'$4.99 + 8% of sale'},{k:'Tournament host',v:'$9.99 + 15% of entry'},
-    {k:'Crew creation',v:'$14.99 flat'},{k:'Court booking',v:'10% platform fee'},
-    {k:'Trainer session',v:'12% platform fee'},{k:'Crew membership',v:'5% platform fee'}
-  ];
-  return '<div class="wallet-hero"><div class="lbl">Available balance</div>' +
-    '<div class="amt"><small>$</small>' + DB.me.wallet.toFixed(2) + '</div>' +
-    '<div class="row" style="margin-top:18px;gap:10px;position:relative;z-index:2">' +
-      '<button class="btn btn-primary btn-sm" style="flex:1" data-act="topup-open">Add funds</button>' +
-      '<button class="btn btn-sm" style="flex:1;background:rgba(255,255,255,.12);color:#fff" data-act="withdraw">Withdraw</button></div></div>' +
-    '<div class="sec-title">What each fee buys</div><div class="card">' +
-    feeList.map(f => '<div class="pay-line"><span>' + f.k + '</span><b>' + f.v + '</b></div>').join('') + '</div>' +
-    '<div class="sec-title">Recent activity</div><div class="card">' +
-    (tx.length ? tx.map(t =>
-      '<div class="tx"><div class="grow"><div style="font-size:12.5px;font-weight:800">' + escapeHTML(t.note) + '</div>' +
-      '<div class="tiny" style="margin-top:2px">' + timeAgo(t.ts) + ' ago' + (t.fee?' · platform fee '+money(t.fee):'') + '</div></div>' +
-      '<div class="amt ' + (t.amount>0?'pos':'neg') + '">' + (t.amount>0?'+':'−') + money(Math.abs(t.amount)) + '</div></div>').join('')
-      : '<div class="tiny">No transactions yet.</div>') + '</div>';
-}
-
-/* 26. SAFETY */
-function safetyScreen(){
-  const s = state.safety;
-  return '<div class="notice" style="margin-bottom:14px">' + ico('shield','ic-sm') +
-    ' RUBIX verifies every trainer, crew leader and vendor before they can operate. Report anything that feels off — reports go straight to a human.</div>' +
-    '<div class="card">' +
-      '<div class="lrow flat"><div class="grow"><div class="t">ID verification</div><div class="s">Government ID matched to your account</div></div>' +
-      (s.idVerified?'<span class="badge ok">✓ VERIFIED</span>':'<button class="btn btn-sm btn-primary" data-act="verify-id">Verify</button>') + '</div>' +
-      '<div class="lrow flat"><div class="grow"><div class="t">Photo verification</div><div class="s">A quick selfie match to your profile photo</div></div>' +
-      (s.photoVerified?'<span class="badge ok">✓ VERIFIED</span>':'<button class="btn btn-sm btn-primary" data-act="verify-photo">Verify</button>') + '</div>' +
-      '<div class="lrow flat"><div class="grow"><div class="t">Share location with matches</div><div class="s">Only shared while a run is active</div></div>' +
-      '<button class="toggle' + (s.shareLocation?' on':'') + '" data-act="toggle" data-k="safety.shareLocation"></button></div>' +
-      '<div class="lrow flat"><div class="grow"><div class="t">Emergency contact</div><div class="s">Notify someone if you go offline mid-run</div></div>' +
-      '<button class="btn btn-sm btn-ghost" data-act="emergency">Add</button></div></div>' +
-    '<div class="sec-title">Blocked players</div><div class="card">' +
-      '<div class="lrow flat"><div class="grow"><div class="t">No blocked players</div>' +
-      '<div class="s">Players you block cannot see you on the map or message you.</div></div></div></div>' +
-    '<button class="btn btn-danger" style="margin-top:14px" data-act="report-user">Report a player</button>';
-}
-
-/* 27. NOTIFS */
-function notifsScreen(){
-  const rows = [
-    ['push','Push notifications','Alerts on this device'],
-    ['email','Email digest','Weekly recap and receipts'],
-    ['nearby','Nearby ballers','When players are within 1 km'],
-    ['invites','Run invites','Direct invites to play'],
-    ['chat','Chat messages','New messages in unlocked threads'],
-    ['bookings','Booking reminders','24h and 1h before your slot'],
-    ['crew','Crew activity','Announcements from crews you joined'],
-    ['quiet','Quiet hours','Mute everything between 10pm and 6am']
-  ];
-  return '<div class="card">' + rows.map(r =>
-    '<div class="lrow flat"><div class="grow"><div class="t">' + r[1] + '</div><div class="s">' + r[2] + '</div></div>' +
-    '<button class="toggle' + (state.notifs[r[0]]?' on':'') + '" data-act="toggle" data-k="notifs.' + r[0] + '"></button></div>').join('') + '</div>' +
-    '<div class="notice info" style="margin-top:14px">RUBIX never sends ads, ever. These preferences only control product notifications.</div>';
-}
-
-/* 28-31. APPLICATIONS */
-function vendorApplyScreen(){
-  const cat = state.form.vendorCategory || 'Sneakers';
-  const submitted = DB.pending.vendors.some(v => v.seller === 'me');
-  return '<div class="notice" style="margin-bottom:14px">' + ico('shop','ic-sm') +
-    ' Listing fee: <b>$4.99</b> to publish, plus an <b>8%</b> platform commission on each sale. You keep 92% of the sale price.</div>' +
-    (submitted?'<div class="notice ok" style="margin-bottom:14px">Your listing is pending admin review. You will be notified once it goes live.</div>':'') +
-    '<div class="field"><label>Item name</label><input data-input="form.vendorName" placeholder="e.g. Nike LeBron 21" value="' + escapeHTML(state.form.vendorName||'') + '"></div>' +
-    '<div class="sec-title">Category</div><div class="chips chips-wrap">' + ['Sneakers','Jerseys','Balls','Gear','Other'].map(c =>
-      '<button class="chip orange' + (cat===c?' on':'') + '" data-act="vendor-cat" data-v="' + c + '">' + c + '</button>').join('') + '</div>' +
-    '<div class="field"><label>Price (USD)</label><input data-input="form.vendorPrice" type="number" min="1" placeholder="85" value="' + escapeHTML(state.form.vendorPrice||'') + '"></div>' +
-    '<div class="sec-title">Condition</div><div class="chips chips-wrap">' + ['New','Like new','Good','Fair'].map(c =>
-      '<button class="chip orange' + ((state.form.vendorCondition||'Good')===c?' on':'') + '" data-act="vendor-cond" data-v="' + c + '">' + c + '</button>').join('') + '</div>' +
-    '<div class="field"><label>Notes</label><textarea data-input="form.vendorNotes" placeholder="Size, wear, what is included…">' + escapeHTML(state.form.vendorNotes||'') + '</textarea></div>' +
-    '<div class="stickybar"><button class="btn btn-primary" data-act="submit-vendor">Submit listing · $4.99</button></div>';
-}
-function trainerApplyScreen(){
-  const picked = state.form.trainerCourts || [];
-  return '<div class="notice" style="margin-bottom:14px">' + ico('user','ic-sm') +
-    ' Trainers keep <b>88%</b> of every session. RUBIX takes a 12% platform fee. You can be stationed at one or more courts.</div>' +
-    '<div class="field"><label>Display name</label><input data-input="form.trainerName" placeholder="Coach Jaylen" value="' + escapeHTML(state.form.trainerName||'') + '"></div>' +
-    '<div class="sec-title">Courts you train at</div><div class="card">' + DB.courts.map(c =>
-      '<div class="lrow flat"><div class="grow"><div class="t">' + escapeHTML(c.name) + '</div>' +
-      '<div class="s">' + c.surface + ' · ' + escapeHTML(c.address) + '</div></div>' +
-      '<button class="toggle' + (picked.indexOf(c.id)>=0?' on':'') + '" data-act="trainer-court" data-v="' + c.id + '"></button></div>').join('') + '</div>' +
-    '<div class="field"><label>Specialty</label><input data-input="form.trainerSpecialty" placeholder="Shooting mechanics · Ball handling" value="' + escapeHTML(state.form.trainerSpecialty||'') + '"></div>' +
-    '<div class="field"><label>Session rate (USD)</label><input data-input="form.trainerRate" type="number" min="10" placeholder="35" value="' + escapeHTML(state.form.trainerRate||'') + '"></div>' +
-    '<div class="field"><label>Experience</label><textarea data-input="form.trainerExp" placeholder="Years coaching, playing background, certifications…">' + escapeHTML(state.form.trainerExp||'') + '</textarea></div>' +
-    '<div class="stickybar"><button class="btn btn-primary" data-act="submit-trainer">Submit application</button></div>';
-}
-function courtSubmitScreen(){
-  const surface = state.form.courtSurface || 'Indoor';
-  return '<div class="notice" style="margin-bottom:14px">' + ico('ball','ic-sm') +
-    ' Submit your facility for review. Approved courts take bookings through RUBIX and pay a 10% platform fee per booking.</div>' +
-    '<div class="field"><label>Court / gym name</label><input data-input="form.courtName" placeholder="Eastside Hoops Hub" value="' + escapeHTML(state.form.courtName||'') + '"></div>' +
-    '<div class="field"><label>Address</label><input data-input="form.courtAddress" placeholder="31 Spintex Rd, Accra" value="' + escapeHTML(state.form.courtAddress||'') + '"></div>' +
-    '<div class="field"><label>Price per hour (USD)</label><input data-input="form.courtPrice" type="number" min="1" placeholder="20" value="' + escapeHTML(state.form.courtPrice||'') + '"></div>' +
-    '<div class="field"><label>Number of courts</label><input data-input="form.courtCount" type="number" min="1" placeholder="4" value="' + escapeHTML(state.form.courtCount||'') + '"></div>' +
-    '<div class="sec-title">Surface</div><div class="chips chips-wrap">' + ['Indoor','Outdoor','Street'].map(s =>
-      '<button class="chip orange' + (surface===s?' on':'') + '" data-act="court-surface" data-v="' + s + '">' + s + '</button>').join('') + '</div>' +
-    '<div class="field"><label>Amenities</label><textarea data-input="form.courtAmenities" placeholder="Indoor AC, Scoreboard, Showers, Parking">' + escapeHTML(state.form.courtAmenities||'') + '</textarea></div>' +
-    '<div class="stickybar"><button class="btn btn-primary" data-act="submit-court">Submit for review</button></div>';
-}
-function hostScreen(){
-  const formats = ['3v3','5v5','1v1','2v2','4v4'];
-  const f = state.hostFormat || '3v3';
-  const entry = Number(state.form.hostEntry || 5);
-  return '<div class="notice warn" style="margin-bottom:14px">' + ico('trophy','ic-sm') +
-    ' Hosting costs a flat <b>$9.99</b>. RUBIX also takes <b>15%</b> of every entry fee — the rest goes to the prize pool.</div>' +
-    '<div class="field"><label>Tournament name</label><input data-input="form.hostName" placeholder="Riverside 3v3 Open" value="' + escapeHTML(state.form.hostName||'') + '"></div>' +
-    '<div class="sec-title">Format</div><div class="chips chips-wrap">' + formats.map(x =>
-      '<button class="chip orange' + (f===x?' on':'') + '" data-act="host-format" data-v="' + x + '">' + x + '</button>').join('') + '</div>' +
-    '<div class="sec-title">Court</div><div class="card">' + DB.courts.map(c =>
-      '<div class="lrow flat"><div class="grow"><div class="t">' + escapeHTML(c.name) + '</div>' +
-      '<div class="s">' + c.surface + ' · $' + c.price + '/hr</div></div>' +
-      '<button class="btn btn-xs ' + (state.form.hostCourt===c.id?'btn-primary':'btn-ghost') + '" data-act="host-court" data-v="' + c.id + '">' +
-      (state.form.hostCourt===c.id?'Selected':'Select') + '</button></div>').join('') + '</div>' +
-    '<div class="field"><label>Max teams</label><input data-input="form.hostMax" type="number" min="2" max="16" placeholder="8" value="' + escapeHTML(state.form.hostMax||'') + '"></div>' +
-    '<div class="field"><label>Entry fee per team (USD)</label><input data-input="form.hostEntry" type="number" min="0" placeholder="5" value="' + escapeHTML(state.form.hostEntry||'') + '"></div>' +
-    '<div class="field"><label>Prize pool (USD)</label><input data-input="form.hostPrize" type="number" min="0" placeholder="60" value="' + escapeHTML(state.form.hostPrize||'') + '"></div>' +
-    '<div class="notice info" style="margin-top:14px">At $' + entry + ' entry across 8 teams, gross entries are ' + money(entry*8) +
-    '. RUBIX takes ' + money(round2(entry*8*0.15)) + ' and ' + money(round2(entry*8*0.85)) + ' flows to the prize pool.</div>' +
-    '<div class="stickybar"><div class="row-between">' +
-      '<div><div class="tiny">Host fee</div><div class="amt">$9.99</div></div>' +
-      '<div style="text-align:right"><div class="tiny">Wallet</div><b class="mono">' + money(DB.me.wallet) + '</b></div></div>' +
-      '<button class="btn btn-primary" data-act="submit-host">Pay $9.99 &amp; create tournament</button></div>';
-}
-
-/* 32. MORE */
-function moreScreen(){
-  const unread = Chat.unreadCount();
-  return '<div class="card card-dark" style="background:radial-gradient(220px 140px at 88% 0%,rgba(255,107,53,.42),transparent 65%),linear-gradient(150deg,#0A0A0A,#1A1F2E)">' +
-    '<div class="row-between"><div><div class="tiny" style="color:#8b95a5;font-weight:900;letter-spacing:.1em">WALLET</div>' +
-    '<div style="font-size:32px;font-weight:900;letter-spacing:-.05em;color:#fff;margin-top:4px">' + money(DB.me.wallet) + '</div></div>' +
-    avatar(DB.me,'md') + '</div>' +
-    '<div class="btn-row" style="margin-top:16px">' +
-      '<button class="btn btn-primary btn-sm" style="flex:1" data-act="wallet">Wallet</button>' +
-      '<button class="btn btn-sm" style="flex:1;background:rgba(255,255,255,.12);color:#fff" data-act="topup-open">Top up</button></div></div>' +
-    '<div class="sec-title">Discover</div>' +
-    '<div class="tiles">' +
-      '<button class="tile" data-act="ai"><div class="e">✨</div><b>AI Runs</b><span>Best today</span></button>' +
-      '<button class="tile" data-act="feed"><div class="e">📰</div><b>Feed</b><span>Your circle</span></button>' +
-      '<button class="tile" data-act="badges"><div class="e">🔥</div><b>Badges</b><span>Streaks</span></button>' +
-      '<button class="tile" data-act="lost"><div class="e">🎒</div><b>Lost &amp; Found</b><span>4 items</span></button>' +
-      '<button class="tile" data-act="shop"><div class="e">🛒</div><b>Shop</b><span>' + DB.shop.length + ' listings</span></button>' +
-      '<button class="tile" data-act="ranks"><div class="e">📊</div><b>Rankings</b><span>Leaderboard</span></button></div>' +
-    '<div class="sec-title">Inbox</div>' +
-    '<button class="lrow" data-act="chats">' +
-      '<div class="av av-md" style="--h:22;background:linear-gradient(135deg,#FF6B35,#E85D04)">' + ico('chat') + '</div>' +
-      '<div class="grow"><div class="t">Chats</div><div class="s">' + DB.chats.length + ' threads · ' + Chat.unreadCount() + ' unread</div></div>' +
-      (unread?'<span class="badge orange">' + unread + '</span>':ico('arrow','ic-sm')) + '</button>' +
-    '<div class="sec-title">Account</div><div class="card">' +
-      '<button class="lrow flat" data-act="profile" data-id="me"><div class="grow"><div class="t">View profile</div><div class="s">Stats, game log, badges</div></div>' + ico('arrow','ic-sm') + '</button>' +
-      '<button class="lrow flat" data-act="profileedit"><div class="grow"><div class="t">Edit profile</div><div class="s">Name, bio, position, availability</div></div>' + ico('arrow','ic-sm') + '</button>' +
-      '<button class="lrow flat" data-act="idcard"><div class="grow"><div class="t">Player ID card</div><div class="s">Show at partner courts</div></div>' + ico('arrow','ic-sm') + '</button>' +
-      '<button class="lrow flat" data-act="safety"><div class="grow"><div class="t">Trust &amp; Safety</div><div class="s">Verification, blocking, reports</div></div>' + ico('arrow','ic-sm') + '</button>' +
-      '<button class="lrow flat" data-act="notifs"><div class="grow"><div class="t">Notification preferences</div><div class="s">8 controls, no ads ever</div></div>' + ico('arrow','ic-sm') + '</button></div>' +
-    '<div class="sec-title">Apply to operate</div><div class="card">' +
-      '<button class="lrow flat" data-act="vendorapply"><div class="grow"><div class="t">Become a vendor</div><div class="s">$4.99 listing + 8% commission</div></div>' + ico('arrow','ic-sm') + '</button>' +
-      '<button class="lrow flat" data-act="trainerapply"><div class="grow"><div class="t">Become a trainer</div><div class="s">Keep 88% of every session</div></div>' + ico('arrow','ic-sm') + '</button>' +
-      '<button class="lrow flat" data-act="courtsubmit"><div class="grow"><div class="t">Submit a court</div><div class="s">Get listed and take bookings</div></div>' + ico('arrow','ic-sm') + '</button>' +
-      '<button class="lrow flat" data-act="host"><div class="grow"><div class="t">Host a tournament</div><div class="s">$9.99 host fee + 15% of entry</div></div>' + ico('arrow','ic-sm') + '</button></div>' +
-    '<div class="sec-title">Dashboards</div><div class="card">' +
-      '<button class="lrow flat" data-act="trainerdash"><div class="grow"><div class="t">Trainer dashboard</div><div class="s">Sessions, court status, earnings</div></div>' + ico('arrow','ic-sm') + '</button>' +
-      '<button class="lrow flat" data-act="crewdash"><div class="grow"><div class="t">Crew dashboard</div><div class="s">Members, requests, events</div></div>' + ico('arrow','ic-sm') + '</button></div>' +
-    '<div class="sec-title">Operator</div><div class="card">' +
-      (SESSION.mode==='admin'
-        ? '<button class="lrow flat" data-act="returnadmin"><div class="grow"><div class="t">Return to console</div><div class="s">Signed in as ' + escapeHTML(SESSION.adminId) + '</div></div>' + ico('arrow','ic-sm') + '</button>'
-        : '<button class="lrow flat" data-act="enteradmin"><div class="grow"><div class="t">Admin sign-in</div><div class="s">Restricted operator access</div></div><span class="badge red">RESTRICTED</span></button>') + '</div>' +
-    '<div class="gate-foot" style="color:#b5b0a4">RUBIX HOOPS · v1.0 · NO ADS EVER</div>';
-}
-
-/* 33. LOST & FOUND */
-function lostScreen(){
-  let list = DB.lost.slice();
-  if (state.lfFilter !== 'all') list = list.filter(x => x.type === state.lfFilter);
-  return '<div class="chips" style="margin-bottom:12px">' +
-    [['all','All'],['lost','Lost'],['found','Found']].map(f =>
-      '<button class="chip orange' + (state.lfFilter===f[0]?' on':'') + '" data-act="lffilter" data-v="' + f[0] + '">' + f[1] + '</button>').join('') + '</div>' +
-    list.map(x => '<div class="card"><div class="row">' +
-      '<div class="av av-lg" style="--h:' + (x.type==='lost'?12:150) + ';background:linear-gradient(135deg,' + (x.type==='lost'?'#EF4444,#b91c1c':'#25C26E,#12864a') + ')"><span>' + x.emoji + '</span></div>' +
-      '<div class="grow"><span class="badge ' + (x.type==='lost'?'red':'ok') + '">' + x.type.toUpperCase() + '</span>' +
-      '<div class="t" style="font-size:14.5px;font-weight:800;margin-top:6px">' + escapeHTML(x.title) + '</div>' +
-      '<div class="tiny" style="margin-top:3px">' + ico('pin','ic-sm') + ' ' + escapeHTML(x.place) + '</div></div></div>' +
-      '<p style="font-size:12.5px;color:#4a545f;line-height:1.55;margin-top:11px;font-weight:500">' + escapeHTML(x.note) + '</p>' +
-      '<div class="row-between" style="margin-top:11px"><span class="tiny">' + timeAgo(x.ts) + ' ago</span>' +
-      '<button class="btn btn-sm btn-ghost" data-act="contact-item" data-id="' + x.id + '">Contact</button></div></div>').join('') +
-    '<button class="btn btn-primary" style="margin-top:6px" data-act="lfadd">' + ico('plus','ic-sm') + ' Report an item</button>';
-}
-
-/* 34. SHOP */
-function shopScreen(){
-  let list = DB.shop.slice();
-  if (state.shopFilter !== 'all') list = list.filter(s => s.category === state.shopFilter);
-  if (state.shopQuery.trim()){
-    const q = state.shopQuery.toLowerCase();
-    list = list.filter(s => s.title.toLowerCase().includes(q));
-  }
-  const cats = [['all','All'],['Sneakers','Sneakers'],['Balls','Balls'],['Jerseys','Jerseys'],['Gear','Gear']];
-  return '<div class="field" style="margin-top:0"><input data-input="shopQuery" data-live="1" placeholder="Search the marketplace" value="' + escapeHTML(state.shopQuery) + '"></div>' +
-    '<div class="chips" style="margin-top:12px;margin-bottom:14px">' + cats.map(c =>
-      '<button class="chip orange' + (state.shopFilter===c[0]?' on':'') + '" data-act="shopfilter" data-v="' + c[0] + '">' + c[1] + '</button>').join('') + '</div>' +
-    '<div class="notice info" style="margin-bottom:14px">RUBIX takes an 8% commission on every sale. Sellers keep 92% and are paid straight to their wallet.</div>' +
-    '<div class="grid-2">' + list.map(s =>
-      '<button class="shop-card" data-act="shopitem" data-id="' + s.id + '">' +
-        '<div class="im"><img src="' + img(s.seed,400,300) + '" alt="" loading="lazy" onerror="this.remove()"></div>' +
-        '<div class="in"><b>' + escapeHTML(s.title) + '</b>' +
-        '<div class="pr">$' + s.price + '</div>' +
-        '<div class="tiny" style="margin-top:3px">' + escapeHTML(s.condition) + ' · ' + escapeHTML(s.place) + '</div></div></button>').join('') + '</div>' +
-    (list.length?'':'<div class="empty"><div class="e">🛒</div><b>Nothing matches that search</b><span>Try another category or keyword.</span></div>');
-}
-function shopItemScreen(p){
-  const s = DB.shop.find(x => x.id === p.id);
-  if (!s) return missingScreen();
-  const seller = userById(s.seller);
-  const fee = round2(s.price * RATES.shop.rate);
-  return '<div class="card card-flush">' +
-    '<div style="height:250px;background:#e6e3db"><img src="' + img(s.seed+'_big',700,500) + '" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.remove()"></div></div>' +
-    '<div class="row-between" style="margin-top:14px">' +
-      '<h2 style="font-size:21px;font-weight:900;letter-spacing:-.04em">' + escapeHTML(s.title) + '</h2>' +
-      '<div style="font-size:24px;font-weight:900;letter-spacing:-.05em">$' + s.price + '</div></div>' +
-    '<div class="pill-row" style="margin-top:10px">' +
-      '<span class="badge orange badge-lg">' + escapeHTML(s.condition) + '</span>' +
-      '<span class="badge badge-lg">' + escapeHTML(s.category) + '</span>' +
-      '<span class="badge badge-lg">' + escapeHTML(s.place) + '</span></div>' +
-    '<div class="sec-title">Seller</div>' +
-    '<button class="lrow" data-act="player" data-id="' + s.seller + '">' + avatar(seller,'md') +
-      '<div class="grow"><div class="t">' + escapeHTML(seller.name) + '</div>' +
-      '<div class="s">' + (seller.verified?'✓ Verified seller':'Seller') + ' · ' + escapeHTML(seller.city) + '</div></div>' +
-      ico('arrow','ic-sm') + '</button>' +
-    '<div class="notice ok" style="margin-top:14px">' + ico('shield','ic-sm') +
-      ' Buyer protection: funds are held until you confirm the item arrived as described. Disputes are reviewed within 24 hours.</div>' +
-    '<div class="stickybar"><div class="row-between">' +
-      '<div><div class="tiny">Item $' + s.price + ' + 8% fee</div><div class="amt">' + money(round2(s.price+fee)) + '</div></div>' +
-      '<div style="text-align:right"><div class="tiny">Wallet</div><b class="mono">' + money(DB.me.wallet) + '</b></div></div>' +
-      '<button class="btn btn-primary" data-act="buy-item" data-id="' + s.id + '">Buy now</button></div>';
-}
-
-/* 35. TRAINER DETAIL */
-function trainerDetailScreen(p){
-  const t = userById(p.id);
-  if (!t) return missingScreen();
-  const court = DB.courts.find(c => c.id === t.coachCourt) || DB.courts[0];
-  const rate = t.trainerRate || 30;
-  const fee = round2(rate * RATES.trainer.rate);
-  const slots = ['6:00 AM','8:00 AM','10:00 AM','4:00 PM','6:00 PM'];
-  return '<div class="card center">' + avatar(t,'hero') +
-      '<h2 style="font-size:21px;font-weight:900;letter-spacing:-.04em;margin-top:14px">' + escapeHTML(t.name) + '</h2>' +
-      '<div class="tiny" style="margin-top:5px">' + escapeHTML(t.specialty||'Skills training') + '</div>' +
-      '<div class="pill-row" style="justify-content:center;margin-top:11px">' +
-        '<span class="badge ok badge-lg">✓ VERIFIED</span>' +
-        '<span class="badge orange badge-lg">$' + rate + '/session</span>' +
-        '<span class="badge badge-lg">' + t.skill.toFixed(1) + ' skill</span></div></div>' +
-    '<div class="sec-title">Stationed at</div>' +
-    '<button class="lrow" data-act="court" data-id="' + court.id + '">' +
-      '<div class="av av-md" style="--h:' + court.hue + ';background:linear-gradient(135deg,hsl(' + court.hue + ' 70% 52%),hsl(' + (court.hue+40) + ' 70% 42%))"><span>🏀</span></div>' +
-      '<div class="grow"><div class="t">' + escapeHTML(court.name) + '</div>' +
-      '<div class="s">' + court.surface + ' · ' + escapeHTML(court.address) + '</div></div>' +
-      ico('arrow','ic-sm') + '</button>' +
-    '<div class="sec-title">Availability today</div>' +
-    '<div class="slots">' + slots.map(s =>
-      '<button class="slot' + (state.booking.time===s?' on':'') + '" data-act="bookslot" data-v="' + s + '">' + s + '</button>').join('') + '</div>' +
-    '<div class="notice" style="margin-top:16px">RUBIX takes a 12% platform fee on trainer sessions. ' +
-      escapeHTML(t.name.split(' ')[0]) + ' receives ' + money(rate-fee) + ' per session.</div>' +
-    '<div class="stickybar"><div class="row-between">' +
-      '<div><div class="tiny">Session ' + money(rate) + ' + fee ' + money(fee) + '</div><div class="amt">' + money(rate+fee) + '</div></div>' +
-      '<div style="text-align:right"><div class="tiny">Wallet</div><b class="mono">' + money(DB.me.wallet) + '</b></div></div>' +
-      '<button class="btn btn-primary" data-act="book-trainer" data-id="' + t.id + '">Book session</button></div>';
-}
-
-/* 36. CREW DETAIL */
-function crewDetailScreen(p){
-  const c = DB.crews.find(x => x.id === p.id);
-  if (!c) return missingScreen();
-  const leader = userById(c.leader);
-  const near = DB.users.filter(u => u.id !== 'me' && u.dist < 4).slice(0,5);
-  const joined = (DB.me.crews||[]).indexOf(c.id) >= 0;
-  return '<div class="hero hero-sm">' +
-      '<img src="' + img(c.id+'_crew',700,400) + '" alt="" onerror="this.remove()">' +
-      '<div class="hero-grad"></div><div class="hero-txt">' +
-      (c.verified?'<span class="badge ok badge-lg">✓ VERIFIED CREW</span>':'') +
-      '<h2 style="margin-top:8px">' + escapeHTML(c.name) + '</h2>' +
-      '<p>' + fmt(c.members) + ' members · ' + c.dist.toFixed(1) + ' km away</p></div></div>' +
-    '<div class="pill-row" style="margin-top:14px">' +
-      '<span class="badge ink badge-lg">' + (c.fee?'$'+c.fee.toFixed(2)+'/mo':'FREE') + '</span>' +
-      '<span class="badge badge-lg">' + fmt(c.members) + ' members</span>' +
-      '<span class="badge badge-lg">' + ico('users','ic-sm') + ' Pickup runs</span></div>' +
-    '<div class="sec-title">About</div><div class="card">' +
-      '<p style="font-size:13px;line-height:1.65;color:#3c4650;font-weight:500">' + escapeHTML(c.desc) + '</p></div>' +
-    '<div class="sec-title">Crew leader</div>' +
-    '<button class="lrow" data-act="player" data-id="' + c.leader + '">' + avatar(leader,'md') +
-      '<div class="grow"><div class="t">' + escapeHTML(leader.name) + '</div>' +
-      '<div class="s">Crew leader · ' + leader.position + ' · ' + leader.skill.toFixed(1) + ' skill</div></div>' +
-      ico('arrow','ic-sm') + '</button>' +
-    '<div class="sec-title">Members nearby</div>' +
-    near.map(u => '<div class="lrow">' + avatar(u,'sm') +
-      '<div class="grow"><div class="t">' + escapeHTML(u.name) + '</div>' +
-      '<div class="s">' + u.position + ' · ' + u.dist.toFixed(1) + ' km</div></div>' +
-      '<button class="btn btn-xs ' + (state.requestsSent[u.id]?'btn-soft':'btn-primary') + '" data-act="request" data-id="' + u.id + '">' +
-      (state.requestsSent[u.id]?'Sent':'Invite') + '</button></div>').join('') +
-    '<div class="stickybar">' +
-      (c.fee?'<div class="row-between"><div><div class="tiny">Membership</div>' +
-      '<div class="amt">' + money(c.fee) + '<span style="font-size:13px;font-weight:700;color:var(--muted)">/mo</span></div></div>' +
-      '<div style="text-align:right"><div class="tiny">5% platform fee</div><b class="mono">Leader gets ' + money(round2(c.fee*0.95)) + '</b></div></div>':'') +
-      '<button class="btn btn-primary" data-act="join-crew" data-id="' + c.id + '">' +
-      (joined?'You are a member':(c.fee?'Join crew · ' + money(c.fee) + '/mo':'Join crew · Free')) + '</button></div>';
-}
-
-/* 37. TRAINER DASHBOARD */
-function trainerDashScreen(){
-  const t = DB.me;
-  const sessions = [
-    {id:'ts1',who:'b7',time:'6:00 AM',type:'Shooting mechanics',status:'done'},
-    {id:'ts2',who:'b9',time:'8:00 AM',type:'Ball handling',status:'live'},
-    {id:'ts3',who:'b2',time:'5:00 PM',type:'Shooting mechanics',status:'upcoming'},
-    {id:'ts4',who:'b11',time:'7:00 PM',type:'Finishing at the rim',status:'upcoming'}
-  ];
-  const court = DB.courts[0];
-  const earnings = 486.20;
-  return '<div class="card card-dark" style="background:linear-gradient(150deg,#E85D04,#FF6B35)">' +
-      '<div class="tiny" style="color:rgba(255,255,255,.75);font-weight:900;letter-spacing:.1em">TRAINER · STATIONED AT</div>' +
-      '<h3 style="font-size:21px;font-weight:900;letter-spacing:-.04em;margin-top:6px;color:#fff">' + escapeHTML(court.name) + '</h3>' +
-      '<div class="row" style="margin-top:14px;gap:9px">' +
-        '<button class="btn btn-sm" style="flex:1;background:rgba(0,0,0,.22);color:#fff" data-act="court-status" data-v="open">Open</button>' +
-        '<button class="btn btn-sm" style="flex:1;background:rgba(0,0,0,.22);color:#fff" data-act="court-status" data-v="closed">Closed</button>' +
-        '<button class="btn btn-sm" style="flex:1;background:rgba(0,0,0,.22);color:#fff" data-act="court-status" data-v="maintenance">Maint.</button></div>' +
-      '<div class="tiny" style="color:rgba(255,255,255,.8);margin-top:9px;font-weight:700">Court status: ' + (state.form.courtStatus||'open').toUpperCase() + '</div></div>' +
-    '<div class="stat-grid three" style="margin-top:14px">' +
-      '<div class="stat"><b>' + sessions.filter(s => s.status==='done').length + '</b><span>Today</span></div>' +
-      '<div class="stat"><b>1</b><span>On court</span></div>' +
-      '<div class="stat"><b>' + sessions.filter(s => s.status==='upcoming').length + '</b><span>Upcoming</span></div></div>' +
-    '<div class="sec-title">Today’s sessions</div>' +
-    sessions.map(s => {
-      const u = userById(s.who);
-      const badge = s.status==='done'?'<span class="badge ok">DONE</span>':
-        s.status==='live'?'<span class="badge orange">LIVE</span>':'<span class="badge">UPCOMING</span>';
-      return '<div class="card card-tight"><div class="row">' + avatar(u,'sm') +
-        '<div class="grow"><div class="t" style="font-size:13.5px;font-weight:800">' + escapeHTML(u.name) + '</div>' +
-        '<div class="s tiny">' + s.time + ' · ' + escapeHTML(s.type) + '</div></div>' + badge + '</div>' +
-        '<div class="btn-row" style="margin-top:11px">' +
-          '<button class="btn btn-xs btn-ok" data-act="session-act" data-v="start">Start</button>' +
-          '<button class="btn btn-xs btn-ghost" data-act="session-act" data-v="complete">Complete</button>' +
-          '<button class="btn btn-xs btn-danger" data-act="session-act" data-v="cancel">Cancel</button></div></div>';
-    }).join('') +
-    '<div class="sec-title">Earnings</div>' +
-    '<div class="card card-dark" style="background:linear-gradient(150deg,#0A0A0A,#1A1F2E)">' +
-      '<div class="tiny" style="color:#8b95a5;font-weight:900;letter-spacing:.1em">THIS MONTH · NET OF 12% FEE</div>' +
-      '<div style="font-size:38px;font-weight:900;letter-spacing:-.05em;color:#fff;margin-top:6px">' + money(earnings) + '</div>' +
-      '<div class="tiny" style="color:#8b95a5;margin-top:6px">Next payout Friday · ' + money(earnings*0.42) + '</div></div>' +
-    '<div class="sec-title">Profile &amp; availability</div><div class="card">' +
-      '<div class="field" style="margin-top:0"><label>Specialty</label><input data-input="form.trainerSpecialty2" value="' + escapeHTML(t.specialty||'Shooting mechanics · Ball handling') + '"></div>' +
-      '<div class="field"><label>Rate (USD/session)</label><input data-input="form.trainerRate2" type="number" value="' + (t.trainerRate||35) + '"></div>' +
-      '<button class="btn btn-ghost btn-sm" data-act="noop" style="width:100%;margin-top:6px">Update availability</button></div>';
-}
-
-/* 38. CREW DASHBOARD */
-function crewDashScreen(){
-  const c = DB.crews[0];
-  const pending = [
-    {id:'j1',user:'b7',note:'SG, plays Wed/Fri evenings'},
-    {id:'j2',user:'b9',note:'PG, new to Accra'},
-    {id:'j3',user:'b12',note:'C, wants competitive runs'}
-  ];
-  const members = DB.users.filter(u => u.id !== 'me').slice(0,7);
-  return '<div class="card card-dark" style="background:linear-gradient(150deg,#B47800,#FFB020)">' +
-      '<div class="tiny" style="color:rgba(0,0,0,.6);font-weight:900;letter-spacing:.1em">CREW LEADER ·</div>' +
-      '<h3 style="font-size:21px;font-weight:900;letter-spacing:-.04em;margin-top:6px;color:#20160a">' + escapeHTML(c.name) + '</h3>' +
-      '<div class="tiny" style="color:rgba(0,0,0,.65);margin-top:6px;font-weight:700">' + fmt(c.members) + ' members · $' + c.fee.toFixed(2) + '/mo membership</div></div>' +
-    '<div class="stat-grid three" style="margin-top:14px">' +
-      '<div class="stat"><b>' + fmt(c.members) + '</b><span>Members</span></div>' +
-      '<div class="stat"><b>' + pending.length + '</b><span>Pending</span></div>' +
-      '<div class="stat"><b>2</b><span>Events</span></div></div>' +
-    '<div class="sec-title">Pending join requests</div>' +
-    pending.map(r => {
-      const u = userById(r.user);
-      return '<div class="card card-tight"><div class="row">' + avatar(u,'sm') +
-        '<div class="grow"><div class="t" style="font-size:13.5px;font-weight:800">' + escapeHTML(u.name) + '</div>' +
-        '<div class="s tiny">' + escapeHTML(r.note) + '</div></div></div>' +
-        '<div class="btn-row" style="margin-top:11px">' +
-          '<button class="btn btn-xs btn-ok" data-act="crew-req" data-id="' + r.id + '" data-v="approve">Approve</button>' +
-          '<button class="btn btn-xs btn-danger" data-act="crew-req" data-id="' + r.id + '" data-v="reject">Reject</button></div></div>';
-    }).join('') +
-    '<div class="sec-title">Members</div><div class="card">' + members.map(u =>
-      '<div class="lrow flat">' + avatar(u,'xs') +
-      '<div class="grow"><div class="t">' + escapeHTML(u.name) + '</div>' +
-      '<div class="s">' + u.position + ' · ' + u.skill.toFixed(1) + ' skill</div></div>' +
-      '<span class="badge">' + (u.status==='available'?'AVAILABLE':'BUSY') + '</span></div>').join('') + '</div>' +
-    '<div class="sec-title">Management</div><div class="card">' +
-      '<button class="lrow flat" data-act="noop"><div class="grow"><div class="t">Send announcement</div><div class="s">Push to all ' + fmt(c.members) + ' members</div></div>' + ico('arrow','ic-sm') + '</button>' +
-      '<button class="lrow flat" data-act="noop"><div class="grow"><div class="t">Create a run</div><div class="s">Schedule a pickup session</div></div>' + ico('arrow','ic-sm') + '</button>' +
-      '<button class="lrow flat" data-act="noop"><div class="grow"><div class="t">Crew settings</div><div class="s">Name, fees, visibility</div></div>' + ico('arrow','ic-sm') + '</button></div>';
-}
-
-/* 39. ADMIN TABS */
-const ADMIN_TABS = [
-  {id:'overview',label:'Overview'},{id:'analytics',label:'Analytics'},
-  {id:'approvals',label:'Approvals'},{id:'users',label:'Users'},
-  {id:'admins',label:'Admins'},{id:'squad',label:'Nat. Squad'},
-  {id:'rankings',label:'Rankings'},{id:'moderation',label:'Moderation'},
-  {id:'revenue',label:'Revenue'},{id:'log',label:'Log'}
-];
-const ADMIN = { log:[] };
 function adminDo(doFn, undoFn, label){
-  const entry = { id:uid('a'), doFn, undoFn, label, state:'active', t:Date.now(), by:SESSION.adminId };
+  const entry = {
+    id: uid('a'), doFn, undoFn, label, state:'active',
+    t: now(), by: SESSION.adminId || 'admin'
+  };
   doFn();
   ADMIN.log.push(entry);
   return entry;
@@ -1584,1126 +540,5292 @@ function adminDo(doFn, undoFn, label){
 function adminToggleLog(id){
   const e = ADMIN.log.find(x => x.id === id);
   if (!e) return;
-  if (e.state === 'active'){ e.undoFn(); e.state = 'undone'; toast('Action reversed'); }
-  else { e.doFn(); e.state = 'active'; toast('Action re-applied'); }
+  if (e.state === 'active'){ e.undoFn(); e.state = 'undone'; toast('↶ Reversed: ' + e.label); }
+  else { e.doFn(); e.state = 'active'; toast('↷ Reapplied: ' + e.label); }
   render();
 }
 
-/* 40-49. ADMIN SCREENS */
-function adminOverview(){
-  const pendingCount = DB.pending.vendors.length + DB.pending.crews.length + DB.pending.trainers.length + DB.pending.courts.length;
-  const openReports = DB.reports.filter(r => r.status === 'open').length;
-  const national = DB.users.filter(u => u.rankN != null).length;
-  const reversed = ADMIN.log.filter(l => l.state === 'undone').length;
-  let html = '<div class="stat-grid two">' +
-    '<div class="adm-stat"><b>$' + PLATFORM.revenue.toFixed(2) + '</b><span>Platform revenue</span></div>' +
-    '<div class="adm-stat"><b>' + pendingCount + '</b><span>Pending approvals</span></div>' +
-    '<div class="adm-stat"><b>' + DB.users.length + '</b><span>Members</span></div>' +
-    '<div class="adm-stat"><b>' + national + '</b><span>National players</span></div>' +
-    '<div class="adm-stat"><b>' + openReports + '</b><span>Open reports</span></div>' +
-    '<div class="adm-stat"><b>' + ADMIN.log.length + '</b><span>Logged actions</span></div></div>';
-  if (reversed) html += '<div class="notice warn" style="margin-top:14px">' + reversed + ' admin action' + (reversed===1?' has':'s have') + ' been reversed. Check the Log tab.</div>';
-  const jumps = [
-    ['analytics','Analytics','DAU, retention, court utilisation'],
-    ['approvals','Approvals',pendingCount + ' items waiting on review'],
-    ['moderation','Moderation',openReports + ' open reports'],
-    ['revenue','Revenue','Fee structure and earnings log'],
-    ['admins','Admins',ADMINS.length + ' operator accounts']
-  ];
-  html += '<div class="sec-title" style="color:#6f7987">Quick jump</div>';
-  jumps.forEach(j => {
-    html += '<button class="adm-card" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px" data-act="admintab" data-v="' + j[0] + '">' +
-      '<div class="grow"><h3>' + j[1] + '</h3><p>' + j[2] + '</p></div>' +
-      '<span style="color:#6f7987">' + ico('arrow','ic-sm') + '</span></button>';
-  });
-  return html;
+function walletOf(userId){
+  const u = userById(userId);
+  return u ? u.wallet : 0;
 }
-function adminAnalytics(){
-  const r = rngFrom('dau');
-  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const vals = days.map(() => 40 + Math.round(r()*60));
-  const max = Math.max.apply(null, vals);
-  let html = '<div class="adm-card"><h3>Daily active players</h3><p>Last 7 days</p><div class="chart">' +
-    vals.map((v,i) => '<div class="bar"><i style="height:' + Math.round((v/max)*100) + '%"></i><span>' + days[i] + '</span></div>').join('') +
-    '</div></div>';
-  html += '<div class="stat-grid two" style="margin-top:12px">' +
-    '<div class="adm-stat"><b>68%</b><span>D30 retention</span></div>' +
-    '<div class="adm-stat"><b>94%</b><span>Game completion</span></div>' +
-    '<div class="adm-stat"><b>$31.40</b><span>Avg wallet</span></div>' +
-    '<div class="adm-stat"><b>73%</b><span>Court utilisation</span></div></div>';
-  html += '<div class="sec-title" style="color:#6f7987">Top performing courts</div>';
-  DB.courts.slice().sort((a,b) => b.rating - a.rating).forEach(c => {
-    html += '<div class="adm-card"><div style="display:flex;justify-content:space-between;gap:10px">' +
-      '<div><h3>' + escapeHTML(c.name) + '</h3><p>' + c.surface + ' · ' + c.courtCount + ' courts · $' + c.price + '/hr</p></div>' +
-      '<div style="text-align:right"><b style="color:#FFB020;font-size:15px">★ ' + c.rating.toFixed(1) + '</b>' +
-      '<p style="margin-top:3px">' + c.playersHere.length + ' here now</p></div></div></div>';
-  });
-  return html;
-}
-function adminApprovals(){
-  const tabs = [['vendors','Vendors'],['crews','Crews'],['trainers','Trainers'],['courts','Courts']];
-  let html = '<div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:4px">' +
-    tabs.map(t => '<button class="adm-tab' + (state.adminAppTab===t[0]?' on':'') + '" data-act="adminapptab" data-v="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>';
-  const list = DB.pending[state.adminAppTab] || [];
-  html += '<div class="sec-title" style="color:#6f7987">' + list.length + ' pending</div>';
-  if (!list.length){
-    html += '<div class="adm-card"><p style="text-align:center;padding:14px 0">Nothing pending in this queue. All caught up.</p></div>';
-    return html;
-  }
-  list.forEach(item => {
-    html += '<button class="adm-card" style="width:100%;text-align:left" data-act="adminapp" data-type="' + state.adminAppTab + '" data-id="' + item.id + '">' +
-      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">' +
-      '<div style="flex:1"><h3>' + escapeHTML(item.name) + '</h3><p>' + escapeHTML(adminAppSummary(state.adminAppTab, item)) + '</p></div>' +
-      '<span class="badge amber">PENDING</span></div></button>';
-  });
-  return html;
-}
-function adminAppSummary(type, item){
-  if (type === 'vendors') return item.category + ' · $' + item.price + ' · ' + item.condition;
-  if (type === 'crews') return fmt(item.members) + ' members · ' + item.region + ' · ' + item.fee;
-  if (type === 'trainers') return '$' + item.rate + '/session · ' + item.specialty;
-  return item.surface + ' · ' + item.courtCount + ' courts · $' + item.price + '/hr';
-}
-function adminAppDetail(p){
-  const type = p.type;
-  const item = (DB.pending[type]||[]).find(x => x.id === p.id);
-  if (!item) return '<div class="adm-card"><p>This item is no longer pending.</p></div>';
-  let rows = '';
-  const kv = (k,v) => { rows += '<div class="adm-kv"><span>' + k + '</span><b>' + escapeHTML(String(v)) + '</b></div>'; };
-  kv('Application ID', item.id);
-  kv('Submitted', timeAgo(item.t) + ' ago');
-  if (type === 'vendors'){
-    kv('Item', item.name); kv('Category', item.category); kv('Price','$'+item.price);
-    kv('Condition', item.condition);
-    const seller = userById(item.seller);
-    kv('Seller', seller?seller.name:item.seller);
-    kv('Seller city', seller?seller.city:'—');
-    kv('Seller rating', seller?seller.skill.toFixed(1)+' skill':'—');
-    kv('Notes', item.notes);
-    kv('Platform fee','$4.99 listing + 8% of sale');
-  } else if (type === 'crews'){
-    kv('Crew name', item.name);
-    const leader = userById(item.leader);
-    kv('Leader', leader?leader.name:item.leader);
-    kv('Leader region', leader?leader.region:'—');
-    kv('Members', item.members); kv('Region', item.region);
-    kv('Monthly fee', item.fee); kv('Contact', item.contact);
-    kv('Notes', item.notes); kv('Platform fee','5% of membership');
-  } else if (type === 'trainers'){
-    kv('Display name', item.name);
-    const u = userById(item.user);
-    kv('Applicant', u?u.name:item.user);
-    kv('Skill rating', u?u.skill.toFixed(1):'—');
-    const court = DB.courts.find(c => c.id === item.court);
-    kv('Stationed court', court?court.name:item.court);
-    kv('Specialty', item.specialty);
-    kv('Rate','$'+item.rate+'/session');
-    kv('Experience', item.exp);
-    kv('Certifications', item.certs);
-    kv('Contact', item.contact);
-    kv('Platform fee','12% of each session');
-  } else {
-    kv('Court name', item.name); kv('Address', item.address);
-    kv('Surface', item.surface); kv('Price','$'+item.price+'/hr');
-    kv('Court count', item.courtCount);
-    kv('Amenities', item.amenities.join(', '));
-    kv('Contact', item.contact); kv('Platform fee','10% of each booking');
-  }
-  return '<div class="adm-card"><h3>Applicant profile</h3><p>' + escapeHTML(adminAppSummary(type, item)) + '</p></div>' +
-    '<div class="adm-card">' + rows + '</div>' +
-    '<div style="display:flex;gap:10px;margin-top:6px">' +
-      '<button class="btn" style="flex:1;background:#25C26E;color:#fff" data-act="adminapprove" data-type="' + type + '" data-id="' + item.id + '">Approve</button>' +
-      '<button class="btn" style="flex:1;background:#EF4444;color:#fff" data-act="adminreject" data-type="' + type + '" data-id="' + item.id + '">Reject</button></div>';
-}
-function adminUsers(){
-  const q = state.adminUserQuery.toLowerCase().trim();
-  const list = DB.users.filter(u => !q || u.name.toLowerCase().includes(q) || u.city.toLowerCase().includes(q));
-  let html = '<input class="adm-input" data-input="adminUserQuery" data-live="1" placeholder="Search users by name or city" value="' + escapeHTML(state.adminUserQuery) + '">';
-  html += '<div class="sec-title" style="color:#6f7987">' + list.length + ' users</div>';
-  list.forEach(u => {
-    const roles = [];
-    if (u.rankN != null) roles.push('NATIONAL');
-    if (u.roles.indexOf('trainer') >= 0) roles.push('TRAINER');
-    if (u.roles.indexOf('vendor') >= 0) roles.push('VENDOR');
-    if (u.roles.indexOf('crewleader') >= 0) roles.push('CREW');
-    html += '<button class="adm-card" style="width:100%;text-align:left" data-act="adminuser" data-id="' + u.id + '">' +
-      '<div style="display:flex;align-items:center;gap:12px">' + avatar(u,'sm') +
-      '<div style="flex:1;min-width:0"><h3>' + escapeHTML(u.name) + (u.id==='me'?' <span class="badge orange">YOU</span>':'') + '</h3>' +
-      '<p>' + escapeHTML(u.city+', '+u.region) + ' · ' + u.position + ' · ' + u.skill.toFixed(1) + ' skill</p>' +
-      '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">' +
-        roles.map(r => '<span class="badge" style="background:#222833;color:#a8b2c1">' + r + '</span>').join('') +
-        (u.verified?'<span class="badge ok">VERIFIED</span>':'') + '</div></div>' +
-      '<div style="text-align:right"><b style="font-size:13px;color:#fff">' + fmt(u.points) + '</b>' +
-      '<p style="margin-top:3px">' + money(u.wallet||0) + '</p></div></div></button>';
-  });
-  return html;
-}
-function adminUserEdit(p){
-  const u = userById(p.id);
-  if (!u) return '<div class="adm-card"><p>User not found.</p></div>';
-  const isTrainer = u.roles.indexOf('trainer') >= 0;
-  const isVendor = u.roles.indexOf('vendor') >= 0;
-  const isNational = u.rankN != null;
-  return '<div class="adm-card"><div style="display:flex;align-items:center;gap:13px">' + avatar(u,'lg') +
-      '<div><h3 style="font-size:17px">' + escapeHTML(u.name) + '</h3>' +
-      '<p>' + escapeHTML(u.city+', '+u.region) + '</p></div></div></div>' +
-    '<div class="adm-card">' +
-      '<div class="adm-kv"><span>User ID</span><b>' + u.id + '</b></div>' +
-      '<div class="adm-kv"><span>Position</span><b>' + u.position + '</b></div>' +
-      '<div class="adm-kv"><span>Skill</span><b>' + u.skill.toFixed(1) + '</b></div>' +
-      '<div class="adm-kv"><span>Points</span><b>' + fmt(u.points) + '</b></div>' +
-      '<div class="adm-kv"><span>Wallet</span><b>' + money(u.wallet||0) + '</b></div>' +
-      '<div class="adm-kv"><span>Games</span><b>' + u.stats.games + '</b></div>' +
-      '<div class="adm-kv"><span>Record</span><b>' + u.stats.wins + 'W · ' + u.stats.losses + 'L</b></div>' +
-      '<div class="adm-kv"><span>National rank</span><b>' + (isNational?'#'+u.rankN:'—') + '</b></div></div>' +
-    '<div class="sec-title" style="color:#6f7987">Roles &amp; verification</div><div class="adm-card">' +
-      '<div class="adm-kv"><span>Verified player</span>' +
-        '<button class="btn btn-xs ' + (u.verified?'btn-ok':'btn-ghost') + '" data-act="adminverify" data-id="' + u.id + '">' + (u.verified?'✓ Verified':'Verify') + '</button></div>' +
-      '<div class="adm-kv"><span>Trainer role</span>' +
-        '<button class="btn btn-xs ' + (isTrainer?'btn-ok':'btn-ghost') + '" data-act="adminrole" data-id="' + u.id + '" data-v="trainer">' + (isTrainer?'Active':'Grant') + '</button></div>' +
-      '<div class="adm-kv"><span>Vendor role</span>' +
-        '<button class="btn btn-xs ' + (isVendor?'btn-ok':'btn-ghost') + '" data-act="adminrole" data-id="' + u.id + '" data-v="vendor">' + (isVendor?'Active':'Grant') + '</button></div>' +
-      '<div class="adm-kv"><span>National squad</span>' +
-        '<button class="btn btn-xs ' + (isNational?'btn-ok':'btn-ghost') + '" data-act="adminsquad" data-id="' + u.id + '">' + (isNational?'In squad':'Add') + '</button></div></div>' +
-    '<div class="sec-title" style="color:#6f7987">Points</div>' +
-    '<div class="adm-card" style="display:flex;gap:10px;align-items:center">' +
-      '<button class="btn btn-xs btn-ghost" data-act="adminpoints" data-id="' + u.id + '" data-v="-50">−50</button>' +
-      '<div style="flex:1;text-align:center"><b style="font-size:20px;color:#fff">' + fmt(u.points) + '</b><p style="margin-top:2px">current points</p></div>' +
-      '<button class="btn btn-xs btn-ghost" data-act="adminpoints" data-id="' + u.id + '" data-v="50">+50</button></div>' +
-    '<div class="sec-title" style="color:#6f7987">Wallet</div>' +
-    '<div class="adm-card" style="display:flex;gap:10px">' +
-      '<button class="btn btn-xs btn-ghost" style="flex:1" data-act="adminwallet" data-id="' + u.id + '" data-v="-10">Debit $10</button>' +
-      '<button class="btn btn-xs btn-ghost" style="flex:1" data-act="adminwallet" data-id="' + u.id + '" data-v="10">Credit $10</button></div>' +
-    '<div style="margin-top:14px">' +
-      '<button class="btn" style="width:100%;background:#EF4444;color:#fff" data-act="admindelete" data-id="' + u.id + '">' + ico('trash','ic-sm') + ' Delete user</button></div>';
-}
-function adminAdmins(){
-  let html = '';
-  ADMINS.forEach(a => {
-    html += '<div class="adm-card"><div style="display:flex;align-items:center;gap:12px">' + avatar(a,'md') +
-      '<div style="flex:1"><h3>' + escapeHTML(a.name) + '</h3><p>' + escapeHTML(a.email) + '</p></div>' +
-      '<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">' +
-        (a.isDefault?'<span class="badge amber">DEFAULT</span>':'') +
-        (SESSION.adminId===a.id?'<span class="badge ok">SIGNED IN</span>':'') + '</div></div>' +
-      '<div class="adm-kv" style="margin-top:10px"><span>Passcode</span><b>' + escapeHTML(a.pin) + '</b></div></div>';
-  });
-  html += '<button class="btn btn-primary" style="width:100%;margin-top:6px" data-act="adminadd">' + ico('plus','ic-sm') + ' Add admin account</button>';
-  return html;
-}
-function adminSquad(){
-  const squad = DB.users.filter(u => u.rankN != null).sort((a,b) => a.rankN - b.rankN);
-  const eligible = DB.users.filter(u => u.rankN == null && u.id !== 'me').sort((a,b) => b.points - a.points).slice(0,8);
-  let html = '<div class="sec-title" style="color:#6f7987">Current roster · ' + squad.length + '/8</div>';
-  squad.forEach(u => {
-    html += '<div class="adm-card" style="display:flex;align-items:center;gap:12px">' +
-      '<b style="font-size:17px;color:#FFB020;width:26px">' + u.rankN + '</b>' + avatar(u,'sm') +
-      '<div style="flex:1;min-width:0"><h3>' + escapeHTML(u.name) + '</h3><p>' + escapeHTML(u.region) + ' · ' + fmt(u.points) + ' pts</p></div>' +
-      '<button class="btn btn-xs" style="background:#EF4444;color:#fff" data-act="adminsquad" data-id="' + u.id + '">Remove</button></div>';
-  });
-  if (!squad.length) html += '<div class="adm-card"><p>No players currently on the national squad.</p></div>';
-  html += '<div class="sec-title" style="color:#6f7987">Eligible players</div>';
-  eligible.forEach(u => {
-    html += '<div class="adm-card" style="display:flex;align-items:center;gap:12px">' + avatar(u,'sm') +
-      '<div style="flex:1;min-width:0"><h3>' + escapeHTML(u.name) + '</h3><p>' + escapeHTML(u.region) + ' · ' + fmt(u.points) + ' pts</p></div>' +
-      '<button class="btn btn-xs btn-ghost" data-act="adminsquad" data-id="' + u.id + '">Add</button></div>';
-  });
-  return html;
-}
-function adminRankings(){
-  const list = DB.users.filter(u => u.id !== 'me').sort((a,b) => b.points - a.points);
-  let html = '<div class="notice info" style="margin-bottom:14px">Adjust points in ±50 increments. Every change is logged and reversible.</div>';
-  list.forEach((u,i) => {
-    html += '<div class="adm-card" style="display:flex;align-items:center;gap:12px">' +
-      '<b style="width:22px;color:#6f7987;font-size:13px">' + (i+1) + '</b>' + avatar(u,'sm') +
-      '<div style="flex:1;min-width:0"><h3>' + escapeHTML(u.name) + '</h3><p>' + fmt(u.points) + ' pts · ' + escapeHTML(u.city) + '</p></div>' +
-      '<div style="display:flex;gap:6px">' +
-        '<button class="btn btn-xs btn-ghost" data-act="adminpoints" data-id="' + u.id + '" data-v="-50">−50</button>' +
-        '<button class="btn btn-xs btn-ghost" data-act="adminpoints" data-id="' + u.id + '" data-v="50">+50</button></div></div>';
-  });
-  return html;
-}
-function adminModeration(){
-  const f = state.adminReportFilter;
-  let list = DB.reports.slice();
-  if (f === 'open') list = list.filter(r => r.status === 'open');
-  else if (f === 'resolved') list = list.filter(r => r.status === 'resolved');
-  let html = '<div style="display:flex;gap:7px;margin-bottom:12px">' +
-    [['open','Open'],['resolved','Resolved'],['all','All']].map(x =>
-      '<button class="adm-tab' + (f===x[0]?' on':'') + '" data-act="adminreportfilter" data-v="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>';
-  if (!list.length){
-    html += '<div class="adm-card"><p style="text-align:center;padding:14px 0">No reports in this view.</p></div>';
-    return html;
-  }
-  list.forEach(r => {
-    const rep = userById(r.reporter);
-    const tgt = userById(r.target);
-    const typeColor = r.type === 'No-show' ? 'amber' : (r.type === 'Harassment' ? 'red' : 'orange');
-    html += '<div class="adm-card">' +
-      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">' +
-      '<span class="badge ' + typeColor + '">' + escapeHTML(r.type.toUpperCase()) + '</span>' +
-      (r.status === 'resolved' ? '<span class="badge ok">RESOLVED</span>' : '<span class="badge">OPEN</span>') + '</div>' +
-      '<p style="margin-top:10px;color:#c3ccd8">' + escapeHTML(rep?rep.name:r.reporter) + ' → ' + escapeHTML(tgt?tgt.name:r.target) + '</p>' +
-      '<p style="margin-top:7px">' + escapeHTML(r.text) + '</p>' +
-      '<p style="margin-top:8px;color:#5c6675">' + timeAgo(r.ts) + ' ago</p>' +
-      (r.status === 'open'
-        ? '<div style="display:flex;gap:7px;margin-top:12px">' +
-            '<button class="btn btn-xs btn-ghost" style="flex:1" data-act="adminreport" data-id="' + r.id + '" data-v="dismiss">Dismiss</button>' +
-            '<button class="btn btn-xs btn-ghost" style="flex:1" data-act="adminreport" data-id="' + r.id + '" data-v="warn">Warn</button>' +
-            '<button class="btn btn-xs" style="flex:1;background:#EF4444;color:#fff" data-act="adminreport" data-id="' + r.id + '" data-v="ban">Ban</button></div>'
-        : '<div style="margin-top:12px"><button class="btn btn-xs btn-ghost" style="width:100%" data-act="adminreport" data-id="' + r.id + '" data-v="reopen">Reopen report</button></div>') + '</div>';
-  });
-  return html;
-}
-function adminRevenue(){
-  const kinds = {};
-  PLATFORM.history.forEach(h => { kinds[h.kind] = round2((kinds[h.kind]||0) + h.fee); });
-  const feeTable = Object.keys(RATES).map(k => ({ k:RATES[k].label, rate:Math.round(RATES[k].rate*100)+'%', rev:kinds[k]||0 }));
-  const flatTable = Object.keys(PRICES).map(k => ({ k:PRICES[k].label, rate:'$'+PRICES[k].flat.toFixed(2), rev:kinds[k]||0 }));
-  let html = '<div class="adm-card" style="background:radial-gradient(240px 150px at 88% 0%,rgba(255,107,53,.4),transparent 66%),#141821">' +
-    '<p>All-time platform revenue</p>' +
-    '<div style="font-size:38px;font-weight:900;letter-spacing:-.05em;color:#fff;margin-top:6px">$' + PLATFORM.revenue.toFixed(2) + '</div>' +
-    '<p style="margin-top:6px">' + PLATFORM.history.length + ' revenue events recorded this session</p></div>';
-  html += '<div class="sec-title" style="color:#6f7987">Percentage fees</div><div class="adm-card">';
-  feeTable.forEach(f => { html += '<div class="adm-kv"><span>' + f.k + ' · ' + f.rate + '</span><b>' + money(f.rev) + '</b></div>'; });
-  html += '</div>';
-  html += '<div class="sec-title" style="color:#6f7987">Flat fees</div><div class="adm-card">';
-  flatTable.forEach(f => { html += '<div class="adm-kv"><span>' + f.k + ' · ' + f.rate + '</span><b>' + money(f.rev) + '</b></div>'; });
-  html += '</div>';
-  html += '<div class="sec-title" style="color:#6f7987">Recent revenue events</div>';
-  if (!PLATFORM.history.length) html += '<div class="adm-card"><p>No revenue recorded yet in this session. Complete a paid action as a player to see it here.</p></div>';
-  PLATFORM.history.slice(0,20).forEach(h => {
-    html += '<div class="adm-card"><div style="display:flex;justify-content:space-between;gap:10px">' +
-      '<div><h3 style="font-size:13.5px">' + escapeHTML(h.kind) + '</h3>' +
-      '<p>Gross ' + money(h.gross) + ' · provider ' + money(h.net) + '</p></div>' +
-      '<b style="color:#25C26E;font-size:15px">+' + money(h.fee) + '</b></div>' +
-      '<p style="margin-top:7px">' + timeAgo(h.ts) + ' ago' + (h.sourceId?' · provider '+escapeHTML(h.sourceId):'') + '</p></div>';
-  });
-  return html;
-}
-function adminLog(){
-  if (!ADMIN.log.length){
-    return '<div class="adm-card"><p style="text-align:center;padding:16px 0">No admin actions logged yet. Approve, edit or moderate something and it will appear here with an Undo button.</p></div>';
-  }
-  let html = '<div class="notice info" style="margin-bottom:14px">Every action is reversible. Reversed entries appear dimmed and can be re-applied.</div>';
-  ADMIN.log.slice().reverse().forEach(e => {
-    html += '<div class="log-entry' + (e.state==='undone'?' undone':'') + '">' +
-      '<div class="lt">' + escapeHTML(e.label) + (e.state==='undone'?' <span class="badge">REVERSED</span>':'') + '</div>' +
-      '<div class="lm">' + escapeHTML(e.by||'admin') + ' · ' + timeAgo(e.t) + ' ago</div>' +
-      '<div style="margin-top:9px"><button class="btn btn-xs btn-ghost" data-act="adminlogtoggle" data-id="' + e.id + '">' +
-      (e.state==='undone'?'Reapply':'Undo') + '</button></div></div>';
-  });
-  return html;
+function txsOf(userId){
+  return DB.transactions.filter(t => t.userId === userId).sort((a,b) => b.ts - a.ts);
 }
 
-/* 50. ADMIN DISPATCHER */
-function adminScreen(){
-  const tab = state.adminTab;
-  let body = '';
-  if (tab === 'overview') body = adminOverview();
-  else if (tab === 'analytics') body = adminAnalytics();
-  else if (tab === 'approvals') body = adminApprovals();
-  else if (tab === 'users') body = adminUsers();
-  else if (tab === 'admins') body = adminAdmins();
-  else if (tab === 'squad') body = adminSquad();
-  else if (tab === 'rankings') body = adminRankings();
-  else if (tab === 'moderation') body = adminModeration();
-  else if (tab === 'revenue') body = adminRevenue();
-  else body = adminLog();
-  return '<div class="adm-bar">' +
-      ADMIN_TABS.map(t => '<button class="adm-tab' + (tab===t.id?' on':'') + '" data-act="admintab" data-v="' + t.id + '">' + t.label + '</button>').join('') + '</div>' +
-    '<div style="padding:16px 16px 30px">' + body + '</div>';
-}
-function adminAppDetailScreen(p){ return adminAppDetail(p); }
-function adminUserEditScreen(p){ return adminUserEdit(p); }
+function charge(userId, { kind, amount, note, sourceId, platformFee }){
+  const user = userById(userId);
+  if (!user) return { ok:false, error:'No user' };
+  if (amount <= 0) return { ok:false, error:'Invalid amount' };
+  if (user.wallet < amount) return { ok:false, error:'insufficient' };
 
-/* 53. SCREEN REGISTRY */
-const SCREENS = {
-  discover:discoverScreen, tourneys:tourneyListScreen, tourneydetail:tourneyDetailScreen,
-  rankings:rankingsScreen, courts:courtsScreen, court:courtDetailScreen,
-  player:playerScreen, profileedit:profileEditScreen, idcard:idCardScreen,
-  chats:chatsScreen, chat:chatViewScreen, feed:feedScreen, badges:badgesScreen,
-  ai:aiScreen, wallet:walletScreen, safety:safetyScreen, notifs:notifsScreen,
-  vendorapply:vendorApplyScreen, trainerapply:trainerApplyScreen, courtsubmit:courtSubmitScreen,
-  host:hostScreen, more:moreScreen, lost:lostScreen, shop:shopScreen, shopitem:shopItemScreen,
-  trainer:trainerDetailScreen, crew:crewDetailScreen,
-  trainerdash:trainerDashScreen, crewdash:crewDashScreen,
-  admin:adminScreen, adminappdetail:adminAppDetailScreen, adminuseredit:adminUserEditScreen
+  const fee = platformFee != null ? platformFee : 0;
+  const net = amount - fee;
+
+  user.wallet -= amount;
+  DB.transactions.push({
+    id: uid('tx'), userId, kind, amount: -amount,
+    note: note || kind, ts: now(), sourceId, fee, net
+  });
+
+  PLATFORM.revenue += fee;
+  if (fee > 0) PLATFORM.history.push({
+    ts: now(), kind, gross: amount, fee, net, sourceId
+  });
+
+  if (net > 0 && sourceId){
+    const seller = userById(sourceId);
+    if (seller){ seller.wallet += net; seller.earnings += net; }
+  }
+  return { ok:true, fee, net };
+}
+function topup(userId, amount){
+  const u = userById(userId);
+  if (!u) return;
+  u.wallet += amount;
+  DB.transactions.push({
+    id: uid('tx'), userId, kind:'topup', amount, note:'Wallet top-up', ts: now()
+  });
+}
+
+const PRICES = {
+  requestPlayer: PLATFORM.flatFees.requestPlayer,
+  chatUnlock: PLATFORM.flatFees.unlockChat,
+  vendorListing: PLATFORM.flatFees.vendorListing,
+  tournamentHost: PLATFORM.flatFees.tournamentHost,
+  crewCreate: PLATFORM.flatFees.crewCreate,
+  priorityBooking: PLATFORM.flatFees.priorityBooking,
+  courtPct: PLATFORM.feePct.court,
+  trainerPct: PLATFORM.feePct.trainer,
+  tournamentPct: PLATFORM.feePct.tournament,
+  shopPct: PLATFORM.feePct.shopSale,
+  crewPct: PLATFORM.feePct.crewJoin
 };
-function missingScreen(){
-  return '<div class="empty"><div class="e">🤷</div><b>Screen not found</b><span>That page does not exist in this build.</span></div>';
-}
+function courtFee(price){ return +(price * PRICES.courtPct / 100).toFixed(2); }
+function trainerFee(rate){ return +(rate * PRICES.trainerPct / 100).toFixed(2); }
+function tourneyFee(entry){ return +(entry * PRICES.tournamentPct / 100).toFixed(2); }
+function shopFee(price){ return +(price * PRICES.shopPct / 100).toFixed(2); }
+function crewFee(mo){ return +(mo * PRICES.crewPct / 100).toFixed(2); }
 
-/* 54. HEADER + TABS RENDER */
-function renderLayers(){
-  const l = $('#layers');
-  let h = '';
-  if (MODAL){
-    if (MODAL.kind === 'paywall') h += paywallHTML(MODAL);
-    else h += '<div class="scrim" data-act="close-layer"></div><div class="sheet"><div class="sheet-grab2"></div>' + MODAL.html + '</div>';
-  }
-  l.innerHTML = h;
-}
-
-/* 55. RENDER */
-let MODAL = null;
-let focusKey = null;
-function render(){
-  const app = $('#app');
-  if (!SESSION.mode){
-    app.innerHTML = state.gateScreen === 'adminlogin' ? adminLoginScreen() : entryGateScreen();
-    renderLayers();
-    return;
-  }
-  const cur = currentScreen();
-  const isTop = nav.stack.length === 0;
-  const dark = DARK_SCREENS.has(cur.screen);
-  let h = '';
-  if (cur.screen === 'discover' && isTop && SESSION.mode === 'player') h += discoverFloatHeader();
-  else h += headerHTML(cur, dark);
-  const fn = SCREENS[cur.screen] || missingScreen;
-  const body = fn(cur.params || {});
-  const flush = (cur.screen === 'discover' && isTop) || cur.screen === 'chat' || cur.screen === 'admin';
-  h += '<main class="main' + (flush?' main-flush':'') + (dark?' dark-bg':'') + '" id="main">' + body + '</main>';
-  if (isTop && SESSION.mode === 'player') h += tabbarHTML();
-  app.innerHTML = h;
-  if (cur.screen === 'chat'){
-    const sc = $('#chatScroll');
-    if (sc) sc.scrollTop = sc.scrollHeight;
-  }
-  renderLayers();
-  if (focusKey){
-    const el = document.querySelector('[data-input="' + focusKey + '"]');
-    if (el && el.focus){
-      el.focus();
-      try { el.setSelectionRange(el.value.length, el.value.length); } catch (err) { /* not a text input */ }
+/* ============================================================
+   SECTION 5 — TOURNAMENT ENGINE
+   ============================================================ */
+const Tournaments = {
+  buildBracket(t){
+    const teams = t.teams.map(x => ({ id: x.id, name: x.name, members: x.members.slice() }));
+    for (let i = teams.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i+1));
+      [teams[i], teams[j]] = [teams[j], teams[i]];
     }
-    focusKey = null;
+    const rounds = [];
+    let current = teams;
+    while (current.length > 1){
+      const matches = [];
+      for (let i = 0; i < current.length; i += 2){
+        matches.push({
+          id: uid('m'),
+          teamA: current[i] || null,
+          teamB: current[i+1] || null,
+          scoreA: null, scoreB: null,
+          status: current[i+1] ? 'pending' : 'bye',
+          agreed: false
+        });
+      }
+      rounds.push(matches);
+      current = matches.map(m => m.teamA && !m.teamB ? m.teamA : null).filter(Boolean);
+      if (matches.every(m => m.status === 'bye')) break;
+      current = matches.map(() => null);
+    }
+    t.bracket = { rounds: [rounds[0]], currentRound: 0, phase:'active' };
+    return t.bracket;
+  },
+
+  recordResult(t, roundIdx, matchId, scoreA, scoreB, agreedByUser){
+    if (!t.bracket) return false;
+    const round = t.bracket.rounds[roundIdx];
+    const m = round.find(x => x.id === matchId);
+    if (!m || !m.teamA || !m.teamB) return false;
+    m.scoreA = scoreA;
+    m.scoreB = scoreB;
+    m.status = 'completed';
+    m.agreed = true;
+    advanceRound(t);
+    return true;
+  },
+
+  isRegistered(t, userId){
+    return t.teams.some(x => x.members.includes(userId));
   }
+};
+
+function advanceRound(t){
+  const cur = t.bracket.rounds[t.bracket.currentRound];
+  if (!cur.every(m => m.status === 'completed' || m.status === 'bye')) return;
+
+  const winners = cur.map(m => {
+    if (m.status === 'bye') return m.teamA;
+    return m.scoreA > m.scoreB ? m.teamA : m.teamB;
+  }).filter(Boolean);
+
+  if (winners.length <= 1){ t.completed = true; t.bracket.phase = 'done'; t.winner = winners[0]; return; }
+
+  const next = [];
+  for (let i = 0; i < winners.length; i += 2){
+    next.push({
+      id: uid('m'),
+      teamA: winners[i] || null,
+      teamB: winners[i+1] || null,
+      scoreA: null, scoreB: null,
+      status: winners[i+1] ? 'pending' : 'bye',
+      agreed: false
+    });
+  }
+  t.bracket.rounds.push(next);
+  t.bracket.currentRound++;
 }
 
-/* PAYWALL */
-function paywallHTML(m){
-  const enough = DB.me.wallet >= m.amount;
-  let lines = '';
-  if (m.rate){
-    lines += '<div class="pay-line"><span>Gross ' + escapeHTML(m.rateLabel||m.title) + '</span><b>' + money(m.amount) + '</b></div>';
-    lines += '<div class="pay-line"><span>Platform fee (' + Math.round(m.rate*100) + '%)</span><b>' + money(round2(m.amount*m.rate)) + '</b></div>';
-  } else {
-    lines += '<div class="pay-line"><span>' + escapeHTML(m.title) + '</span><b>' + money(m.amount) + '</b></div>';
-    lines += '<div class="pay-line"><span>Routes to RUBIX platform</span><b>' + money(m.amount) + '</b></div>';
+/* ============================================================
+   SECTION 6 — CHAT ENGINE
+   ============================================================ */
+const Chat = {
+  threadWith(userId){
+    return DB.chats.find(c => c.withId === userId);
+  },
+  ensureThread(userId){
+    let c = this.threadWith(userId);
+    if (!c){
+      c = { id: uid('ch'), withId: userId, unlocked: false, messages: [], lastRead: 0 };
+      DB.chats.unshift(c);
+    }
+    return c;
+  },
+  send(chatId, from, text){
+    const c = DB.chats.find(x => x.id === chatId);
+    if (!c) return;
+    c.messages.push({ id: uid('m'), from, text, ts: now() });
+    c.lastRead = now();
+  },
+  unreadCount(){
+    return DB.chats.reduce((n, c) => {
+      if (!c.unlocked) return n;
+      const last = c.messages[c.messages.length - 1];
+      if (!last) return n;
+      if (last.from === 'me') return n;
+      return n + (last.ts > c.lastRead ? 1 : 0);
+    }, 0);
+  },
+  totalUnlockedUnread(){
+    return this.unreadCount();
   }
-  lines += '<div class="pay-line total"><span>Total due</span><b>' + money(m.amount) + '</b></div>';
-  return '<div class="scrim" data-act="close-layer"></div>' +
-    '<div class="sheet"><div class="sheet-grab2"></div>' +
-      '<h3>' + escapeHTML(m.title) + '</h3><p>' + escapeHTML(m.body) + '</p>' +
-      '<div class="pay-box"><div class="row-between">' +
-        '<div class="pay-amt ' + (enough?'ok':'bad') + '">' + money(m.amount) + '</div>' +
-        '<span class="bal-pill">Wallet ' + money(DB.me.wallet) + '</span></div>' +
-        '<div style="margin-top:12px">' + lines + '</div></div>' +
-      (enough
-        ? '<div style="margin-top:18px;display:flex;gap:10px">' +
-            '<button class="btn btn-soft" style="flex:1" data-act="close-layer">Cancel</button>' +
-            '<button class="btn btn-gold" style="flex:1.4" data-act="paywall-confirm">Confirm</button></div>'
-        : '<div class="notice warn" style="margin-top:16px">Your wallet balance is too low for this action. Top up to continue.</div>' +
-          '<div style="margin-top:14px;display:flex;gap:10px">' +
-            '<button class="btn btn-soft" style="flex:1" data-act="close-layer">Cancel</button>' +
-            '<button class="btn btn-primary" style="flex:1.4" data-act="topup-open">Top up wallet</button></div>') +
+};
+
+/* ============================================================
+   SECTION 7 — GAME VERIFICATION ENGINE
+   ============================================================ */
+const Verify = {
+  all(){ return (getMe().verifications ||= []); },
+  pending(){ return this.all().filter(x => x.status === 'awaiting-both' || x.status === 'awaiting-me'); },
+  propose(opponentId, scoreMe, scoreThem, photo){
+    const v = {
+      id: uid('v'),
+      withId: opponentId,
+      scoreMe, scoreThem,
+      photo: !!photo,
+      proposedAt: now(),
+      status:'awaiting-both',
+      myConfirm: true,
+      theirConfirm: false,
+      expiresAt: now() + 48*3600000
+    };
+    this.all().push(v);
+    return v;
+  },
+  confirmOpponent(v){
+    v.theirConfirm = true;
+    if (v.myConfirm && v.theirConfirm) v.status = 'locked';
+  },
+  dispute(v){
+    v.status = 'disputed';
+  }
+};
+
+/* ============================================================
+   SECTION 8 — AI RECOMMENDATIONS
+   ============================================================ */
+const AI = {
+  matchScore(me, other){
+    let s = 0;
+    const skillDiff = Math.abs(parseFloat(me.skill) - parseFloat(other.skill));
+    s += Math.max(0, 40 - skillDiff * 12);
+    if (other.preferredCourt === me.preferredCourt) s += 15;
+    if (other.position !== me.position) s += 10;
+    if (other.region === me.region) s += 15;
+    if (other.status === 'Available now') s += 10;
+    if (other.dist <= 500) s += 10;
+    const shared = (me.interests || []).filter(x => (other.interests || []).includes(x));
+    s += shared.length * 5;
+    return Math.min(99, Math.round(s));
+  },
+  topMatches(limit){
+    const me = getMe();
+    return DB.users
+      .filter(u => u.id !== 'me' && u.role !== 'admin')
+      .map(u => ({ u, s: this.matchScore(me, u) }))
+      .sort((a, b) => b.s - a.s)
+      .slice(0, limit || 5);
+  }
+};
+
+/* ============================================================
+   SECTION 9 — WEATHER (mock, deterministic)
+   ============================================================ */
+const Weather = {
+  _hash(day){
+    let h = 0;
+    const str = 'hoops-' + day;
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+    return h;
+  },
+  current(){
+    const h = this._hash(new Date().toDateString());
+    const temp = 24 + (h % 8);
+    const cond = ['Clear','Partly cloudy','Sunny','Light breeze','Humid','Chance of rain'][h % 6];
+    const emoji = { 'Clear':'☀️','Partly cloudy':'⛅','Sunny':'☀️','Light breeze':'🌤️','Humid':'💨','Chance of rain':'🌧️' }[cond];
+    return { temp, cond, emoji };
+  },
+  forecast(days){
+    const out = [];
+    const base = new Date();
+    for (let i = 0; i < (days || 5); i++){
+      const d = new Date(base.getTime() + i*86400000);
+      const h = this._hash(d.toDateString());
+      const t = 22 + (h % 10);
+      const c = ['Clear','Sunny','Cloudy','Light rain','Thunderstorm'][h % 5];
+      const e = { Clear:'☀️', Sunny:'☀️', Cloudy:'⛅', 'Light rain':'🌦️', Thunderstorm:'⛈️' }[c];
+      out.push({
+        label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en', {weekday:'short'}),
+        temp: t, cond: c, emoji: e,
+        playable: c !== 'Thunderstorm' && c !== 'Light rain'
+      });
+    }
+    return out;
+  },
+  courtAdvice(court){
+    /* Indoor courts are always playable — no weather dependency */
+    if (court.surface === 'Indoor' || court.surface === 'Street'){
+      return { ok:true, msg: court.surface === 'Indoor' ? 'Climate controlled — always playable.' : 'Street courts — playable unless heavy rain.' };
+    }
+    const f = this.forecast(3);
+    const bad = f.find(x => !x.playable);
+    if (!bad) return { ok:true, msg:'Great conditions for the next 3 days.' };
+    return { ok:false, msg: bad.label + ' looks rough — ' + bad.cond + '. Consider Indoor instead.' };
+  }
+};
+
+/* ════════════════════════════════════════════════════════════
+   END OF SESSION 2 — continue with Session 3 below
+   ════════════════════════════════════════════════════════════ */
+/* ============================================================
+   SECTION 10 — ROUTER + STATE + DOM REFS + HELPERS
+   ============================================================ */
+const nav = { tab:'discover', stack:[] };
+
+const state = {
+  /* discover */
+  discoverFilter:'all',
+  /* rankings */
+  rankList:'national', rankQuery:'', rankRegion:'All', rankSkill:'All',
+  /* lost & found */
+  lfFilter:'all',
+  /* booking */
+  booking:{ date:'Today', time:null },
+  /* application drafts */
+  vendorDraft:null, trainerCourt:null, courtSurface:null,
+  hostFormat:null,
+  /* admin */
+  adminTab:'overview', adminAppTab:'vendors', adminUserQuery:'',
+  adminReportFilter:'open',
+  /* forms */
+  gateAdminEmail:'', gateAdminPin:'',
+  /* shop filter */
+  shopFilter:'all',
+  /* tournaments */
+  tourneyFilter:'open',
+  /* chat */
+  activeChat:null,
+  /* onboarding */
+  onboardStep: 1,
+  onboardDraft: null,
+  /* post composer */
+  postDraft: null,
+  commentDraft: '',
+  /* profile form */
+  profileDraft: null,
+  /* misc */
+  requestsSent:{}, topupPick:25,
+  feedLikes:{}, feedComments:{},
+  feedTab: 'foryou'
+};
+
+const hdrEl   = document.getElementById('hdr');
+const mainEl  = document.getElementById('main');
+const tabsEl  = document.getElementById('tabs');
+const layerEl = document.getElementById('layer');
+const phoneEl = document.getElementById('phone');
+
+const TABS = [
+  {id:'discover',   label:'DISCOVER',   icon:'pin'},
+  {id:'tournaments',label:'TOURNEYS',   icon:'trophy'},
+  {id:'rankings',   label:'RANKINGS',   icon:'chart'},
+  {id:'courts',     label:'COURTS',     icon:'ball'},
+  {id:'more',       label:'MORE',       icon:'grid'}
+];
+const VISIBLE_TABS = TABS.map(t => t.id);
+
+function go(screen, params, title){
+  nav.stack.push({ screen, params: params || {}, title: title || '' });
+  render();
+  mainEl.scrollTop = 0;
+}
+function back(){ nav.stack.pop(); render(); }
+function setTab(t){ nav.tab = t; nav.stack = []; render(); mainEl.scrollTop = 0; }
+
+/* -------- Lookup helpers -------- */
+function getMe(){ return DB.users.find(u => u.id === 'me'); }
+function userById(id){ return DB.users.find(u => u.id === id); }
+function courtById(id){ return DB.courts.find(c => c.id === id); }
+function crewById(id){ return DB.crews.find(c => c.id === id); }
+function shopById(id){ return DB.shop.find(s => s.id === id); }
+function tourneyById(id){ return DB.tournaments.find(t => t.id === id); }
+function adminById(id){ return ADMINS.find(a => a.id === id); }
+
+function winPct(s){ return s.games ? Math.round(s.wins/s.games*100) : 0; }
+function stars(r){ return '<span class="star">★</span> ' + r.toFixed(1); }
+function statusDot(a){ return a === 'on' ? 'dot--on' : a === 'soon' ? 'dot--soon' : 'dot--off'; }
+
+/* -------- Avatar rendering (respects uploaded photo) -------- */
+function avatarHTML(u, cls){
+  if (!u) return '<div class="av '+(cls||'')+'"></div>';
+  const h = u.hue != null ? u.hue : 22;
+  const c1 = 'hsl(' + h + ' 78% 58%)';
+  const c2 = 'hsl(' + ((h+50)%360) + ' 72% 42%)';
+  /* Priority: uploaded dataUrl > user's picsum seed */
+  const src = u.avatarDataUrl ? u.avatarDataUrl : img(u.id + '-' + u.photo, 200, 200);
+  return '<div class="av ' + (cls||'') + '" style="--c1:' + c1 + ';--c2:' + c2 + '">' +
+    '<span class="av__ini">' + u.initials + '</span>' +
+    '<img src="' + src + '" alt="" loading="lazy" onerror="this.remove()">' +
+  '</div>';
+}
+
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  phoneEl.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('is-on'));
+  setTimeout(() => { t.classList.remove('is-on'); setTimeout(() => t.remove(), 320); }, 2100);
+}
+function closeLayer(){ layerEl.innerHTML = ''; layerEl._paywall = null; }
+
+/* ============================================================
+   PAYWALL / TOPUP POPUPS
+   ============================================================ */
+function paywallPopup(opts){
+  const me = getMe();
+  const enough = me.wallet >= opts.price;
+  layerEl.innerHTML =
+    '<div class="scrim" data-act="close-layer"></div>' +
+    '<div class="popup">' +
+      '<div class="popup__pill"><span class="pulse"></span>PAID ACTION</div>' +
+      '<h3>' + escapeHTML(opts.title) + '</h3>' +
+      '<p>' + escapeHTML(opts.body || '') + '</p>' +
+      '<div class="paywall" style="margin-top:16px;text-align:left">' +
+        '<div class="paywall__inner">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+            '<div>' +
+              '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:rgba(255,255,255,.5)">AMOUNT</div>' +
+              '<div class="paywall__price" style="margin-top:6px">' + money(opts.price) + '</div>' +
+            '</div>' +
+            '<div style="text-align:right">' +
+              '<div style="font-size:10.5px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5)">WALLET</div>' +
+              '<div style="font-size:20px;font-weight:900;letter-spacing:-.04em;margin-top:6px;color:' +
+                (enough ? 'var(--orange)' : '#FF9B8B') + '">' + money(me.wallet) + '</div>' +
+            '</div>' +
+          '</div>' +
+          (opts.platformFee
+            ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;font-size:11px;font-weight:700">' +
+                '<span style="color:rgba(255,255,255,.5)">Platform fee</span>' +
+                '<span style="color:var(--orange)">' + money(opts.platformFee) + '</span>' +
+              '</div>'
+            : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="popup__btns">' +
+        '<button class="btn btn--ghost" data-act="close-layer">Cancel</button>' +
+        (enough
+          ? '<button class="btn btn--primary" data-act="paywall-confirm">' + escapeHTML(opts.cta || 'Pay ' + money(opts.price)) + '</button>'
+          : '<button class="btn btn--gold" data-act="topup">Top up wallet</button>') +
+      '</div>' +
+    '</div>';
+  layerEl._paywall = opts;
+}
+
+function topupPopup(){
+  const amounts = [5, 10, 25, 50];
+  layerEl.innerHTML =
+    '<div class="scrim" data-act="close-layer"></div>' +
+    '<div class="popup">' +
+      '<div class="popup__pill" style="background:linear-gradient(140deg,#FFD770,#FFB020);color:#3A2500">ADD FUNDS</div>' +
+      '<h3>Top up your wallet</h3>' +
+      '<p>Funds are used for chat unlocks, tournament entries, court bookings and trainer sessions.</p>' +
+      '<div class="chips chips--pad" style="padding:14px 0 0">' +
+        amounts.map(a =>
+          '<button class="chip ' + (a===25?'is-on':'') + '" data-act="topup-pick" data-v="' + a + '">' + money(a) + '</button>'
+        ).join('') +
+      '</div>' +
+      '<div class="popup__btns">' +
+        '<button class="btn btn--ghost" data-act="close-layer">Cancel</button>' +
+        '<button class="btn btn--primary" data-act="topup-confirm" data-v="25">Add $25</button>' +
+      '</div>' +
     '</div>';
 }
-function openPaywall(cfg){
-  MODAL = Object.assign({ kind:'paywall', amount:0, rate:0 }, cfg);
-  renderLayers();
-}
-function openSheet(html){
-  MODAL = { kind:'sheet', html };
-  renderLayers();
-}
-function closeLayer(){ MODAL = null; renderLayers(); }
-function topupSheetHTML(){
-  const presets = [5,10,25,50];
-  return '<h3>Top up wallet</h3>' +
-    '<p>Add funds instantly. No fees, no card stored — this is a demo wallet.</p>' +
-    '<div class="chips chips-wrap" style="margin-top:16px">' +
-      presets.map(p => '<button class="chip orange' + (state.topupPick===p?' on':'') + '" data-act="topup" data-v="' + p + '">$' + p + '</button>').join('') + '</div>' +
-    '<div class="pay-box" style="margin-top:16px">' +
-      '<div class="pay-line"><span>Amount</span><b>$' + state.topupPick + '.00</b></div>' +
-      '<div class="pay-line"><span>Processing fee</span><b>$0.00</b></div>' +
-      '<div class="pay-line total"><span>New balance</span><b>' + money(DB.me.wallet + state.topupPick) + '</b></div></div>' +
-    '<div style="margin-top:16px"><button class="btn btn-primary" data-act="topup-confirm">Add $' + state.topupPick + '.00</button></div>';
+
+/* ============================================================
+   IMAGE PICKER HELPER
+   Reusable across onboarding, edit profile, post composer.
+   ============================================================ */
+function attachImagePicker(inputId, cb){
+  const input = document.getElementById(inputId);
+  if (!input || input.dataset.bound) return;
+  input.dataset.bound = '1';
+  input.addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024){ toast('Image must be under 5 MB'); input.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      /* Optional downscale to max 1200px wide */
+      const raw = reader.result;
+      downscaleImage(raw, 1200, 0.85, cb);
+    };
+    reader.onerror = () => toast('Could not read image');
+    reader.readAsDataURL(file);
+    input.value = ''; // allow re-selecting the same file
+  });
 }
 
-/* TOAST */
-let toastTimer = null;
-function toast(msg){
-  const t = $('#toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2100);
+function downscaleImage(dataUrl, maxW, quality, cb){
+  const image = new Image();
+  image.onload = () => {
+    if (image.width <= maxW){ cb(dataUrl); return; }
+    const scale = maxW / image.width;
+    const w = maxW;
+    const h = Math.round(image.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(image, 0, 0, w, h);
+    try { cb(canvas.toDataURL('image/jpeg', quality)); }
+    catch(e){ cb(dataUrl); }
+  };
+  image.onerror = () => cb(dataUrl);
+  image.src = dataUrl;
 }
 
-/* 56. EVENT BUS */
-document.addEventListener('click', function(e){
+/* ============================================================
+   MAP SVG
+   ============================================================ */
+function mapSVG(){
+  return `
+  <svg class="map__bg" viewBox="0 0 400 720" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <rect width="400" height="720" fill="#EFEBE2"/>
+    <g fill="#E0DAD0">
+      <rect x="18" y="36" width="106" height="86" rx="12"/>
+      <rect x="152" y="28" width="112" height="72" rx="12"/>
+      <rect x="292" y="46" width="94" height="106" rx="12"/>
+      <rect x="26" y="168" width="84" height="92" rx="12"/>
+      <rect x="146" y="164" width="106" height="74" rx="12"/>
+      <rect x="284" y="188" width="102" height="86" rx="12"/>
+      <rect x="200" y="298" width="76" height="58" rx="12"/>
+      <rect x="300" y="306" width="86" height="112" rx="12"/>
+      <rect x="34" y="448" width="112" height="88" rx="12"/>
+      <rect x="182" y="438" width="96" height="76" rx="12"/>
+      <rect x="302" y="458" width="84" height="96" rx="12"/>
+      <rect x="56" y="582" width="118" height="92" rx="12"/>
+      <rect x="212" y="568" width="120" height="88" rx="12"/>
+    </g>
+    <rect x="18" y="292" width="152" height="132" rx="16" fill="#D4E0CC"/>
+    <path d="M44 372 q30 -26 62 -6 q28 18 58 -4" stroke="#B9D9AB" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <g stroke="#FFFFFF" stroke-width="13" stroke-linecap="round">
+      <path d="M-10 146 H410"/><path d="M-10 272 H410"/><path d="M-10 424 H410"/><path d="M-10 556 H410"/>
+    </g>
+    <g stroke="#FFFFFF" stroke-width="9" stroke-linecap="round">
+      <path d="M136 -10 V730"/><path d="M270 -10 V730"/>
+    </g>
+    <g stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity=".85">
+      <path d="M-10 660 L410 470"/><path d="M60 -10 V730"/><path d="M340 -10 V730"/>
+    </g>
+    <g stroke="#D6CFC4" stroke-width="2">
+      <path d="M-10 210 H410" opacity=".7"/><path d="M-10 350 H410" opacity=".7"/>
+      <path d="M-10 490 H410" opacity=".7"/><path d="M-10 620 H410" opacity=".7"/>
+      <path d="M204 -10 V730" opacity=".7"/>
+    </g>
+  </svg>`;
+}
+
+/* ============================================================
+   SECTION 11 — ENTRY GATE + ADMIN LOGIN
+   ============================================================ */
+function screenEntry(){
+  return '<div class="gate">'+
+    '<div class="gate__inner">'+
+      '<div class="gate__logo">🏀</div>'+
+      '<div class="gate__title">RUBIX HOOPS</div>'+
+      '<div class="gate__sub">Find runs. Book courts. Join crews.<br>Confirm how you want to continue.</div>'+
+      '<div class="gate__cards">'+
+        '<button class="entry-card" data-act="enterplayer">'+
+          '<div class="entry-card__ico" style="background:rgba(255,255,255,.1)">'+ico('user')+'</div>'+
+          '<div class="entry-card__main">'+
+            '<div class="entry-card__t">Continue as Player</div>'+
+            '<div class="entry-card__s">Sign in as Marcus Bell and access the player experience</div>'+
+          '</div>'+
+          ico('chev')+
+        '</button>'+
+        '<button class="entry-card" data-act="startfresh" style="border-color:rgba(255,255,255,.2)">'+
+          '<div class="entry-card__ico" style="background:rgba(255,255,255,.1)">'+ico('camera')+'</div>'+
+          '<div class="entry-card__main">'+
+            '<div class="entry-card__t">Create my own profile</div>'+
+            '<div class="entry-card__s">Pick your photo, position, skill — start from scratch</div>'+
+          '</div>'+
+          ico('chev')+
+        '</button>'+
+        '<button class="entry-card entry-card--admin" data-act="enteradmin">'+
+          '<div class="entry-card__ico">'+ico('shield2')+'</div>'+
+          '<div class="entry-card__main">'+
+            '<div class="entry-card__t">Enter Admin Console <span class="badge" style="background:rgba(255,107,53,.25);color:var(--orange);font-size:9px;padding:2px 7px">RESTRICTED</span></div>'+
+            '<div class="entry-card__s">Manage approvals, accounts, rankings & platform settings</div>'+
+          '</div>'+
+          ico('chev')+
+        '</button>'+
+      '</div>'+
+      '<div class="gate__foot">NO ADS · EVER · v1.0</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function screenAdminLogin(){
+  return '<div style="min-height:100%;background:linear-gradient(160deg,#1A1F2E 0%,#0A0A0A 60%);padding:36px 24px;color:#fff;display:flex;flex-direction:column">'+
+    '<div style="text-align:center;margin-bottom:32px">'+
+      '<div style="width:72px;height:72px;border-radius:26px;background:linear-gradient(140deg,var(--orange),var(--orange-dk));color:#fff;display:grid;place-items:center;margin:0 auto 20px">'+ico('lock')+'</div>'+
+      '<div style="font-size:24px;font-weight:900;letter-spacing:-.045em">Admin Sign-in</div>'+
+      '<div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:8px">Authorised personnel only</div>'+
+    '</div>'+
+    '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:22px 20px">'+
+      '<label style="display:block;font-size:11px;font-weight:800;letter-spacing:.08em;color:rgba(255,255,255,.5);margin-bottom:10px">EMAIL</label>'+
+      '<input id="adminEmail" type="email" placeholder="admin@rubix.app" value="'+state.gateAdminEmail+'"'+
+        ' style="width:100%;padding:15px;border-radius:14px;background:rgba(0,0,0,.3);border:1.5px solid rgba(255,255,255,.12);color:#fff;font-size:14px;font-weight:600;margin-bottom:16px">'+
+      '<label style="display:block;font-size:11px;font-weight:800;letter-spacing:.08em;color:rgba(255,255,255,.5);margin-bottom:10px">PASSCODE</label>'+
+      '<input id="adminPin" type="password" inputmode="numeric" maxlength="6" placeholder="••••" value="'+state.gateAdminPin+'"'+
+        ' style="width:100%;padding:15px;border-radius:14px;background:rgba(0,0,0,.3);border:1.5px solid rgba(255,255,255,.12);color:#fff;font-size:22px;font-weight:900;text-align:center;letter-spacing:.35em">'+
+      '<button class="abtn abtn--ok" style="width:100%;padding:16px;margin-top:18px;font-size:14px" data-act="adminauth">Unlock Console</button>'+
+      '<div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.4);text-align:center;margin-top:14px;line-height:1.6">'+
+        'Demo: <b style="color:var(--orange)">admin@rubix.app</b> · <b style="color:var(--orange)">1234</b></div>'+
+    '</div>'+
+    '<button class="abtn abtn--ghost" style="margin-top:auto" data-act="exitgate">← Back to gate</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 12 — ONBOARDING WIZARD
+   ============================================================ */
+function blankDraft(){
+  return {
+    avatarDataUrl: null,
+    name: '',
+    skill: '3.5',
+    position: 'SG',
+    preferredCourt: 'Indoor',
+    city: '',
+    region: 'Greater Accra',
+    bio: '',
+    playstyle: ['Playmaker'],
+    interests: ['Pickup runs'],
+    status: 'Available now',
+    avail: 'on'
+  };
+}
+function skillLabel(v){
+  const n = parseFloat(v);
+  if (n <= 1.5) return 'Beginner';
+  if (n <= 2.5) return 'Casual';
+  if (n <= 3.5) return 'Competitive';
+  if (n <= 4.5) return 'Advanced';
+  return 'Elite';
+}
+
+function screenOnboarding(){
+  if (!state.onboardDraft) state.onboardDraft = blankDraft();
+  const d = state.onboardDraft;
+  const step = state.onboardStep;
+
+  const progress = [1,2,3,4].map(n => {
+    const cls = n < step ? 'is-done' : (n === step ? 'is-on' : '');
+    return '<div class="onboard-progress__seg '+cls+'"></div>';
+  }).join('');
+
+  let body = '';
+  let footer = '';
+
+  /* ---------- STEP 1: PHOTO + NAME ---------- */
+  if (step === 1){
+    const hasPhoto = !!d.avatarDataUrl;
+    body =
+      '<div class="onboard-title">Your photo &amp; name</div>'+
+      '<div class="onboard-sub">A clear photo helps other players recognise you at the court. You can change it anytime.</div>'+
+      '<div class="onboard-avatar-drop '+(hasPhoto?'has-photo':'')+'" data-act="pick-avatar">'+
+        (hasPhoto
+          ? '<img src="'+d.avatarDataUrl+'" alt="">'
+          : '<span class="onboard-avatar-drop__icon">'+ico('camera')+'</span>')+
+        '<span class="onboard-avatar-drop__label">'+(hasPhoto?'Tap to change':'Tap to upload')+'</span>'+
+      '</div>'+
+      '<div class="form-field" style="margin-top:22px">'+
+        '<label class="form-label">Full name</label>'+
+        '<input class="form-input" data-input="onboard-name" value="'+escapeHTML(d.name)+'" placeholder="e.g. Marcus Bell" autocomplete="name">'+
+      '</div>'+
+      '<button class="btn btn--ghost btn--block btn--sm" data-act="onboard-skip-photo">Skip photo for now</button>';
+    footer =
+      '<button class="btn btn--ghost" data-act="exitgate">Cancel</button>'+
+      '<button class="btn btn--primary" data-act="onboard-next"'+(d.name.trim()?'':' disabled')+'>Continue</button>';
+  }
+
+  /* ---------- STEP 2: YOUR GAME ---------- */
+  if (step === 2){
+    const val = parseFloat(d.skill);
+    const pct = ((val - 1) / 4) * 100;
+    body =
+      '<div class="onboard-title">Your game</div>'+
+      '<div class="onboard-sub">Help us match you with players at the right level and pick-up runs that fit.</div>'+
+      '<div class="form-field">'+
+        '<label class="form-label">Skill rating</label>'+
+        '<div class="skill-slider">'+
+          '<div class="skill-slider__track">'+
+            '<div class="skill-slider__fill" style="width:'+pct+'%"></div>'+
+            '<div class="skill-slider__thumb" style="left:'+pct+'%"></div>'+
+            '<input type="range" min="1" max="5" step="0.5" value="'+d.skill+'" data-input="onboard-skill">'+
+          '</div>'+
+          '<div class="skill-slider__label">'+val.toFixed(1)+' · '+skillLabel(d.skill)+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="form-field" style="margin-top:22px">'+
+        '<label class="form-label">Position</label>'+
+        '<div class="form-chips">'+
+          ['PG','SG','SF','PF','C'].map(p =>
+            '<button class="form-chip '+(d.position===p?'is-on':'')+'" data-act="onboard-field" data-f="position" data-v="'+p+'">'+p+'</button>'
+          ).join('')+
+        '</div>'+
+      '</div>'+
+      '<div class="form-field">'+
+        '<label class="form-label">Preferred court</label>'+
+        '<div class="form-chips">'+
+          ['Indoor','Outdoor','Street'].map(p =>
+            '<button class="form-chip '+(d.preferredCourt===p?'is-on':'')+'" data-act="onboard-field" data-f="preferredCourt" data-v="'+p+'">'+p+'</button>'
+          ).join('')+
+        '</div>'+
+      '</div>';
+    footer =
+      '<button class="btn btn--ghost" data-act="onboard-back">Back</button>'+
+      '<button class="btn btn--primary" data-act="onboard-next">Continue</button>';
+  }
+
+  /* ---------- STEP 3: LOCATION + BIO ---------- */
+  if (step === 3){
+    body =
+      '<div class="onboard-title">Where do you play?</div>'+
+      '<div class="onboard-sub">We use this to find courts, crews and players near you.</div>'+
+      '<div class="form-field">'+
+        '<label class="form-label">City</label>'+
+        '<input class="form-input" data-input="onboard-city" value="'+escapeHTML(d.city)+'" placeholder="e.g. Accra">'+
+      '</div>'+
+      '<div class="form-field">'+
+        '<label class="form-label">Region</label>'+
+        '<input class="form-input" data-input="onboard-region" value="'+escapeHTML(d.region)+'" placeholder="e.g. Greater Accra">'+
+      '</div>'+
+      '<div class="form-field">'+
+        '<label class="form-label">Short bio</label>'+
+        '<textarea class="form-input" data-input="onboard-bio" maxlength="240" placeholder="What\'s your game like? What are you looking for?">'+escapeHTML(d.bio)+'</textarea>'+
+        '<div style="font-size:11px;font-weight:700;color:var(--muted);text-align:right;margin-top:6px">'+d.bio.length+' / 240</div>'+
+      '</div>'+
+      '<div class="form-field">'+
+        '<label class="form-label">Playstyle (pick any)</label>'+
+        '<div class="form-chips">'+
+          ['Sharpshooter','Playmaker','Defender','Post-Up','Slasher','Rebounder'].map(p =>
+            '<button class="form-chip '+(d.playstyle.includes(p)?'is-on':'')+'" data-act="onboard-toggle" data-f="playstyle" data-v="'+p+'">'+p+'</button>'
+          ).join('')+
+        '</div>'+
+      '</div>'+
+      '<div class="form-field">'+
+        '<label class="form-label">Interests (pick any)</label>'+
+        '<div class="form-chips">'+
+          ['Pickup runs','1v1','3v3','League play','Training','Social'].map(p =>
+            '<button class="form-chip '+(d.interests.includes(p)?'is-on':'')+'" data-act="onboard-toggle" data-f="interests" data-v="'+p+'">'+p+'</button>'
+          ).join('')+
+        '</div>'+
+      '</div>';
+    footer =
+      '<button class="btn btn--ghost" data-act="onboard-back">Back</button>'+
+      '<button class="btn btn--primary" data-act="onboard-next"'+(d.city.trim()?'':' disabled')+'>Continue</button>';
+  }
+
+  /* ---------- STEP 4: PREVIEW ---------- */
+  if (step === 4){
+    const tempUser = {
+      id:'preview', name: d.name || 'Your name',
+      initials: (d.name || 'Y N').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase(),
+      hue: 22, avatarDataUrl: d.avatarDataUrl, photo: 0,
+      skill: d.skill, position: d.position, preferredCourt: d.preferredCourt,
+      city: d.city || '—', region: d.region
+    };
+    body =
+      '<div class="onboard-title">All set, '+(d.name.split(' ')[0] || 'friend')+'</div>'+
+      '<div class="onboard-sub">Here\'s how your profile will look. You can edit everything later.</div>'+
+      '<div style="background:#fff;border-radius:22px;padding:20px;box-shadow:var(--shadow)">'+
+        '<div style="display:flex;gap:16px;align-items:center">'+
+          avatarHTML(tempUser, 'av--xl')+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:20px;font-weight:900;letter-spacing:-.04em">'+escapeHTML(d.name || 'Your name')+'</div>'+
+            '<div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:5px">📍 '+escapeHTML(d.city||'—')+' · '+escapeHTML(d.region)+'</div>'+
+            '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+
+              '<span class="badge badge--orange">'+d.position+'</span>'+
+              '<span class="badge badge--soft">Skill '+d.skill+'</span>'+
+              '<span class="badge badge--soft">'+d.preferredCourt+'</span>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+        (d.bio ? '<div style="font-size:13px;font-weight:500;color:#3A3A3A;margin-top:16px;line-height:1.5">'+escapeHTML(d.bio)+'</div>' : '')+
+        (d.playstyle.length ? '<div style="margin-top:14px"><div style="font-size:10.5px;font-weight:900;letter-spacing:.1em;color:var(--muted);margin-bottom:8px">PLAYSTYLE</div>'+
+          '<div style="display:flex;gap:6px;flex-wrap:wrap">'+d.playstyle.map(p=>'<span class="badge badge--soft">'+p+'</span>').join('')+'</div></div>' : '')+
+        (d.interests.length ? '<div style="margin-top:14px"><div style="font-size:10.5px;font-weight:900;letter-spacing:.1em;color:var(--muted);margin-bottom:8px">LOOKING FOR</div>'+
+          '<div style="display:flex;gap:6px;flex-wrap:wrap">'+d.interests.map(p=>'<span class="badge badge--soft">'+p+'</span>').join('')+'</div></div>' : '')+
+      '</div>';
+    footer =
+      '<button class="btn btn--ghost" data-act="onboard-back">Edit</button>'+
+      '<button class="btn btn--primary" data-act="onboard-finish">Publish my profile</button>';
+  }
+
+  return '<div class="onboard-wrap">'+
+    '<div class="onboard-progress">'+progress+'</div>'+
+    '<div class="onboard-body">'+body+'</div>'+
+    '<div class="onboard-footer">'+footer+'</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 13 — DISCOVER (MAP + SHEET)
+   ============================================================ */
+const PINS = [
+  {type:'player',id:'b1',x:44,y:36},{type:'player',id:'b2',x:63,y:29},
+  {type:'player',id:'b3',x:29,y:50},{type:'player',id:'b4',x:56,y:57},
+  {type:'player',id:'b5',x:73,y:44},{type:'player',id:'b6',x:37,y:21},
+  {type:'player',id:'b7',x:23,y:64},{type:'player',id:'b8',x:81,y:60},
+  {type:'player',id:'b9',x:50,y:70},{type:'player',id:'b10',x:66,y:77},
+  {type:'player',id:'b11',x:35,y:76},{type:'player',id:'b12',x:58,y:48},
+  {type:'court',id:'h1',x:33,y:41},{type:'court',id:'h2',x:69,y:52},
+  {type:'court',id:'h3',x:20,y:32},{type:'court',id:'h4',x:57,y:18},
+  {type:'court',id:'h5',x:79,y:71},
+  {type:'crew',id:'c1',x:46,y:46},{type:'crew',id:'c2',x:27,y:57},
+  {type:'crew',id:'c3',x:64,y:38}
+];
+
+function pinHTML(pin){
+  if (pin.type === 'player'){
+    const u = userById(pin.id);
+    if (!u) return '';
+    const c1 = 'hsl(' + u.hue + ' 78% 58%)';
+    const c2 = 'hsl(' + ((u.hue+50)%360) + ' 72% 42%)';
+    const src = u.avatarDataUrl ? u.avatarDataUrl : img(u.id + '-' + u.photo, 80, 80);
+    return '<button class="pin pin--player" style="left:'+pin.x+'%;top:'+pin.y+'%;--c1:'+c1+';--c2:'+c2+'" data-act="player" data-id="'+u.id+'">'+
+      u.initials +
+      '<img src="' + src + '" alt="" onerror="this.remove()">' +
+    '</button>';
+  }
+  if (pin.type === 'court') return '<button class="pin pin--court" style="left:'+pin.x+'%;top:'+pin.y+'%" data-act="court" data-id="'+pin.id+'">🏀</button>';
+  return '<button class="pin pin--crew" style="left:'+pin.x+'%;top:'+pin.y+'%" data-act="crew" data-id="'+pin.id+'">👥</button>';
+}
+
+function discoverItems(){
+  const f = state.discoverFilter;
+  const items = [];
+  if (f === 'all' || f === 'players')
+    DB.users.filter(u => u.id !== 'me' && u.role !== 'admin').forEach(u => items.push({kind:'player', dist:u.dist, ref:u}));
+  if (f === 'all' || f === 'courts')
+    DB.courts.filter(c => c.status === 'approved').forEach(c => items.push({kind:'court', dist:c.dist, ref:c}));
+  if (f === 'all' || f === 'crews')
+    DB.crews.filter(k => k.verified === 'approved').forEach(k => items.push({kind:'crew', dist:k.dist, ref:k}));
+  return items.sort((a,b) => a.dist - b.dist);
+}
+
+function discoverRow(item){
+  if (item.kind === 'player'){
+    const u = item.ref;
+    const sent = state.requestsSent[u.id];
+    return '<div class="row" data-act="player" data-id="'+u.id+'">'+
+      avatarHTML(u, 'av--sm')+
+      '<div class="row__main">'+
+        '<div class="row__title">'+u.name+'<span class="lvl">'+u.position+'</span>'+(u.role==='trainer'?'<span class="badge badge--soft" style="font-size:8px;padding:2px 6px">TRAINER</span>':'')+'</div>'+
+        '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+' · '+u.dist+' m · Skill '+u.skill+'</div>'+
+      '</div>'+
+      '<button class="btn btn--sm '+(sent?'is-sent':'btn--primary')+'" data-act="request" data-id="'+u.id+'">'+(sent?'Sent · $'+PRICES.requestPlayer:'Invite')+'</button>'+
+    '</div>';
+  }
+  if (item.kind === 'court'){
+    const c = item.ref;
+    return '<div class="row" data-act="court" data-id="'+c.id+'">'+
+      '<div class="av av--sm" style="--c1:hsl('+c.hue+' 62% 58%);--c2:hsl('+((c.hue+40)%360)+' 58% 38%)">'+
+        '<img src="'+img('court-'+c.id,120,120)+'" alt="" onerror="this.remove()">'+
+      '</div>'+
+      '<div class="row__main">'+
+        '<div class="row__title">'+c.name+'</div>'+
+        '<div class="row__sub"><span class="star">★</span> '+c.rating.toFixed(1)+' · '+c.surface+' · '+c.dist+' m</div>'+
+      '</div>'+
+      '<div style="text-align:right"><b style="font-size:13px;font-weight:900;letter-spacing:-.03em">$'+c.price+'</b><div style="font-size:9.5px;color:var(--muted);font-weight:700">+$'+courtFee(c.price)+' fee</div></div>'+
+    '</div>';
+  }
+  const k = item.ref;
+  return '<div class="row" data-act="crew" data-id="'+k.id+'">'+
+    '<div class="av av--sm" style="--c1:hsl('+k.hue+' 80% 60%);--c2:hsl('+((k.hue+40)%360)+' 70% 45%)">'+
+      '<img src="'+img('crew-'+k.id,120,120)+'" alt="" onerror="this.remove()">'+
+    '</div>'+
+    '<div class="row__main">'+
+      '<div class="row__title">'+k.name+'</div>'+
+      '<div class="row__sub">'+k.members.toLocaleString()+' members · '+k.dist+' m</div>'+
+    '</div>'+
+    '<button class="btn btn--sm btn--ghost" data-act="joincrew" data-id="'+k.id+'">Join</button>'+
+  '</div>';
+}
+
+function screenDiscover(){
+  const f = state.discoverFilter;
+  const pins = PINS.filter(p => f === 'all' || p.type === (f === 'players' ? 'player' : f === 'courts' ? 'court' : 'crew'));
+  const items = discoverItems();
+  const ai = AI.topMatches(1)[0];
+  return ''+
+  '<div class="map">'+
+    mapSVG()+
+    '<div class="map__pins">'+pins.map(pinHTML).join('')+'</div>'+
+    '<div class="pin--me" style="left:50%;top:62%"></div>'+
+  '</div>'+
+  '<div class="sheet">'+
+    '<div class="sheet__handle"></div>'+
+    '<div class="sheet__head">'+
+      '<div class="sheet__title">Nearby</div>'+
+      '<div class="sheet__count">'+items.length+' results</div>'+
+    '</div>'+
+    (ai ? '<div class="chips" style="padding-bottom:8px">'+
+      '<button class="chip" style="background:linear-gradient(140deg,#3D1F5C,#1F0F30);color:#fff;border:none" data-act="player" data-id="'+ai.u.id+'">'+
+        '✨ ' + Math.round(ai.s) + '% match · ' + ai.u.name.split(' ')[0] +
+      '</button>'+
+    '</div>' : '') +
+    '<div class="chips">'+
+      [['all','All'],['players','Ballers'],['courts','Courts'],['crews','Crews']].map(([v,l]) =>
+        '<button class="chip '+(f===v?'is-on':'')+'" data-act="dfilter" data-v="'+v+'">'+l+'</button>'
+      ).join('')+
+    '</div>'+
+    '<div class="sheet__scroll">'+items.map(discoverRow).join('')+'</div>'+
+  '</div>';
+}
+
+let proximityShown = false;
+function maybeProximity(){
+  if (proximityShown) return;
+  const near = DB.users.filter(u => u.id !== 'me' && u.role !== 'admin' && u.dist <= 500)
+    .sort((a,b) => a.dist - b.dist)[0];
+  if (!near) return;
+  proximityShown = true;
+  setTimeout(() => showProximity(near), 3200);
+}
+function showProximity(u){
+  layerEl.innerHTML =
+  '<div class="scrim" data-act="close-layer"></div>'+
+  '<div class="popup">'+
+    '<div class="popup__pill"><span class="pulse"></span>PROXIMITY ALERT</div>'+
+    '<h3>A baller is close to you!</h3>'+
+    '<p>'+u.name.split(' ')[0]+' is only <b>'+u.dist+' m</b> away right now and is open for a run.</p>'+
+    '<div style="display:flex;align-items:center;gap:13px;background:#F5F2EA;border-radius:20px;padding:13px;margin-top:16px">'+
+      avatarHTML(u, 'av--sm')+
+      '<div class="row__main">'+
+        '<div class="row__title">'+u.name+'<span class="lvl">'+u.position+'</span></div>'+
+        '<div class="row__sub"><span class="dot dot--on"></span>'+u.status+' · '+u.city+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="popup__btns">'+
+      '<button class="btn btn--ghost" data-act="close-layer">Later</button>'+
+      '<button class="btn btn--primary" data-act="request" data-id="'+u.id+'">Invite · $'+PRICES.requestPlayer+'</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 14 — TOURNAMENTS
+   ============================================================ */
+function tourneyStatusPill(t){
+  if (t.completed) return '<span class="badge badge--gold">Completed</span>';
+  if (t.status === 'draft') return '<span class="badge badge--soft">Draft</span>';
+  if (t.teams.length >= t.maxTeams) return '<span class="badge badge--amber">Full · Starting</span>';
+  return '<span class="badge badge--orange">Open</span>';
+}
+
+function screenTournaments(){
+  const f = state.tourneyFilter;
+  const list = DB.tournaments.filter(t =>
+    f === 'all' ||
+    (f === 'open' && !t.completed && t.status !== 'draft') ||
+    (f === 'mine' && t.hostId === 'me') ||
+    (f === 'completed' && t.completed) ||
+    (f === 'draft' && t.status === 'draft')
+  );
+
+  return '<div class="pad">'+
+    '<div class="seg">'+
+      [['open','Open'],['mine','Hosted by me'],['completed','Completed'],['all','All']].map(([v,l]) =>
+        '<button class="seg__b '+(f===v?'is-on':'')+'" data-act="tourneyfilter" data-v="'+v+'">'+l+'</button>'
+      ).join('')+
+    '</div>'+
+
+    '<div class="ai-card">'+
+      '<div class="ai-card__inner">'+
+        '<div class="ai-card__eyebrow">'+ico('crown')+' NEARBY TOURNAMENT HOSTING</div>'+
+        '<h3>Host a 3v3 at your nearest court</h3>'+
+        '<p>Entry fee from $3. Players have 7 days to agree on match times. You earn the platform split automatically.</p>'+
+        '<button class="btn btn--primary btn--block" style="margin-top:14px" data-act="hosttourney">Host Tournament · $'+PRICES.tournamentHost+'</button>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="sec-title">'+(f === 'mine' ? 'Your tournaments' : f === 'completed' ? 'Past tournaments' : 'Nearby tournaments')+
+      ' <small>'+list.length+'</small></div>'+
+
+    (list.length === 0
+      ? '<div class="empty"><div class="empty__ico">🏆</div>No tournaments in this view.</div>'
+      : list.map(t => {
+          const host = userById(t.hostId);
+          const c1 = 'hsl('+t.hue+' 68% 55%)';
+          const c2 = 'hsl('+((t.hue+45)%360)+' 62% 32%)';
+          const daysLeft = Math.ceil((t.agreeBy - now()) / 86400000);
+          const joined = Tournaments.isRegistered(t, 'me');
+          const fillPct = Math.min(100, Math.round(t.teams.length / t.maxTeams * 100));
+          return '<div class="tourney-card" data-act="tourney" data-id="'+t.id+'">'+
+            '<div class="tourney-card__banner" style="--c1:'+c1+';--c2:'+c2+'">'+
+              '<img src="'+img('tourney-'+t.id,600,300)+'" alt="" onerror="this.remove()">'+
+              '<div class="tourney-card__badges">'+
+                '<span class="badge badge--dark">'+t.format.toUpperCase()+'</span>'+
+                (joined ? '<span class="badge badge--orange">JOINED</span>' : '')+
+              '</div>'+
+              '<div class="tourney-card__status">'+tourneyStatusPill(t)+'</div>'+
+              '<div class="tourney-card__prize">'+
+                '<b>$'+t.prize+'</b>'+
+                '<span>PRIZE POOL</span>'+
+              '</div>'+
+            '</div>'+
+            '<div class="tourney-card__body">'+
+              '<div class="tourney-card__name">'+t.name+'</div>'+
+              '<div class="tourney-card__meta">'+
+                '<span>📍 '+ (courtById(t.courts) ? courtById(t.courts).name : 'TBD') +'</span>'+
+                '<span>👥 '+t.teams.length+' / '+t.maxTeams+' teams</span>'+
+                '<span>💵 $'+t.entry+' entry</span>'+
+              '</div>'+
+              '<div class="tourney-card__slots">'+
+                '<div class="tourney-card__bar"><div style="width:'+fillPct+'%"></div></div>'+
+                '<span>'+(daysLeft > 0 ? daysLeft+'d to agree' : 'Agreement closed')+'</span>'+
+              '</div>'+
+              '<div style="display:flex;gap:8px;margin-top:12px">'+
+                '<button class="btn btn--ghost btn--sm" style="flex:1" data-act="tourney" data-id="'+t.id+'">View Bracket</button>'+
+                (joined
+                  ? '<button class="btn btn--sm" style="flex:1;background:#DFF7E8;color:#12924F" disabled>Registered</button>'
+                  : '<button class="btn btn--primary btn--sm" style="flex:1" data-act="tourneyjoin" data-id="'+t.id+'">Join · $'+t.entry+'</button>')+
+              '</div>'+
+            '</div>'+
+          '</div>';
+        }).join(''))+
+  '</div>';
+}
+
+function screenTourney(params){
+  const t = tourneyById(params.id);
+  if (!t) return '<div class="empty">Tournament not found.</div>';
+  const host = userById(t.hostId);
+  const c1 = 'hsl('+t.hue+' 68% 55%)';
+  const c2 = 'hsl('+((t.hue+45)%360)+' 62% 32%)';
+  const joined = Tournaments.isRegistered(t, 'me');
+  const daysLeft = Math.max(0, Math.ceil((t.agreeBy - now()) / 86400000));
+
+  const teamsHTML = t.teams.map(team => {
+    const members = team.members.map(id => userById(id)).filter(Boolean);
+    return '<div class="row" style="background:#fff;border-radius:16px;margin-bottom:8px;box-shadow:var(--shadow)">'+
+      '<div style="display:flex">'+
+        members.map((m,i) => '<div style="margin-left:'+(i?-14:0)+'px;position:relative;z-index:'+(10-i)+'">'+avatarHTML(m,'av--sm')+'</div>').join('')+
+      '</div>'+
+      '<div class="row__main">'+
+        '<div class="row__title">'+team.name+'</div>'+
+        '<div class="row__sub">Joined '+timeAgo(team.joined)+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  const bracketHTML = t.bracket
+    ? t.bracket.rounds.map((round, ri) =>
+        '<div class="bracket">'+
+          '<div class="bracket__label">Round ' + (ri+1) + '</div>'+
+          '<div class="bracket__round">'+
+            round.map(m => {
+              const a = m.teamA ? m.teamA.name : 'TBD';
+              const b = m.teamB ? m.teamB.name : (m.status === 'bye' ? '— BYE —' : 'TBD');
+              const cls = m.status === 'completed' ? 'done' : m.status === 'bye' ? 'done' : 'pending';
+              const scoreA = m.scoreA != null ? m.scoreA : '';
+              const scoreB = m.scoreB != null ? m.scoreB : '';
+              return '<div class="match-slot match-slot--'+cls+'">'+
+                '<div class="match-slot__team">'+a+'</div>'+
+                '<div class="match-slot__score">'+scoreA+'</div>'+
+                '<div class="match-slot__vs">VS</div>'+
+                '<div class="match-slot__score">'+scoreB+'</div>'+
+                '<div class="match-slot__team" style="text-align:right">'+b+'</div>'+
+              '</div>';
+            }).join('')+
+          '</div>'+
+        '</div>'
+      ).join('')
+    : '<div class="empty" style="padding:22px;background:#fff;border-radius:20px;box-shadow:var(--shadow)">'+
+        'Bracket will be generated when all teams have registered.<br>'+
+        '<b style="color:var(--ink)">'+t.teams.length+' / '+t.maxTeams+' teams</b>'+
+      '</div>';
+
+  const myMatches = t.bracket
+    ? t.bracket.rounds[t.bracket.currentRound].filter(m =>
+        (m.teamA && m.teamA.members.includes('me')) || (m.teamB && m.teamB.members.includes('me'))
+      )
+    : [];
+
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="height:170px;border-radius:24px;overflow:hidden;position:relative">'+
+      '<div style="position:absolute;inset:0;background:linear-gradient(140deg,'+c1+','+c2+')"></div>'+
+      '<img src="'+img('tourney-'+t.id,800,400)+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">'+
+      '<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(10,10,10,.78) 100%)"></div>'+
+      '<div style="position:absolute;top:12px;left:12px;z-index:2">'+tourneyStatusPill(t)+'</div>'+
+      '<div style="position:absolute;left:18px;right:18px;bottom:16px;color:#fff;z-index:2">'+
+        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">'+t.format.toUpperCase()+' · $'+t.entry+' ENTRY</div>'+
+        '<div style="font-size:21px;font-weight:900;letter-spacing:-.04em;margin-top:6px">'+t.name+'</div>'+
+        '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.72);margin-top:4px">Hosted by '+(host?host.name:'—')+' · '+(courtById(t.courts)?courtById(t.courts).name:'TBD')+'</div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="stats" style="margin-top:16px">'+
+      '<div class="stat"><b>$'+t.prize+'</b><span>Prize</span></div>'+
+      '<div class="stat"><b>'+t.teams.length+'</b><span>Teams</span></div>'+
+      '<div class="stat"><b>'+daysLeft+'d</b><span>To agree</span></div>'+
+      '<div class="stat stat--hl"><b>$'+t.entry+'</b><span>Entry</span></div>'+
+    '</div>'+
+
+    '<div class="verify-pending" style="background:#FFF3DE;border-radius:14px;padding:12px 14px;display:flex;gap:11px;align-items:center;margin-bottom:14px">'+
+      '<div style="width:34px;height:34px;border-radius:12px;background:var(--amber);color:#fff;display:grid;place-items:center;flex:0 0 auto;font-size:16px">🕒</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:12.5px;font-weight:800">Agreement window</div>'+
+        '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:3px">All matches must be agreed by '+fmtDate(t.agreeBy)+'</div>'+
+      '</div>'+
+    '</div>'+
+
+    (myMatches.length
+      ? '<div class="sec-title">Your active matches <small>'+myMatches.length+'</small></div>'+
+        myMatches.map(m => {
+          const opp = m.teamA && m.teamA.members.includes('me') ? m.teamB : m.teamA;
+          return '<div style="background:#fff;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)">'+
+            '<div style="font-size:14px;font-weight:900;letter-spacing:-.025em;margin-bottom:10px">vs '+(opp?opp.name:'TBD')+'</div>'+
+            '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:12px">Agree a time with the opposing team in chat, then log the score here.</div>'+
+            '<div style="display:flex;gap:9px">'+
+              '<button class="btn btn--ghost btn--sm" style="flex:1" data-act="tourneybracket" data-id="'+t.id+'">See bracket</button>'+
+              '<button class="btn btn--primary btn--sm" style="flex:1" data-act="tourneyreport" data-t="'+t.id+'" data-m="'+m.id+'">Submit Score</button>'+
+            '</div>'+
+          '</div>';
+        }).join('')
+      : '')+
+
+    '<div class="sec-title">Bracket</div>'+
+    bracketHTML+
+
+    '<div class="sec-title">Registered teams <small>'+t.teams.length+' / '+t.maxTeams+'</small></div>'+
+    (t.teams.length ? teamsHTML : '<div class="empty" style="padding:22px">Be the first to register.</div>')+
+
+    '<div class="sec-title">Entry & split</div>'+
+    '<div class="tile" style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A)">'+
+      '<h3>Prize pool breakdown</h3>'+
+      '<p>Entry fee $'+t.entry+' · Platform fee '+PRICES.tournamentPct+'% · Winner takes '+money(t.prize)+'</p>'+
+      '<div class="tile__emoji">💰</div>'+
+    '</div>'+
+
+    '<div class="sticky-bar">'+
+      '<div class="sticky-bar__price" style="flex:1">'+
+        '<b>$'+t.entry+'</b>'+
+        '<span>per player + $'+tourneyFee(t.entry)+' platform fee</span>'+
+      '</div>'+
+      (joined
+        ? '<button class="btn btn--ok" disabled>✓ Registered</button>'
+        : t.status === 'draft'
+          ? '<button class="btn btn--ghost" disabled>Not yet open</button>'
+          : '<button class="btn btn--primary" data-act="tourneyjoin" data-id="'+t.id+'">Join</button>')+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 15 — RANKINGS
+   ============================================================ */
+function rankListHTML(){
+  const q = state.rankQuery.trim().toLowerCase();
+  let list;
+  if (state.rankList === 'national'){
+    list = DB.users.filter(u => u.isNational && u.role !== 'admin').sort((a,b) => a.rankN - b.rankN);
+  } else {
+    list = DB.users.filter(u => !u.isNational && u.role !== 'admin' && u.id !== 'me').sort((a,b) => b.points - a.points);
+  }
+  if (state.rankRegion !== 'All') list = list.filter(u => u.region === state.rankRegion);
+  if (state.rankSkill !== 'All'){
+    if (state.rankSkill === '4.5+') list = list.filter(u => parseFloat(u.skill) >= 4.5);
+    else list = list.filter(u => u.skill === state.rankSkill);
+  }
+  if (q) list = list.filter(u => u.name.toLowerCase().indexOf(q) > -1);
+  if (!list.length) return '<div class="empty">No players match those filters.</div>';
+  return list.map((u, i) => {
+    const rank = state.rankList === 'national' ? u.rankN : (i + 1);
+    const top = rank <= 3 ? ' is-top' : '';
+    return '<div class="rankrow" data-act="player" data-id="'+u.id+'">'+
+      '<div class="rankrow__n'+top+'">'+rank+'</div>'+
+      avatarHTML(u, 'av--sm')+
+      '<div class="rankrow__info">'+
+        '<div class="rankrow__name">'+u.name+'</div>'+
+        '<div class="rankrow__meta">'+u.position+' · '+u.region+' · Skill '+u.skill+'</div>'+
+      '</div>'+
+      '<div class="rankrow__pts">'+
+        '<b>'+u.points.toLocaleString()+'</b>'+
+        '<span class="'+(u.move==='up'?'up':'down')+'">'+(u.move==='up'?'▲':'▼')+' '+u.moveBy+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function screenRankings(){
+  const regions = ['All','Greater Accra','Ashanti','Central','Northern'];
+  const skills = ['All','3.0','3.5','4.0','4.5','4.5+'];
+  const isNat = state.rankList === 'national';
+  return '<div class="pad">'+
+    '<div class="seg">'+
+      '<button class="seg__b '+(isNat?'is-on':'')+'" data-act="ranklist" data-v="national">National Squad</button>'+
+      '<button class="seg__b '+(!isNat?'is-on':'')+'" data-act="ranklist" data-v="general">General Pool</button>'+
+    '</div>'+
+    (isNat
+      ? '<div style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:16px;padding:14px 16px;margin-bottom:12px;color:#fff">'+
+          '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">OFFICIAL NATIONAL SQUAD</div>'+
+          '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.6);margin-top:6px;line-height:1.4">Verified by RUBIX admin. Rankings update only after a confirmed game.</div>'+
+        '</div>'
+      : '<div style="background:#fff;border-radius:16px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow)">'+
+          '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--muted)">GENERAL PLAYER POOL</div>'+
+          '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:6px;line-height:1.4">Community ladder — updated after every verified game.</div>'+
+        '</div>')+
+    '<div class="search">'+ico('search')+
+      '<input data-input="rankQuery" value="'+state.rankQuery.replace(/"/g,'&quot;')+'" placeholder="Search players…">'+
+    '</div>'+
+    '<div class="chips chips--pad">'+
+      regions.map(r => '<button class="chip '+(state.rankRegion===r?'is-on':'')+'" data-act="region" data-v="'+r+'">'+r+'</button>').join('')+
+    '</div>'+
+    '<div class="chips chips--pad">'+
+      skills.map(l => '<button class="chip '+(state.rankSkill===l?'is-on':'')+'" data-act="skill" data-v="'+l+'">'+(l==='All'?'Any skill':l)+'</button>').join('')+
+    '</div>'+
+    '<div id="rankList">'+rankListHTML()+'</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 16 — COURTS LIST
+   ============================================================ */
+function screenCourts(){
+  const approved = DB.courts.filter(c => c.status === 'approved');
+  return '<div class="pad">'+
+    '<div class="search">'+ico('search')+
+      '<input placeholder="Search courts near you…" data-input="courtQuery">'+
+    '</div>'+
+    '<div class="chips chips--pad" style="padding-left:0">'+
+      '<button class="chip is-on">Nearest</button>'+
+      '<button class="chip">Cheapest</button>'+
+      '<button class="chip">Top rated</button>'+
+      '<button class="chip">Indoor only</button>'+
+    '</div>'+
+    approved.map(c => {
+      const c1 = 'hsl('+c.hue+' 62% 58%)';
+      const c2 = 'hsl('+((c.hue+45)%360)+' 58% 38%)';
+      return '<div class="court-card" data-act="court" data-id="'+c.id+'">'+
+        '<div class="court-card__img" style="--c1:'+c1+';--c2:'+c2+'">'+
+          '<img src="'+img('court-'+c.id,600,300)+'" alt="" loading="lazy" onerror="this.remove()">'+
+          '<div class="court-card__price">$'+c.price+'<small>/hr</small></div>'+
+        '</div>'+
+        '<div class="court-card__body">'+
+          '<div class="court-card__name">'+c.name+'</div>'+
+          '<div class="court-card__meta">'+
+            '<span>'+stars(c.rating)+'</span>'+
+            '<span>📍 '+(c.dist>=1000?(c.dist/1000).toFixed(1)+' km':c.dist+' m')+'</span>'+
+            '<span>🏀 '+c.surface+'</span>'+
+            '<span>🏟️ '+c.courtCount+' courts</span>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join('')+
+    '<button class="btn btn--outline btn--block" style="margin-top:6px" data-act="submitcourt">+ Submit a new court</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   COURT DETAIL
+   ============================================================ */
+const DATES = ['Today','Tomorrow','Fri 21','Sat 22','Sun 23'];
+const TIMES = ['07:00','08:30','10:00','11:30','14:00','15:30','17:00','18:30','20:00'];
+
+function screenCourt(params){
+  const c = courtById(params.id);
+  if (!c) return '<div class="empty">Court not found.</div>';
+  const c1 = 'hsl('+c.hue+' 62% 58%)';
+  const c2 = 'hsl('+((c.hue+45)%360)+' 58% 38%)';
+  const b = state.booking;
+  const fee = courtFee(c.price);
+  const total = c.price + fee;
+  const wx = Weather.courtAdvice(c);
+
+  const slots = TIMES.map((t, i) => {
+    const taken = (i*3 + c.name.length) % 4 === 0;
+    return '<button class="slot '+(taken?'is-off':'')+(b.time===t?' is-on':'')+'" data-act="slot" data-v="'+t+'"'+(taken?' disabled':'')+'>'+t+'</button>';
+  }).join('');
+
+  const playersHere = c.playersHere.map(id => {
+    const u = userById(id);
+    if (!u) return '';
+    const sent = state.requestsSent[u.id];
+    return '<div class="row" data-act="player" data-id="'+u.id+'">'+
+      avatarHTML(u, 'av--sm')+
+      '<div class="row__main">'+
+        '<div class="row__title">'+u.name+'<span class="lvl">'+u.position+'</span></div>'+
+        '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+'</div>'+
+      '</div>'+
+      '<button class="btn btn--sm '+(sent?'is-sent':'btn--primary')+'" data-act="request" data-id="'+u.id+'">'+(sent?'Sent':'Invite')+'</button>'+
+    '</div>';
+  }).join('');
+
+  const trainers = c.trainers.map(tr => {
+    const owner = userById(tr.userId);
+    const verBadge = tr.verified
+      ? '<span class="badge badge--ok" style="font-size:9px;padding:3px 7px">✓ Verified</span>'
+      : '<span class="badge badge--amber" style="font-size:9px;padding:3px 7px">Pending</span>';
+    return '<div class="trainer" data-act="trainer" data-id="'+tr.id+'" data-court="'+c.id+'">'+
+      (owner ? avatarHTML(owner, 'av--sm') : '')+
+      '<div class="trainer__info">'+
+        '<div class="trainer__name">'+tr.name+' '+verBadge+'</div>'+
+        '<div class="trainer__spec">'+tr.spec+' · '+tr.exp+'</div>'+
+      '</div>'+
+      '<div class="trainer__rate">$'+tr.rate+'<small>per hour</small></div>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="court-hero">'+
+      '<div class="court-hero__bg" style="--c1:'+c1+';--c2:'+c2+'">'+
+        '<img src="'+img('court-'+c.id,800,500)+'" alt="" onerror="this.remove()">'+
+      '</div>'+
+      '<div class="court-hero__grad"></div>'+
+      '<div class="court-hero__info">'+
+        '<h2>'+c.name+'</h2>'+
+        '<p>📍 '+c.address+' · '+(c.dist>=1000?(c.dist/1000).toFixed(1)+' km':c.dist+' m')+' away</p>'+
+      '</div>'+
+    '</div>'+
+    '<div class="pad" style="padding-top:18px">'+
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+        '<span class="badge badge--orange">'+stars(c.rating)+'</span>'+
+        '<span class="badge badge--soft">🏀 '+c.surface+'</span>'+
+        '<span class="badge badge--soft">🏟️ '+c.courtCount+' courts</span>'+
+        '<span class="badge badge--soft">$'+c.price+'/hr</span>'+
+        '<span class="fee-tag">+'+money(fee)+' fee</span>'+
+      '</div>'+
+      '<div class="amenities">'+c.amenities.map(a => '<span>'+a+'</span>').join('')+'</div>'+
+
+      (wx.ok
+        ? '<div class="weather-card" style="margin-top:14px">'+
+            '<div class="weather-card__now">'+
+              '<div class="weather-card__emoji">'+Weather.current().emoji+'</div>'+
+              '<div class="weather-card__main">'+
+                '<div class="weather-card__t">'+Weather.current().temp+'°</div>'+
+                '<div class="weather-card__cond">'+Weather.current().cond+' · '+wx.msg+'</div>'+
+              '</div>'+
+            '</div>'+
+          '</div>'
+        : '<div class="safety-banner" style="margin-top:14px">'+
+            '<div class="safety-banner__ico">⚠️</div>'+
+            '<div>'+
+              '<div class="safety-banner__t">Weather advisory</div>'+
+              '<div class="safety-banner__s">'+wx.msg+'</div>'+
+            '</div>'+
+          '</div>')+
+
+      '<div class="sec-title">Trainers at this court <small>'+c.trainers.length+' listed</small></div>'+
+      trainers+
+
+      '<div class="sec-title">Players here now <small>'+c.playersHere.length+'</small></div>'+
+      playersHere+
+
+      '<div class="sec-title">Book a court</div>'+
+      '<div class="chips chips--pad" style="padding-left:0">'+
+        DATES.map(d => '<button class="chip '+(b.date===d?'is-on':'')+'" data-act="date" data-v="'+d+'">'+d+'</button>').join('')+
+      '</div>'+
+      '<div class="slots">'+slots+'</div>'+
+
+      '<div class="sticky-bar">'+
+        '<div class="sticky-bar__price" style="flex:1">'+
+          '<b>'+money(total)+'</b>'+
+          '<span>'+money(c.price)+' court + '+money(fee)+' platform fee</span>'+
+        '</div>'+
+        '<button class="btn btn--primary" data-act="book" data-id="'+c.id+'"'+(b.time?'':' disabled')+'>Book Court</button>'+
+      '</div>'+
+    '</div>';
+}
+
+/* ════════════════════════════════════════════════════════════
+   END OF SESSION 3 — continue with Session 4 below
+   ════════════════════════════════════════════════════════════ */
+/* ============================================================
+   SECTION 17 — PLAYER PROFILE (with posts section)
+   ============================================================ */
+function gameRow(m){
+  return '<div class="game" data-act="player" data-id="'+(m.id||'')+'">'+
+    '<div class="game__res game__res--'+m.res.toLowerCase()+'">'+m.res+'</div>'+
+    '<div class="game__main">'+
+      '<div class="game__vs">vs '+m.vs+' '+(m.verified?'<span class="badge badge--ok" style="font-size:8px;padding:2px 6px">✓</span>':'')+'</div>'+
+      '<div class="game__meta">'+m.date+' · '+m.surface+'</div>'+
+    '</div>'+
+    '<div class="game__score">'+m.score+'</div>'+
+  '</div>';
+}
+
+function postCardHTML(post, opts){
+  opts = opts || {};
+  const u = userById(post.authorId);
+  if (!u) return '';
+  const isMine = post.authorId === 'me';
+  const liked = post.likes.includes('me');
+  const firstName = u.name.split(' ')[0];
+  const imageSrc = post.imageDataUrl || post.imageUrl;
+  const commentCount = (post.comments || []).length;
+
+  return '<div class="post-card '+(isMine?'is-mine':'')+'" data-act="post-open" data-id="'+post.id+'">'+
+    '<div class="post-card__head">'+
+      avatarHTML(u, 'av--sm')+
+      '<div class="post-card__main">'+
+        '<div class="post-card__name">'+escapeHTML(u.name)+
+          (u.verified ? '<span class="badge badge--ok" style="font-size:8px;padding:2px 6px">✓</span>' : '')+
+          (u.isNational ? '<span class="badge badge--orange" style="font-size:8px;padding:2px 6px">NAT</span>' : '')+
+        '</div>'+
+        '<div class="post-card__time">'+timeAgo(post.createdAt)+(post.isEdited?' <span class="post-card__edited">· Edited</span>':'')+'</div>'+
+      '</div>'+
+      '<button class="post-card__menu" data-act="post-menu" data-id="'+post.id+'">'+ico('dots')+'</button>'+
+    '</div>'+
+    (post.text ? '<div class="post-card__text">'+escapeHTML(post.text)+'</div>' : '')+
+    (imageSrc
+      ? '<div class="post-card__image" data-act="post-image-view" data-id="'+post.id+'">'+
+          '<img src="'+imageSrc+'" alt="" loading="lazy" onerror="this.remove()">'+
+        '</div>'
+      : '')+
+    '<div class="post-card__foot">'+
+      '<button class="post-card__action '+(liked?'is-on':'')+'" data-act="post-like" data-id="'+post.id+'">'+
+        ico('heart')+'<span>'+post.likes.length+'</span>'+
+      '</button>'+
+      '<button class="post-card__action" data-act="post-open" data-id="'+post.id+'">'+
+        ico('comment')+'<span>'+commentCount+'</span>'+
+      '</button>'+
+      '<button class="post-card__action" data-act="post-share" data-id="'+post.id+'">'+
+        ico('share')+'<span>Share</span>'+
+      '</button>'+
+    '</div>'+
+  '</div>';
+}
+
+function screenProfile(params){
+  const id = (params && params.id) || 'me';
+  const u = userById(id) || getMe();
+  const isMe = u.id === 'me';
+  const s = u.stats;
+  const pct = winPct(s);
+  const sent = state.requestsSent[u.id];
+  const thread = Chat.threadWith(u.id);
+  const chatUnlocked = thread && thread.unlocked;
+
+  const roleBadge =
+    u.role === 'admin' ? '<span class="badge badge--orange">ADMIN</span>' :
+    u.role === 'trainer' ? '<span class="badge" style="background:rgba(255,107,53,.2);color:var(--orange);border:1px solid rgba(255,107,53,.4)">TRAINER</span>' : '';
+  const vendorBadge = u.vendorStatus === 'approved'
+    ? '<span class="badge" style="background:rgba(37,194,110,.2);color:#9BE8C2;border:1px solid rgba(37,194,110,.35)">✓ Vendor</span>' : '';
+  const crewBadge = u.crewId
+    ? '<span class="badge" style="background:rgba(255,138,61,.2);color:#FFB27A;border:1px solid rgba(255,138,61,.35)">CREW LEAD</span>' : '';
+
+  /* Posts for this user */
+  const userPosts = (DB.posts || []).filter(p => p.authorId === u.id).sort((a,b) => b.createdAt - a.createdAt);
+
+  /* Cover: dataURL first, else picsum */
+  const coverSrc = u.coverDataUrl || img('cover-'+u.id, 800, 400);
+
+  return '<div class="hero">'+
+    '<div class="hero__cover">'+
+      '<img src="'+coverSrc+'" alt="" onerror="this.remove()">'+
+    '</div>'+
+    '<div class="hero__inner">'+
+      '<div class="hero__avatar-wrap">'+
+        '<div class="hero__avatar">'+avatarHTML(u, 'av--xl')+'</div>'+
+        (isMe
+          ? '<button class="btn btn--sm" style="background:#fff;color:var(--ink);box-shadow:var(--shadow)" data-act="editprofile">'+ico('edit')+' Edit</button>'
+          : '')+
+      '</div>'+
+      '<div class="hero__name">'+u.name+'</div>'+
+      '<div class="hero__loc">📍 '+u.city+(u.region ? ' · '+u.region : '')+'</div>'+
+      '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+roleBadge+vendorBadge+crewBadge+
+        (u.verified ? '<span class="badge" style="background:rgba(37,194,110,.2);color:#9BE8C2;border:1px solid rgba(37,194,110,.35)">✓ Verified</span>' : '')+
+      '</div>'+
+      (u.bio ? '<div style="font-size:12.5px;font-weight:500;color:rgba(255,255,255,.72);margin-top:14px;line-height:1.5">'+escapeHTML(u.bio)+'</div>' : '')+
+      '<div class="hero__chips">'+
+        '<span class="pill">'+u.position+'</span>'+
+        '<span class="pill">Skill '+u.skill+'</span>'+
+        '<span class="pill">'+u.preferredCourt+'</span>'+
+        (u.points ? '<span class="pill">'+u.points.toLocaleString()+' pts</span>' : '')+
+      '</div>'+
+      '<div class="hero__actions">'+
+        (isMe
+          ? '<button class="btn btn--primary" data-act="idcard">'+ico('shield')+' My ID</button>'+
+            '<button class="btn" style="background:rgba(255,255,255,.14);color:#fff" data-act="wallet">'+ico('wallet')+' Wallet</button>'
+          : '<button class="btn btn--primary" data-act="request" data-id="'+u.id+'"'+(sent?' disabled':'')+'>'+(sent?'Request Sent':'Send Request · $'+PRICES.requestPlayer)+'</button>'+
+            (chatUnlocked
+              ? '<button class="btn btn--gold" data-act="openthread" data-id="'+u.id+'">'+ico('chat')+'</button>'
+              : '<button class="btn btn--gold" data-act="unlockchat" data-id="'+u.id+'">'+ico('lock')+'</button>'))+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+  '<div class="pad" style="padding-top:0">'+
+
+    /* Stats */
+    '<div class="stats">'+
+      '<div class="stat"><b>'+s.games+'</b><span>Games</span></div>'+
+      '<div class="stat"><b>'+s.wins+'</b><span>Wins</span></div>'+
+      '<div class="stat"><b>'+s.losses+'</b><span>Losses</span></div>'+
+      '<div class="stat stat--hl"><b>'+pct+'%</b><span>Win rate</span></div>'+
+    '</div>'+
+    '<div class="winbar"><div style="width:'+pct+'%"></div></div>'+
+
+    /* Stat line row */
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px">'+
+      '<div style="background:#fff;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)">'+
+        '<b style="font-size:16px;font-weight:900;letter-spacing:-.04em;display:block;line-height:1">'+s.ppg.toFixed(1)+'</b>'+
+        '<span style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-top:5px;display:block">PPG</span>'+
+      '</div>'+
+      '<div style="background:#fff;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)">'+
+        '<b style="font-size:16px;font-weight:900;letter-spacing:-.04em;display:block;line-height:1">'+s.apg.toFixed(1)+'</b>'+
+        '<span style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-top:5px;display:block">APG</span>'+
+      '</div>'+
+      '<div style="background:#fff;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)">'+
+        '<b style="font-size:16px;font-weight:900;letter-spacing:-.04em;display:block;line-height:1">'+s.rpg.toFixed(1)+'</b>'+
+        '<span style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-top:5px;display:block">RPG</span>'+
+      '</div>'+
+    '</div>'+
+
+    /* Composer bar (only on own profile) */
+    (isMe
+      ? '<div class="composer-bar" data-act="compose-post">'+
+          avatarHTML(u, 'av--sm')+
+          '<div class="composer-bar__placeholder">What\'s on your mind, '+u.name.split(' ')[0]+'?</div>'+
+          '<button class="btn btn--primary btn--sm" data-act="compose-post">Post</button>'+
+        '</div>'
+      : '')+
+
+    /* Posts section */
+    (userPosts.length
+      ? '<div class="sec-title">'+(isMe?'Your posts':'Posts by '+u.name.split(' ')[0])+' <small>'+userPosts.length+'</small></div>'+
+        userPosts.map(p => postCardHTML(p)).join('')
+      : (isMe
+          ? '<div style="text-align:center;padding:36px 20px;background:#fff;border-radius:20px;box-shadow:var(--shadow);margin-bottom:14px">'+
+              '<div style="font-size:52px;line-height:1">🏀</div>'+
+              '<div style="font-size:15px;font-weight:900;letter-spacing:-.025em;margin-top:12px">Share your first post</div>'+
+              '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:8px;line-height:1.5">Talk about your game, gear, or runs. Find players who match your vibe.</div>'+
+              '<button class="btn btn--primary" style="margin-top:16px" data-act="compose-post">Create your first post</button>'+
+            '</div>'
+          : ''))+
+
+    /* Game history */
+    '<div class="sec-title">Game log <small>'+u.matches.length+' recent</small></div>'+
+    u.matches.map(gameRow).join('')+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 18 — EDIT PROFILE (with upload)
+   ============================================================ */
+function screenProfileForm(){
+  const u = getMe();
+  const draft = state.profileDraft || {
+    name: u.name, bio: u.bio, city: u.city, region: u.region,
+    skill: u.skill, position: u.position, preferredCourt: u.preferredCourt,
+    dominant: u.dominant, playstyle: u.playstyle.slice(), interests: u.interests.slice(),
+    status: u.status, avail: u.avail
+  };
+  state.profileDraft = draft;
+
+  const avatarSrc = u.avatarDataUrl || img(u.id+'-'+u.photo, 200, 200);
+  const coverSrc = u.coverDataUrl || img('cover-'+u.id, 800, 400);
+
+  return '<div class="pad" style="padding-top:8px">'+
+
+    /* Cover + avatar block */
+    '<div style="position:relative;border-radius:22px;overflow:hidden;margin-bottom:60px;box-shadow:var(--shadow)">'+
+      '<div style="position:relative;height:160px;background:linear-gradient(140deg,#1A1F2E,#0A0A0A)">'+
+        '<img src="'+coverSrc+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">'+
+        '<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(10,10,10,.6) 100%)"></div>'+
+        '<button class="btn btn--sm" style="position:absolute;right:12px;bottom:12px;background:rgba(0,0,0,.65);color:#fff;backdrop-filter:blur(6px)" data-act="pick-cover">'+ico('camera')+' Change cover</button>'+
+      '</div>'+
+      '<div style="position:absolute;left:20px;bottom:-46px">'+
+        '<div style="position:relative;display:inline-block">'+
+          avatarHTML(u, 'av--xl')+
+          '<button style="position:absolute;right:-6px;bottom:-6px;width:36px;height:36px;border-radius:50%;background:linear-gradient(140deg,var(--orange),var(--orange-dk));color:#fff;display:grid;place-items:center;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer" data-act="pick-avatar">'+ico('camera')+'</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    /* Photo actions */
+    '<div style="display:flex;gap:8px;margin-bottom:20px">'+
+      '<button class="btn btn--ghost btn--sm" style="flex:1" data-act="shuffle-avatar">'+ico('image')+' Shuffle photo</button>'+
+      '<button class="btn btn--ghost btn--sm" style="flex:1;color:var(--red)" data-act="remove-avatar">'+ico('trash')+' Remove photo</button>'+
+    '</div>'+
+
+    /* Identity */
+    '<div class="sec-title" style="margin-top:6px">Identity</div>'+
+    '<div class="form-field"><label class="form-label">Full name</label>'+
+      '<input class="form-input" data-input="profile-name" value="'+escapeHTML(draft.name)+'"></div>'+
+    '<div class="form-field"><label class="form-label">Bio</label>'+
+      '<textarea class="form-input" data-input="profile-bio" maxlength="240">'+escapeHTML(draft.bio)+'</textarea>'+
+      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-align:right;margin-top:6px">'+draft.bio.length+' / 240</div></div>'+
+    '<div class="form-row">'+
+      '<div class="form-field"><label class="form-label">City</label>'+
+        '<input class="form-input" data-input="profile-city" value="'+escapeHTML(draft.city)+'"></div>'+
+      '<div class="form-field"><label class="form-label">Region</label>'+
+        '<input class="form-input" data-input="profile-region" value="'+escapeHTML(draft.region)+'"></div>'+
+    '</div>'+
+
+    /* Game */
+    '<div class="sec-title" style="margin-top:6px">Your game</div>'+
+    '<div class="form-field"><label class="form-label">Skill rating</label>'+
+      '<div class="form-chips">'+
+        ['1.0','1.5','2.0','2.5','3.0','3.5','4.0','4.5','5.0'].map(l =>
+          '<button class="form-chip '+(draft.skill===l?'is-on':'')+'" data-act="profile-field" data-f="skill" data-v="'+l+'">'+l+'</button>').join('')+
+      '</div></div>'+
+    '<div class="form-field"><label class="form-label">Position</label>'+
+      '<div class="form-chips">'+
+        ['PG','SG','SF','PF','C'].map(p =>
+          '<button class="form-chip '+(draft.position===p?'is-on':'')+'" data-act="profile-field" data-f="position" data-v="'+p+'">'+p+'</button>').join('')+
+      '</div></div>'+
+    '<div class="form-field"><label class="form-label">Preferred court</label>'+
+      '<div class="form-chips">'+
+        ['Indoor','Outdoor','Street'].map(p =>
+          '<button class="form-chip '+(draft.preferredCourt===p?'is-on':'')+'" data-act="profile-field" data-f="preferredCourt" data-v="'+p+'">'+p+'</button>').join('')+
+      '</div></div>'+
+    '<div class="form-field"><label class="form-label">Dominant hand</label>'+
+      '<div class="form-chips">'+
+        ['Right','Left'].map(h =>
+          '<button class="form-chip '+(draft.dominant===h?'is-on':'')+'" data-act="profile-field" data-f="dominant" data-v="'+h+'">'+h+'</button>').join('')+
+      '</div></div>'+
+
+    /* Playstyle */
+    '<div class="sec-title" style="margin-top:6px">Playstyle</div>'+
+    '<div class="form-field"><div class="form-chips">'+
+      ['Sharpshooter','Playmaker','Defender','Post-Up','Slasher','Rebounder'].map(p =>
+        '<button class="form-chip '+(draft.playstyle.includes(p)?'is-on':'')+'" data-act="profile-toggle" data-f="playstyle" data-v="'+p+'">'+p+'</button>').join('')+
+    '</div></div>'+
+
+    /* Availability */
+    '<div class="sec-title" style="margin-top:6px">Availability</div>'+
+    '<div class="form-field"><div class="form-chips">'+
+      [['Available now','on'],['In 1 hour','soon'],['Tomorrow','soon'],['Weekends only','soon'],['Busy','off']].map(([l,a]) =>
+        '<button class="form-chip '+(draft.status===l?'is-on':'')+'" data-act="profile-field" data-field="status" data-f="status" data-v="'+l+'" data-avail="'+a+'">'+l+'</button>').join('')+
+    '</div></div>'+
+
+    /* Interests */
+    '<div class="sec-title" style="margin-top:6px">Looking for</div>'+
+    '<div class="form-field"><div class="form-chips">'+
+      ['Pickup runs','1v1','3v3','League play','Training','Coaching','Social'].map(i =>
+        '<button class="form-chip '+(draft.interests.includes(i)?'is-on':'')+'" data-act="profile-toggle" data-f="interests" data-v="'+i+'">'+i+'</button>').join('')+
+    '</div></div>'+
+
+    '<button class="btn btn--primary btn--block" style="margin-top:12px" data-act="save-profile">Save changes</button>'+
+    '<button class="btn btn--ghost btn--block" style="margin-top:9px" data-act="back">Cancel</button>'+
+    '<button class="btn btn--block" style="margin-top:20px;color:var(--red);font-weight:700" data-act="delete-account">Delete my account</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 19 — ID CARD
+   ============================================================ */
+function qrHTML(seed){
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  let cells = '';
+  for (let y = 0; y < 9; y++){
+    for (let x = 0; x < 9; x++){
+      h = (h * 1103515245 + 12345) >>> 0;
+      cells += '<div class="qr__c'+(((h>>>16)&1)?' on':'')+'"></div>';
+    }
+  }
+  return '<div class="qr">'+cells+'</div>';
+}
+function screenIdCard(){
+  const u = getMe();
+  const c1 = 'hsl('+u.hue+' 78% 58%)';
+  const c2 = 'hsl('+((u.hue+50)%360)+' 72% 42%)';
+  const avatarSrc = u.avatarDataUrl || img(u.id+'-'+u.photo, 320, 320);
+  return '<div class="pad" style="padding-top:14px">'+
+    '<div class="idcard">'+
+      '<div class="idcard__inner">'+
+        '<div class="idcard__top">'+
+          '<div class="idcard__brand"><span class="dot"></span>RUBIX HOOPS</div>'+
+          '<div style="font-size:10px;font-weight:800;letter-spacing:.12em;color:rgba(255,255,255,.55)">PLAYER ID</div>'+
+        '</div>'+
+        '<div class="idcard__body">'+
+          '<div class="idcard__photo" style="--c1:'+c1+';--c2:'+c2+'">'+
+            u.initials+
+            '<img src="'+avatarSrc+'" alt="" onerror="this.remove()">'+
+          '</div>'+
+          '<div>'+
+            '<div class="idcard__name">'+u.name+'</div>'+
+            '<div class="idcard__role">'+ (u.isNational ? 'National Squad' : u.role === 'trainer' ? 'Trainer' : 'Member') +'</div>'+
+            '<div class="idcard__no">'+u.idNumber+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="idcard__grid">'+
+          '<div class="idcard__cell"><span>Position</span><b>'+u.position+'</b></div>'+
+          '<div class="idcard__cell"><span>Skill</span><b>'+u.skill+'</b></div>'+
+          '<div class="idcard__cell"><span>Home court</span><b>'+ (u.preferredCourt) +'</b></div>'+
+          '<div class="idcard__cell"><span>Region</span><b>'+u.region+'</b></div>'+
+        '</div>'+
+        '<div class="idcard__bottom">'+
+          '<div class="idcard__valid">MEMBER SINCE<b>'+u.memberSince.toUpperCase()+'</b></div>'+
+          qrHTML(u.idNumber + u.name)+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="text-align:center;margin-top:22px;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.6">'+
+      'This is your digital RUBIX ID.<br>Show it at verified courts and crews.'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 20 — POST COMPOSER
+   ============================================================ */
+function screenPostComposer(params){
+  const editing = params && params.postId;
+  const existing = editing ? DB.posts.find(p => p.id === params.postId) : null;
+
+  if (!state.postDraft || (editing && state.postDraft._for !== params.postId)){
+    state.postDraft = {
+      _for: editing || null,
+      text: existing ? existing.text : '',
+      imageDataUrl: existing ? existing.imageDataUrl : null,
+      imageUrl: existing ? existing.imageUrl : null,
+      visibility: existing ? existing.visibility : 'public'
+    };
+  }
+  const d = state.postDraft;
+  const me = getMe();
+  const hasText = d.text.trim().length > 0;
+  const hasImage = !!(d.imageDataUrl || d.imageUrl);
+  const canPost = hasText || hasImage;
+  const imageSrc = d.imageDataUrl || d.imageUrl;
+  const charCount = d.text.length;
+
+  return '<div class="post-composer">'+
+    '<div class="post-composer__head">'+
+      avatarHTML(me, 'av--sm')+
+      '<div class="post-composer__author">'+
+        '<div class="post-composer__name">'+escapeHTML(me.name)+'</div>'+
+        '<div class="post-composer__vis">'+ico('shield2')+' Public</div>'+
+      '</div>'+
+    '</div>'+
+    '<textarea class="post-composer__text" data-input="post-text" placeholder="Talk about your game, gear, runs, or ask for players…" maxlength="500">'+escapeHTML(d.text)+'</textarea>'+
+    (imageSrc
+      ? '<div class="post-composer__preview">'+
+          '<div class="post-composer__remove" data-act="remove-post-image">'+ico('close')+'</div>'+
+          '<img src="'+imageSrc+'" alt="" onerror="this.remove()">'+
+        '</div>'
+      : '')+
+    '<div class="post-composer__tools">'+
+      '<button class="post-composer__tool" data-act="pick-post-image">'+ico('image')+' Photo</button>'+
+      '<button class="post-composer__tool" data-act="toast" data-msg="Court tagging coming soon">'+ico('pin')+' Tag court</button>'+
+      '<button class="post-composer__tool" data-act="toast" data-msg="Player tagging coming soon">'+ico('users')+' Tag players</button>'+
+    '</div>'+
+    '<div class="post-composer__foot">'+
+      '<div class="post-composer__count '+(charCount>450?'is-over':charCount>400?'is-warn':'')+'">'+charCount+' / 500</div>'+
+      '<div style="flex:1"></div>'+
+      '<button class="btn btn--ghost btn--sm" data-act="back">Cancel</button>'+
+      '<button class="btn btn--primary btn--sm" data-act="post-submit"'+(canPost?'':' disabled')+'>'+(editing?'Save':'Post')+'</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 21 — POST DETAIL (with comments)
+   ============================================================ */
+function screenPostDetail(params){
+  const post = DB.posts.find(p => p.id === params.postId);
+  if (!post) return '<div class="empty">Post not found.</div>';
+  const u = userById(post.authorId);
+  const me = getMe();
+  const liked = post.likes.includes('me');
+  const imageSrc = post.imageDataUrl || post.imageUrl;
+  const isMine = post.authorId === 'me';
+
+  const commentsHTML = (post.comments || []).map(c => {
+    const cu = userById(c.fromId);
+    if (!cu) return '';
+    return '<div class="comment-row">'+
+      avatarHTML(cu, 'av--sm')+
+      '<div class="comment-row__main">'+
+        '<div class="comment-row__bubble">'+
+          '<div class="comment-row__name">'+escapeHTML(cu.name)+'</div>'+
+          '<div class="comment-row__text">'+escapeHTML(c.text)+'</div>'+
+        '</div>'+
+        '<div class="comment-row__time">'+timeAgo(c.ts)+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="pad" style="padding-top:12px">'+
+    /* Author */
+    '<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">'+
+      avatarHTML(u, 'av--lg')+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:16px;font-weight:900;letter-spacing:-.03em">'+escapeHTML(u.name)+
+          (u.verified ? ' <span class="badge badge--ok" style="font-size:9px;padding:2px 6px">✓</span>' : '')+
+        '</div>'+
+        '<div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-top:4px">'+u.position+' · '+u.city+'</div>'+
+        '<div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px">'+timeAgo(post.createdAt)+(post.isEdited?' · Edited':'')+'</div>'+
+      '</div>'+
+      (isMine
+        ? '<button class="post-card__menu" data-act="post-menu" data-id="'+post.id+'">'+ico('dots')+'</button>'
+        : '')+
+    '</div>'+
+
+    /* Body */
+    (post.text ? '<div style="font-size:15px;font-weight:500;line-height:1.6;color:#2B2B2B;white-space:pre-wrap;word-break:break-word;margin-bottom:14px">'+escapeHTML(post.text)+'</div>' : '')+
+
+    (imageSrc
+      ? '<div style="border-radius:16px;overflow:hidden;margin-bottom:14px;background:#EFEBE2" data-act="post-image-view" data-id="'+post.id+'">'+
+          '<img src="'+imageSrc+'" alt="" style="width:100%;height:auto;display:block" onerror="this.remove()">'+
+        '</div>'
+      : '')+
+
+    /* Action row */
+    '<div style="display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:20px">'+
+      '<button class="post-card__action '+(liked?'is-on':'')+'" data-act="post-like" data-id="'+post.id+'">'+
+        ico('heart')+'<span>'+post.likes.length+'</span>'+
+      '</button>'+
+      '<button class="post-card__action">'+ico('comment')+'<span>'+(post.comments||[]).length+'</span></button>'+
+      '<button class="post-card__action" data-act="post-share" data-id="'+post.id+'">'+ico('share')+'<span>Share</span></button>'+
+    '</div>'+
+
+    /* Comments */
+    '<div style="font-size:15px;font-weight:900;letter-spacing:-.025em;margin-bottom:14px">Comments</div>'+
+    (commentsHTML || '<div class="empty" style="padding:24px 0">No comments yet. Start the conversation.</div>')+
+
+    /* Comment input */
+    '<div style="position:sticky;bottom:0;background:var(--bg);padding:12px 0 0;display:flex;gap:9px;align-items:center;margin-top:14px">'+
+      avatarHTML(me, 'av--xs')+
+      '<input class="form-input" style="flex:1;border-radius:16px;padding:11px 14px;font-size:13.5px" data-input="post-comment" value="'+escapeHTML(state.commentDraft)+'" placeholder="Add a comment…">'+
+      '<button class="btn btn--primary btn--sm" style="padding:11px 14px;border-radius:14px" data-act="post-comment-send" data-id="'+post.id+'"'+(state.commentDraft.trim()?'':' disabled')+'>'+ico('send')+'</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 22 — CHATS LIST + VIEW
+   ============================================================ */
+function screenChats(){
+  const unlocked = DB.chats.filter(c => c.unlocked);
+  const locked = DB.chats.filter(c => !c.unlocked);
+
+  const renderThread = (c) => {
+    const u = userById(c.withId);
+    if (!u) return '';
+    const last = c.messages[c.messages.length - 1];
+    const unread = last && last.from !== 'me' && last.ts > c.lastRead ? 1 : 0;
+    return '<div class="chat-list-item" data-act="openthread" data-id="'+u.id+'">'+
+      avatarHTML(u, 'av--sm')+
+      '<div class="chat-list-item__main">'+
+        '<div class="chat-list-item__top">'+
+          '<div class="chat-list-item__name">'+u.name+'</div>'+
+          '<div class="chat-list-item__time">'+(last ? timeAgo(last.ts) : '')+'</div>'+
+        '</div>'+
+        '<div class="chat-list-item__preview">'+(last ? escapeHTML(last.text) : 'Start the conversation')+'</div>'+
+      '</div>'+
+      (unread ? '<div class="chat-list-item__unread">1</div>' : '')+
+    '</div>';
+  };
+
+  return '<div class="pad">'+
+    '<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:18px;padding:14px 16px;color:#fff;margin-bottom:16px">'+
+      '<div style="flex:1">'+
+        '<div style="font-size:10.5px;font-weight:900;letter-spacing:.14em;color:var(--orange)">UNLOCKED CHATS</div>'+
+        '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:5px">Unlock any thread for $'+PRICES.chatUnlock+' — one-time per person.</div>'+
+      '</div>'+
+      '<div style="font-size:24px;font-weight:900;letter-spacing:-.05em;color:var(--orange)">'+unlocked.length+'</div>'+
+    '</div>'+
+
+    (unlocked.length
+      ? '<div class="sec-title" style="margin-top:6px">Active <small>'+unlocked.length+'</small></div>'+unlocked.map(renderThread).join('')
+      : '<div class="empty" style="padding:26px 20px">No unlocked chats yet.<br><span style="font-size:11px;opacity:.7">Tap any player → "Unlock chat"</span></div>')+
+
+    (locked.length
+      ? '<div class="sec-title">Locked <small>'+locked.length+'</small></div>'+
+        locked.map(c => {
+          const u = userById(c.withId);
+          if (!u) return '';
+          return '<div class="chat-list-item" data-act="unlockchat" data-id="'+u.id+'" style="opacity:.75">'+
+            avatarHTML(u, 'av--sm')+
+            '<div class="chat-list-item__main">'+
+              '<div class="chat-list-item__top">'+
+                '<div class="chat-list-item__name">'+u.name+' <span class="badge badge--amber" style="font-size:8px;padding:2px 6px">LOCKED</span></div>'+
+              '</div>'+
+              '<div class="chat-list-item__preview">'+ (c.messages[0] ? escapeHTML(c.messages[0].text).slice(0,60)+'…' : 'Unlock to see messages') +'</div>'+
+            '</div>'+
+            '<div style="display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;font-weight:800">'+ico('lock')+' $'+PRICES.chatUnlock+'</div>'+
+          '</div>';
+        }).join('')
+      : '')+
+  '</div>';
+}
+
+function screenChatView(params){
+  const u = userById(params.id);
+  const c = Chat.threadWith(params.id);
+  if (!u || !c) return '<div class="empty">Chat not found.</div>';
+  if (!c.unlocked){
+    return '<div class="pad" style="padding-top:20px">'+
+      '<div class="paywall">'+
+        '<div class="paywall__inner">'+
+          '<div class="paywall__ico">'+ico('lock')+'</div>'+
+          '<h3>Unlock chat with '+u.name.split(' ')[0]+'</h3>'+
+          '<p>Send and receive messages instantly. One-time payment — no subscription.</p>'+
+          '<div class="paywall__price">'+money(PRICES.chatUnlock)+'<small> / one-time</small></div>'+
+          '<div class="paywall__btns">'+
+            '<button class="btn btn--ghost" style="flex:1;background:rgba(255,255,255,.1);color:#fff" data-act="back">Cancel</button>'+
+            '<button class="btn btn--gold" style="flex:1" data-act="unlockchat" data-id="'+u.id+'">Unlock</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+  const msgs = c.messages.map(m => {
+    const mine = m.from === 'me';
+    return '<div class="msg msg--'+(mine?'me':'them')+'">'+
+      escapeHTML(m.text)+
+      '<span class="msg__time">'+new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})+'</span>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="chat-view">'+
+    '<div class="chat-view__scroll" id="chatScroll">'+
+      (c.messages.length ? msgs : '<div style="text-align:center;color:var(--muted);font-size:12px;font-weight:600;padding:20px">Say hi to '+u.name.split(' ')[0]+'.</div>')+
+    '</div>'+
+    '<div class="chat-view__input">'+
+      '<input id="chatInput" placeholder="Message…">'+
+      '<button data-act="chatsend" data-id="'+u.id+'">'+ico('send')+'</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 23 — FEED (with composer + posts)
+   ============================================================ */
+function screenFeed(){
+  const me = getMe();
+  const tabs = [
+    ['foryou','For you'],
+    ['following','Following'],
+    ['nearby','Nearby']
+  ];
+  const activeTab = state.feedTab || 'foryou';
+
+  /* Merge DB.posts with user-authored posts, all sorted by newest */
+  const allPosts = (DB.posts || []).slice().sort((a,b) => b.createdAt - a.createdAt);
+
+  return '<div class="pad">'+
+    '<div class="feed-tabs">'+
+      tabs.map(([v,l]) =>
+        '<button class="feed-tab '+(activeTab===v?'is-on':'')+'" data-act="feed-tab" data-v="'+v+'">'+l+'</button>'
+      ).join('')+
+    '</div>'+
+
+    /* Composer bar */
+    '<div class="composer-bar" data-act="compose-post">'+
+      avatarHTML(me, 'av--sm')+
+      '<div class="composer-bar__placeholder">What\'s on your mind, '+me.name.split(' ')[0]+'?</div>'+
+      '<button class="btn btn--primary btn--sm">Post</button>'+
+    '</div>'+
+
+    (allPosts.length
+      ? allPosts.map(p => postCardHTML(p)).join('')
+      : '<div class="empty" style="padding:40px 20px">'+
+          '<div class="empty__ico">🏀</div>'+
+          'No posts yet. Be the first.'+
+        '</div>')+
+
+    /* Floating action button */
+    '<button class="fab" data-act="compose-post" style="bottom:88px">+</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 24 — BADGES
+   ============================================================ */
+const ALL_BADGES = [
+  { id:'first-game', name:'First Bucket', icon:'🏀', desc:'Play your first game' },
+  { id:'10-games', name:'10 Games', icon:'🏅', desc:'Play 10 games' },
+  { id:'50-games', name:'50 Games', icon:'🥈', desc:'Play 50 games' },
+  { id:'100-games', name:'100 Games', icon:'🥇', desc:'Play 100 games' },
+  { id:'sharp-shooter', name:'Sharp Shooter', icon:'🎯', desc:'50+ threes in a season' },
+  { id:'playmaker', name:'Playmaker', icon:'🎩', desc:'10+ assists in a game' },
+  { id:'rim-protector', name:'Rim Protector', icon:'🛡️', desc:'5+ blocks in a game' },
+  { id:'triple-double', name:'Triple-Double', icon:'📊', desc:'Triple-double in a game' },
+  { id:'streak-5', name:'5-Win Streak', icon:'🔥', desc:'Win 5 in a row' },
+  { id:'streak-10', name:'10-Win Streak', icon:'⚡', desc:'Win 10 in a row' },
+  { id:'crew-champ', name:'Crew Champion', icon:'👑', desc:'Win with your crew' },
+  { id:'tourney-mvp', name:'Tournament MVP', icon:'🏆', desc:'Win a tournament' }
+];
+function screenBadges(){
+  const me = getMe();
+  return '<div class="pad">'+
+    '<div class="streak-card">'+
+      '<div class="streak-card__inner">'+
+        '<div class="streak-card__flame">🔥</div>'+
+        '<div class="streak-card__main">'+
+          '<div class="streak-card__n">CURRENT WIN STREAK</div>'+
+          '<div class="streak-card__v">'+ (me.streaks?.current || 0) +' WINS</div>'+
+          '<div class="streak-card__s">Longest: '+ (me.streaks?.longest || 0) +' wins</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="sec-title">Your badges <small>'+ (me.badges?.length || 0) +' / '+ALL_BADGES.length+'</small></div>'+
+    '<div class="badge-grid">'+
+      ALL_BADGES.map(b => {
+        const got = (me.badges || []).includes(b.id);
+        return '<div class="badge-tile '+(got?'':'is-locked')+'">'+
+          '<div class="badge-tile__ico">'+(got ? b.icon : '🔒')+'</div>'+
+          '<div class="badge-tile__n">'+b.name+'</div>'+
+          '<div class="badge-tile__s">'+b.desc+'</div>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 25 — AI RECOMMENDATIONS
+   ============================================================ */
+function screenAI(){
+  const matches = AI.topMatches(8);
+  return '<div class="pad">'+
+    '<div class="ai-card">'+
+      '<div class="ai-card__inner">'+
+        '<div class="ai-card__eyebrow">'+ico('bolt')+' AI MATCH ENGINE</div>'+
+        '<h3>Your best runs today</h3>'+
+        '<p>Scored using skill fit, position, court preference, region and shared interests.</p>'+
+      '</div>'+
+    '</div>'+
+    '<div class="sec-title">Top picks <small>'+matches.length+'</small></div>'+
+    matches.map(({u, s}) => {
+      return '<div class="row" style="background:#fff;border-radius:18px;box-shadow:var(--shadow);margin-bottom:9px" data-act="player" data-id="'+u.id+'">'+
+        avatarHTML(u, 'av--sm')+
+        '<div class="row__main">'+
+          '<div class="row__title">'+u.name+'<span class="lvl">'+u.position+'</span></div>'+
+          '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+' · '+u.dist+' m · Skill '+u.skill+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;margin-right:6px">'+
+          '<div class="match-score">'+s+'%</div>'+
+        '</div>'+
+      '</div>';
+    }).join('')+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 26 — WALLET
+   ============================================================ */
+function screenWallet(){
+  const me = getMe();
+  const txs = txsOf('me').slice(0, 20);
+  return '<div class="pad" style="padding-top:10px">'+
+    '<div class="wallet-hero">'+
+      '<div class="wallet-hero__inner">'+
+        '<div class="wallet-hero__label">RUBIX WALLET</div>'+
+        '<div class="wallet-hero__balance">'+
+          money(me.wallet).replace(/^\$/, '<small>$</small>')+
+        '</div>'+
+        '<div class="wallet-hero__row">'+
+          '<button class="btn btn--primary" data-act="topup">Add funds</button>'+
+          '<button class="btn" style="background:rgba(255,255,255,.14);color:#fff" data-act="toast" data-msg="Withdrawals available once you earn from hosting">Withdraw</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="sec-title">What you can pay for</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Send an invite: '+money(PRICES.requestPlayer)+' per player">'+
+      '<div class="menu-row__ico">'+ico('send')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Send run invite</div><div class="menu-row__s">'+money(PRICES.requestPlayer)+' · reaches a player directly</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Chat unlock: '+money(PRICES.chatUnlock)+' one-time">'+
+      '<div class="menu-row__ico">'+ico('chat')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Unlock chat</div><div class="menu-row__s">'+money(PRICES.chatUnlock)+' · one-time per person</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Court booking fees: '+PRICES.courtPct+'% of total">'+
+      '<div class="menu-row__ico">'+ico('ball')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Court booking</div><div class="menu-row__s">'+PRICES.courtPct+'% platform fee · paid at booking</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Trainer sessions: '+PRICES.trainerPct+'% platform fee">'+
+      '<div class="menu-row__ico">'+ico('briefcase')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Trainer sessions</div><div class="menu-row__s">'+PRICES.trainerPct+'% platform fee · paid at session</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Tournament host: '+money(PRICES.tournamentHost)+' · entry fees split automatically">'+
+      '<div class="menu-row__ico">'+ico('trophy')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Host a tournament</div><div class="menu-row__s">'+money(PRICES.tournamentHost)+' + '+PRICES.tournamentPct+'% of entry</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="toast" data-msg="Vendor listing: '+money(PRICES.vendorListing)+' flat per item">'+
+      '<div class="menu-row__ico">'+ico('briefcase')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Vendor listing</div><div class="menu-row__s">'+money(PRICES.vendorListing)+' flat + '+PRICES.shopPct+'% of sale</div></div>'+
+      ico('chev')+
+    '</div>'+
+
+    '<div class="sec-title">Recent activity <small>'+txs.length+'</small></div>'+
+    (txs.length === 0
+      ? '<div class="empty">No transactions yet.</div>'
+      : txs.map(t => {
+          const inOut = t.amount > 0 ? 'in' : 'out';
+          const emoji = t.kind === 'topup' ? '💳' :
+            t.kind === 'court-booking' ? '🏀' :
+            t.kind === 'chat-unlock' ? '💬' :
+            t.kind === 'tournament-entry' ? '🏆' :
+            t.kind === 'trainer-session' ? '🧑‍🏫' :
+            t.kind === 'vendor-listing' ? '🛒' :
+            t.kind === 'earnings' ? '💰' : '💵';
+          return '<div class="tx">'+
+            '<div class="tx__ico tx__ico--'+inOut+'">'+emoji+'</div>'+
+            '<div class="tx__main">'+
+              '<div class="tx__t">'+escapeHTML(t.note || t.kind)+'</div>'+
+              '<div class="tx__m">'+timeAgo(t.ts)+' · '+t.kind+'</div>'+
+            '</div>'+
+            '<div class="tx__amt tx__amt--'+inOut+'">'+
+              (t.amount > 0 ? '+' : '')+money(t.amount).replace('$-','-$')+
+              (t.fee ? '<small>fee '+money(t.fee)+'</small>' : '')+
+            '</div>'+
+          '</div>';
+        }).join(''))+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 27 — TRUST & SAFETY
+   ============================================================ */
+function screenSafety(){
+  const me = getMe();
+  return '<div class="pad">'+
+    '<div class="safety-banner">'+
+      '<div class="safety-banner__ico">🛡️</div>'+
+      '<div>'+
+        '<div class="safety-banner__t">Your safety on RUBIX</div>'+
+        '<div class="safety-banner__s">Always meet in public courts. Share your run details with a friend. Report anything suspicious.</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="sec-title">Verification</div>'+
+    '<div class="safety-action" data-act="verifyid">'+
+      '<div class="safety-action__ico">'+(me.idVerified ? '✅' : '🆔')+'</div>'+
+      '<div class="safety-action__main">'+
+        '<div class="safety-action__t">ID verification</div>'+
+        '<div class="safety-action__s">'+(me.idVerified ? 'Verified' : 'Verify with a government ID')+'</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+    '<div class="safety-action" data-act="verifyphoto">'+
+      '<div class="safety-action__ico">'+(me.photoVerified ? '✅' : '📷')+'</div>'+
+      '<div class="safety-action__main">'+
+        '<div class="safety-action__t">Photo verification</div>'+
+        '<div class="safety-action__s">'+(me.photoVerified ? 'Verified' : 'Selfie must match your profile photo')+'</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+    '<div class="sec-title">Before every run</div>'+
+    '<div class="notif-row">'+
+      '<div class="notif-row__main">'+
+        '<div class="notif-row__t">Share location with a friend</div>'+
+        '<div class="notif-row__s">Auto-prompt when you open a court booking</div>'+
+      '</div>'+
+      '<div class="toggle '+(me.safety.shareLocationBeforeMatch?'is-on':'')+'" data-act="safetytoggle" data-f="shareLocationBeforeMatch"></div>'+
+    '</div>'+
+    '<div class="safety-action" data-act="emergencycontact">'+
+      '<div class="safety-action__ico">📞</div>'+
+      '<div class="safety-action__main">'+
+        '<div class="safety-action__t">Emergency contact</div>'+
+        '<div class="safety-action__s">'+ (me.safety.emergencyContact || 'Not set — tap to add') +'</div>'+
+      '</div>'+ico('chev')+
+    '</div>'+
+    '<div class="sec-title">Blocked players</div>'+
+    (me.safety.blocked.length === 0
+      ? '<div class="empty" style="padding:22px">Nobody blocked.</div>'
+      : me.safety.blocked.map(id => {
+          const u = userById(id);
+          return '<div class="safety-action" data-act="unblock" data-id="'+id+'">'+
+            avatarHTML(u, 'av--sm')+
+            '<div class="safety-action__main">'+
+              '<div class="safety-action__t">'+u.name+'</div>'+
+              '<div class="safety-action__s">Tap to unblock</div>'+
+            '</div>'+ico('chev')+
+          '</div>';
+        }).join(''))+
+    '<div class="sec-title">Report</div>'+
+    '<button class="btn btn--danger btn--block" data-act="report-abuse">Report a player or issue</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 28 — NOTIFICATION PREFS
+   ============================================================ */
+function screenNotifPrefs(){
+  const me = getMe();
+  const rows = [
+    { k:'push',     t:'Push notifications', s:'Enable all push alerts' },
+    { k:'email',    t:'Email notifications', s:'Weekly digest + booking reminders' },
+    { k:'nearby',   t:'Nearby player alerts', s:'When a baller is within 500 m' },
+    { k:'invites',  t:'Run invites', s:'When someone sends you an invite' },
+    { k:'chat',     t:'Chat messages', s:'New message alerts' },
+    { k:'bookings', t:'Court bookings', s:'Booking confirmations & reminders' },
+    { k:'crew',     t:'Crew activity', s:'Posts and events from your crews' },
+    { k:'quietHours', t:'Quiet hours (10pm – 7am)', s:'Silence push during quiet hours' }
+  ];
+  return '<div class="pad">'+
+    '<div style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:18px;padding:16px;color:#fff;margin-bottom:14px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">NOTIFICATION CENTRE</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Control exactly what reaches you — and when.</div>'+
+    '</div>'+
+    rows.map(r =>
+      '<div class="notif-row">'+
+        '<div class="notif-row__main">'+
+          '<div class="notif-row__t">'+r.t+'</div>'+
+          '<div class="notif-row__s">'+r.s+'</div>'+
+        '</div>'+
+        '<div class="toggle '+(me.notifPrefs[r.k]?'is-on':'')+'" data-act="notiftoggle" data-k="'+r.k+'"></div>'+
+      '</div>'
+    ).join('')+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 29 — VENDOR APPLICATION
+   ============================================================ */
+function screenVendorApply(){
+  const me = getMe();
+  if (me.vendorStatus === 'pending' || me.vendorStatus === 'approved'){
+    return '<div class="pad" style="padding-top:30px">'+
+      '<div style="text-align:center;padding:40px 20px;background:#fff;border-radius:24px;box-shadow:var(--shadow)">'+
+        '<div style="font-size:52px">'+(me.vendorStatus==='approved'?'✅':'⏳')+'</div>'+
+        '<div style="font-size:18px;font-weight:900;letter-spacing:-.03em;margin-top:14px">'+
+          (me.vendorStatus==='approved'?'You are a verified vendor':'Application under review')+
+        '</div>'+
+        '<div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-top:10px;line-height:1.55">'+
+          (me.vendorStatus==='approved'
+            ? 'Your shop listings are live and visible to all players.'
+            : 'An admin will review your request shortly.')+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">VENDOR APPLICATION</div>'+
+      '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Sell gear in the RUBIX shop</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Listing fee: '+money(PRICES.vendorListing)+' flat + '+PRICES.shopPct+'% of sale.</div>'+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Item name</label>'+
+      '<input class="form-input" id="v-item" placeholder="e.g. Nike LeBron 21"></div>'+
+    '<div class="form-field"><label class="form-label">Category</label>'+
+      '<div class="form-chips">'+
+        ['Sneakers','Balls','Jerseys','Gear','Other'].map(c =>
+          '<button class="form-chip '+(state.vendorDraft?.category===c?'is-on':'')+'" data-act="vendorfield" data-v="'+c+'">'+c+'</button>').join('')+
+      '</div></div>'+
+    '<div class="form-field"><label class="form-label">Asking price (USD)</label>'+
+      '<input class="form-input" id="v-price" type="number" placeholder="0"></div>'+
+    '<div class="form-field"><label class="form-label">Condition / notes</label>'+
+      '<textarea class="form-input" id="v-note" placeholder="Describe the item…"></textarea></div>'+
+    '<button class="btn btn--primary btn--block" data-act="vendorsubmit">Pay '+money(PRICES.vendorListing)+' & Submit</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 30 — TRAINER APPLICATION
+   ============================================================ */
+function screenTrainerApply(){
+  const c = DB.courts.filter(x => x.status === 'approved');
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">TRAINER APPLICATION</div>'+
+      '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Get stationed at a court</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Trainers earn '+ (100 - PRICES.trainerPct) +'% of each booking. '+PRICES.trainerPct+'% platform fee.</div>'+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Select court</label>'+
+      c.map(ct =>
+        '<div class="toggle-row" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#fff;border-radius:16px;margin-bottom:9px;border:1.5px solid var(--line);gap:14px" data-act="trainercourt" data-id="'+ct.id+'">'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:13.5px;font-weight:800">'+ct.name+'</div>'+
+            '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:3px">📍 '+ct.address+'</div>'+
+          '</div>'+
+          '<div class="toggle '+(state.trainerCourt===ct.id?'is-on':'')+'"></div>'+
+        '</div>').join('')+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Specialty</label>'+
+      '<input class="form-input" id="tr-spec" placeholder="e.g. Shooting mechanics"></div>'+
+    '<div class="form-row">'+
+      '<div class="form-field"><label class="form-label">Hourly rate</label>'+
+        '<input class="form-input" id="tr-rate" type="number" placeholder="30"></div>'+
+      '<div class="form-field"><label class="form-label">Experience</label>'+
+        '<input class="form-input" id="tr-exp" placeholder="e.g. 5 yrs"></div>'+
+    '</div>'+
+    '<button class="btn btn--primary btn--block" data-act="trainersubmit">Submit Application</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 31 — COURT SUBMISSION
+   ============================================================ */
+function screenSubmitCourt(){
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">COURT SUBMISSION</div>'+
+      '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Add a venue to RUBIX</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Reviewed by admin before going live.</div>'+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Court name</label>'+
+      '<input class="form-input" id="nc-name" placeholder="e.g. Eastside Hoops Hub"></div>'+
+    '<div class="form-field"><label class="form-label">Address</label>'+
+      '<input class="form-input" id="nc-addr" placeholder="Street, city"></div>'+
+    '<div class="form-row">'+
+      '<div class="form-field"><label class="form-label">Price / hour</label>'+
+        '<input class="form-input" id="nc-price" type="number" placeholder="20"></div>'+
+      '<div class="form-field"><label class="form-label">Courts</label>'+
+        '<input class="form-input" id="nc-count" type="number" placeholder="4"></div>'+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Surface</label>'+
+      '<div class="form-chips">'+
+        ['Indoor','Outdoor','Street'].map(s =>
+          '<button class="form-chip '+(state.courtSurface===s?'is-on':'')+'" data-act="courtsurface" data-v="'+s+'">'+s+'</button>').join('')+
+      '</div></div>'+
+    '<button class="btn btn--primary btn--block" data-act="courtsubmit">Submit for Review</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 32 — HOST TOURNAMENT
+   ============================================================ */
+function screenHostTourney(){
+  const courts = DB.courts.filter(c => c.status === 'approved');
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="background:linear-gradient(140deg,#3D1F5C,#1F0F30);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">HOST TOURNAMENT</div>'+
+      '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Bring nearby ballers together</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Players have 7 days to agree on match times. Host fee: '+money(PRICES.tournamentHost)+'.</div>'+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Tournament name</label>'+
+      '<input class="form-input" id="ht-name" placeholder="e.g. Riverside 3v3 Open"></div>'+
+    '<div class="form-field"><label class="form-label">Format</label>'+
+      '<div class="form-chips">'+
+        [['1v1','1v1'],['2v2','2v2'],['3v3','3v3'],['4v4','4v4'],['5v5','5v5']].map(([v,l]) =>
+          '<button class="form-chip '+(state.hostFormat===v?'is-on':'')+'" data-act="hostfield" data-v="'+v+'">'+l+'</button>').join('')+
+      '</div></div>'+
+    '<div class="form-field"><label class="form-label">Court</label>'+
+      '<select class="form-input" id="ht-court">'+
+        courts.map(c => '<option value="'+c.id+'">'+c.name+'</option>').join('')+
+      '</select></div>'+
+    '<div class="form-row">'+
+      '<div class="form-field"><label class="form-label">Max teams</label>'+
+        '<input class="form-input" id="ht-max" type="number" value="8"></div>'+
+      '<div class="form-field"><label class="form-label">Entry ($)</label>'+
+        '<input class="form-input" id="ht-entry" type="number" value="5"></div>'+
+    '</div>'+
+    '<div class="form-field"><label class="form-label">Prize pool ($)</label>'+
+      '<input class="form-input" id="ht-prize" type="number" value="60"></div>'+
+    '<div style="background:#F5F2EA;border-radius:14px;padding:14px;font-size:12px;font-weight:600;color:#3A4756;line-height:1.6;margin-bottom:16px">'+
+      '<b>How it works:</b> Players join for the entry fee. '+PRICES.tournamentPct+'% platform fee is deducted automatically. Winners are paid instantly from the prize pool once the bracket completes.'+
+    '</div>'+
+    '<button class="btn btn--primary btn--block" data-act="hosttourneysubmit">Pay '+money(PRICES.tournamentHost)+' & Create</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 33 — MORE
+   ============================================================ */
+function screenMore(){
+  const me = getMe();
+  const unread = Chat.unreadCount();
+
+  const vendorRow = me.vendorStatus === 'approved'
+    ? '<div class="menu-row" data-act="toast" data-msg="You are a verified vendor ✓">'+
+        '<div class="menu-row__ico" style="background:var(--orange);color:#fff">'+ico('check')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Verified Vendor</div><div class="menu-row__s">Your shop listings are live</div></div>'+
+        ico('chev')+
+      '</div>'
+    : me.vendorStatus === 'pending'
+    ? '<div class="menu-row" data-act="toast" data-msg="Your vendor application is under review">'+
+        '<div class="menu-row__ico" style="background:#FFF3DE;color:#A56A00">'+ico('bolt')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Vendor Application Pending</div><div class="menu-row__s">An admin will review shortly</div></div>'+
+        ico('chev')+
+      '</div>'
+    : '<div class="menu-row" data-act="vendorapply">'+
+        '<div class="menu-row__ico">'+ico('briefcase')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Become a Vendor · '+money(PRICES.vendorListing)+'</div><div class="menu-row__s">Sell gear in the RUBIX shop</div></div>'+
+        ico('chev')+
+      '</div>';
+
+  const trainerDashRow = me.role === 'trainer' && me.trainerCourt
+    ? '<div class="menu-row" style="background:linear-gradient(140deg,#3A1F0F,#1F1408);color:#fff" data-act="trainerdash">'+
+        '<div class="menu-row__ico" style="background:var(--orange);color:#fff">'+ico('clipboard')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t" style="color:#fff">Trainer Dashboard</div><div class="menu-row__s" style="color:rgba(255,255,255,.6)">Manage sessions & court status</div></div>'+
+        ico('chev', 'style="color:#fff"')+
+      '</div>'
+    : '<div class="menu-row" data-act="trainerapply">'+
+        '<div class="menu-row__ico">'+ico('users')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Apply as Trainer</div><div class="menu-row__s">Earn '+ (100 - PRICES.trainerPct) +'% of each session</div></div>'+
+        ico('chev')+
+      '</div>';
+
+  return '<div class="pad">'+
+    '<div class="wallet-hero" data-act="wallet" style="margin-bottom:14px;cursor:pointer">'+
+      '<div class="wallet-hero__inner">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+          '<div>'+
+            '<div class="wallet-hero__label">RUBIX WALLET</div>'+
+            '<div class="wallet-hero__balance" style="font-size:32px">'+money(me.wallet)+'</div>'+
+          '</div>'+
+          '<div style="width:44px;height:44px;border-radius:16px;background:linear-gradient(140deg,var(--orange),var(--orange-dk));color:#fff;display:grid;place-items:center">'+ico('wallet')+'</div>'+
+        '</div>'+
+        '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:14px">Tap to top up, view activity and see platform fees</div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="tile" style="background:linear-gradient(140deg,#3D1F5C,#1F0F30)" data-act="ai">'+
+      '<h3>AI Match Recommendations</h3>'+
+      '<p>Top picks based on skill, position, court preference, region, availability.</p>'+
+      '<div class="tile__emoji">✨</div>'+
+    '</div>'+
+
+    '<div class="tile" style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A)" data-act="feed">'+
+      '<h3>RUBIX Feed</h3>'+
+      '<p>Wins, runs, gear — your hoop circle in one place.</p>'+
+      '<div class="tile__emoji">📰</div>'+
+    '</div>'+
+
+    '<div class="tile" style="background:linear-gradient(140deg,#FF6B35,#E85D04)" data-act="badges">'+
+      '<h3>Badges & Streaks</h3>'+
+      '<p>Unlock achievements as you play. Track your current and longest streaks.</p>'+
+      '<div class="tile__emoji">🔥</div>'+
+    '</div>'+
+
+    '<div class="tile" style="background:linear-gradient(140deg,#0A0A0A,#1A1F2E)" data-act="lostfound">'+
+      '<h3>Lost &amp; Found</h3>'+
+      '<p>Reunite gear with its owner. Post a lost or found item in seconds.</p>'+
+      '<div class="tile__emoji">🎒</div>'+
+    '</div>'+
+
+    '<div class="tile" style="background:linear-gradient(140deg,#3E6B1F,#1F3A0E)" data-act="shop">'+
+      '<h3>RUBIX Shop</h3>'+
+      '<p>Buy and sell sneakers, balls, jerseys and gear near you.</p>'+
+      '<div class="tile__emoji">🛒</div>'+
+    '</div>'+
+
+    '<div class="sec-title">Inbox</div>'+
+    '<div class="menu-row" data-act="chats">'+
+      '<div class="menu-row__ico">'+ico('chat')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Chats</div><div class="menu-row__s">'+ (unread ? unread + ' new messages' : 'No new messages') +'</div></div>'+
+      (unread ? '<span class="icon-btn__badge" style="position:static">'+unread+'</span>' : ico('chev'))+
+    '</div>'+
+
+    '<div class="sec-title">Account</div>'+
+    '<div class="menu-row" data-act="idcard">'+
+      '<div class="menu-row__ico">'+ico('shield')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">My RUBIX ID</div><div class="menu-row__s">Digital card · '+me.idNumber+'</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="editprofile">'+
+      '<div class="menu-row__ico">'+ico('edit')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Edit Profile</div><div class="menu-row__s">Update your photo, position, bio</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="safety">'+
+      '<div class="menu-row__ico">'+ico('shield2')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Trust & Safety</div><div class="menu-row__s">Verification, emergency contact, blocked players</div></div>'+
+      ico('chev')+
+    '</div>'+
+    '<div class="menu-row" data-act="notifprefs">'+
+      '<div class="menu-row__ico">'+ico('bell')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Notifications</div><div class="menu-row__s">Control what reaches you and when</div></div>'+
+      ico('chev')+
+    '</div>'+
+    vendorRow+
+    trainerDashRow+
+    '<div class="menu-row" data-act="submitcourt">'+
+      '<div class="menu-row__ico">'+ico('pin')+'</div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Submit a Court</div><div class="menu-row__s">Add a new venue to RUBIX</div></div>'+
+      ico('chev')+
+    '</div>'+
+
+    (SESSION.adminId
+      ? '<div class="sec-title">Admin</div>'+
+        '<div class="menu-row" style="background:linear-gradient(140deg,#0A0A0A,#1A1F2E);color:#fff" data-act="returnadmin">'+
+          '<div class="menu-row__ico" style="background:var(--orange);color:#fff">'+ico('shield2')+'</div>'+
+          '<div class="menu-row__main"><div class="menu-row__t" style="color:#fff">Return to Admin Console</div><div class="menu-row__s" style="color:rgba(255,255,255,.55)">You are still signed in as admin</div></div>'+
+          ico('chev', 'style="color:#fff"')+
+        '</div>'
+      : '<div class="sec-title">Admin</div>'+
+        '<div class="menu-row" style="background:linear-gradient(140deg,#0A0A0A,#1A1F2E);color:#fff" data-act="exitgate">'+
+          '<div class="menu-row__ico" style="background:var(--orange);color:#fff">'+ico('lock')+'</div>'+
+          '<div class="menu-row__main"><div class="menu-row__t" style="color:#fff">Admin Sign-in</div><div class="menu-row__s" style="color:rgba(255,255,255,.55)">Approvals · Users · Rankings</div></div>'+
+          ico('chev', 'style="color:#fff"')+
+        '</div>')+
+
+    '<div style="text-align:center;padding:22px 0 6px;font-size:11px;font-weight:700;color:#B3BDC6;letter-spacing:.14em">RUBIX HOOPS · NO ADS · v1.0</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 34 — LOST & FOUND
+   ============================================================ */
+function screenLostFound(){
+  const list = DB.lostFound.filter(i => state.lfFilter === 'all' || i.type === state.lfFilter);
+  return '<div class="pad" style="position:relative;min-height:100%">'+
+    '<div class="chips chips--pad" style="padding-left:0">'+
+      [['all','All items'],['lost','Lost'],['found','Found']].map(([v,l]) =>
+        '<button class="chip '+(state.lfFilter===v?'is-on':'')+'" data-act="lffilter" data-v="'+v+'">'+l+'</button>').join('')+
+    '</div>'+
+    (list.length === 0 ? '<div class="empty">Nothing here yet.</div>' :
+      list.map(i => {
+        const c1 = 'hsl('+i.hue+' 70% 60%)';
+        const c2 = 'hsl('+((i.hue+45)%360)+' 66% 42%)';
+        return '<div class="lf-card" data-act="toast" data-msg="Opening conversation about \''+escapeHTML(i.title)+'\'…">'+
+          '<div class="lf-card__img" style="--c1:'+c1+';--c2:'+c2+'">'+i.emoji+
+            '<img src="'+img('lf-'+i.id,160,160)+'" alt="" onerror="this.remove()">'+
+          '</div>'+
+          '<div class="lf-card__main">'+
+            '<span class="lf-card__tag tag--'+i.type+'">'+i.type+'</span>'+
+            '<div class="lf-card__t">'+i.title+'</div>'+
+            '<div class="lf-card__m">📍 '+i.place+' · '+i.time+'</div>'+
+          '</div>'+ ico('chev')+
+        '</div>';
+      }).join(''))+
+    '<button class="fab" data-act="lfadd">+</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 35 — SHOP
+   ============================================================ */
+function screenShop(){
+  return '<div class="pad">'+
+    '<div class="search">'+ico('search')+
+      '<input placeholder="Search sneakers, balls, jerseys…" data-input="shopQuery">'+
+    '</div>'+
+    '<div class="chips chips--pad" style="padding-left:0">'+
+      '<button class="chip is-on">All</button>'+
+      '<button class="chip">Sneakers</button>'+
+      '<button class="chip">Balls</button>'+
+      '<button class="chip">Jerseys</button>'+
+      '<button class="chip">Gear</button>'+
+    '</div>'+
+    '<div class="grid2">'+
+      DB.shop.filter(i => i.status === 'approved').map(it => {
+        const c1 = 'hsl('+it.hue+' 72% 58%)';
+        const c2 = 'hsl('+((it.hue+45)%360)+' 68% 40%)';
+        return '<div class="shop-card" data-act="shopitem" data-id="'+it.id+'">'+
+          '<div class="shop-card__img" style="--c1:'+c1+';--c2:'+c2+'">'+
+            '<img src="'+img('shop-'+it.id,400,300)+'" alt="" loading="lazy" onerror="this.remove()">'+
+          '</div>'+
+          '<div class="shop-card__body">'+
+            '<div class="shop-card__t">'+it.title+'</div>'+
+            '<div class="shop-card__p">$'+it.price+'</div>'+
+            '<div class="shop-card__c">'+it.cond+' · '+(userById(it.sellerId)?.name.split(' ')[0] || 'Seller')+'</div>'+
+          '</div>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
+  '</div>';
+}
+
+function screenShopItem(params){
+  const it = shopById(params.id);
+  if (!it) return '<div class="empty">Item not found.</div>';
+  const c1 = 'hsl('+it.hue+' 72% 58%)';
+  const c2 = 'hsl('+((it.hue+45)%360)+' 68% 40%)';
+  const seller = userById(it.sellerId);
+  const fee = shopFee(it.price);
+  return '<div class="shop-hero">'+
+      '<div class="shop-hero__bg" style="--c1:'+c1+';--c2:'+c2+'">'+
+        '<img src="'+img('shop-'+it.id,800,500)+'" alt="" onerror="this.remove()">'+
+      '</div>'+
+    '</div>'+
+    '<div class="pad" style="padding-top:20px">'+
+      '<div style="display:flex;gap:12px;align-items:flex-start">'+
+        '<div style="flex:1">'+
+          '<div style="font-size:19px;font-weight:900;letter-spacing:-.04em;line-height:1.2">'+it.title+'</div>'+
+          '<div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:6px">'+it.cond+'</div>'+
+        '</div>'+
+        '<div style="font-size:26px;font-weight:900;letter-spacing:-.05em">$'+it.price+'</div>'+
+      '</div>'+
+      '<div class="sec-title">Seller</div>'+
+      '<div class="row" style="background:#fff;border-radius:18px;box-shadow:var(--shadow)" data-act="player" data-id="'+it.sellerId+'">'+
+        (seller ? avatarHTML(seller, 'av--sm') : '')+
+        '<div class="row__main">'+
+          '<div class="row__title">'+(seller ? seller.name : 'Unknown')+'<span class="lvl">'+(seller ? seller.position : '—')+'</span></div>'+
+          '<div class="row__sub">📍 '+it.place+' · ⭐ 4.9 seller rating</div>'+
+        '</div>'+ ico('chev')+
+      '</div>'+
+      '<div class="sec-title">Buyer protection</div>'+
+      '<div style="background:#F5F2EA;border-radius:14px;padding:14px;font-size:12px;font-weight:600;color:#3A4756;line-height:1.6">'+
+        '<b>How it works:</b> Pay through RUBIX to protect your purchase. The seller receives '+ (100 - PRICES.shopPct) +'% of the sale price; '+PRICES.shopPct+'% platform fee applies.'+
+      '</div>'+
+      '<div class="sticky-bar">'+
+        '<div class="sticky-bar__price" style="flex:1">'+
+          '<b>$'+it.price+'</b>'+
+          '<span>'+PRICES.shopPct+'% platform fee ('+money(fee)+')</span>'+
+        '</div>'+
+        '<button class="btn btn--primary" data-act="shopbuy" data-id="'+it.id+'">Buy Now</button>'+
+      '</div>'+
+    '</div>';
+}
+
+/* ============================================================
+   SECTION 36 — TRAINER DETAIL
+   ============================================================ */
+function screenTrainer(params){
+  const c = courtById(params.court);
+  const tr = c && c.trainers.find(x => x.id === params.id);
+  if (!tr) return '<div class="empty">Trainer not found.</div>';
+  const owner = userById(tr.userId);
+  const fee = trainerFee(tr.rate);
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="display:flex;gap:16px;align-items:center">'+
+      (owner ? avatarHTML(owner, 'av--lg') : '')+
+      '<div>'+
+        '<div style="font-size:21px;font-weight:900;letter-spacing:-.04em">'+tr.name+'</div>'+
+        '<div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:5px">'+tr.spec+'</div>'+
+        '<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap">'+
+          '<span class="badge badge--soft">'+tr.exp+'</span>'+
+          (tr.verified
+            ? '<span class="badge badge--ok">✓ Verified by Admin</span>'
+            : '<span class="badge badge--amber">⏳ Pending</span>')+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="sec-title">Stationed at</div>'+
+    '<div class="row" style="background:#fff;border-radius:18px;box-shadow:var(--shadow)" data-act="court" data-id="'+c.id+'">'+
+      '<div class="av av--sm" style="--c1:hsl('+c.hue+' 62% 58%);--c2:hsl('+((c.hue+45)%360)+' 58% 38%)">'+
+        '<img src="'+img('court-'+c.id,120,120)+'" alt="" onerror="this.remove()">'+
+      '</div>'+
+      '<div class="row__main">'+
+        '<div class="row__title">'+c.name+'</div>'+
+        '<div class="row__sub">📍 '+c.address+'</div>'+
+      '</div>'+ ico('chev')+
+    '</div>'+
+    '<div class="sec-title">Availability this week</div>'+
+    '<div class="slots">'+
+      TIMES.slice(0, 6).map((t, i) => {
+        const off = (i*2 + tr.name.length) % 5 === 0;
+        return '<button class="slot '+(off?'is-off':'')+'" data-act="trainerbook" data-court="'+c.id+'" data-trainer="'+tr.id+'" data-time="'+t+'">'+t+'</button>';
+      }).join('')+
+    '</div>'+
+    '<div class="sticky-bar">'+
+      '<div class="sticky-bar__price" style="flex:1">'+
+        '<b>$'+tr.rate+'</b>'+
+        '<span>+ '+money(fee)+' platform fee ('+PRICES.trainerPct+'%)</span>'+
+      '</div>'+
+      '<button class="btn btn--primary" data-act="trainerbook" data-court="'+c.id+'" data-trainer="'+tr.id+'">Book Session</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 37 — CREW DETAIL
+   ============================================================ */
+function screenCrew(params){
+  const k = crewById(params.id);
+  if (!k) return '<div class="empty">Crew not found.</div>';
+  const c1 = 'hsl('+k.hue+' 80% 60%)';
+  const c2 = 'hsl('+((k.hue+45)%360)+' 70% 42%)';
+  const members = DB.users.filter(u => u.id !== 'me' && u.role !== 'admin').slice(0, 6);
+  const creator = userById(k.createdBy);
+  return '<div class="pad" style="padding-top:8px">'+
+    '<div style="height:160px;border-radius:26px;overflow:hidden;position:relative">'+
+      '<div style="position:absolute;inset:0;background:linear-gradient(140deg,'+c1+','+c2+')"></div>'+
+      '<img src="'+img('crew-'+k.id,800,400)+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">'+
+      '<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(10,10,10,.72) 100%)"></div>'+
+      '<div style="position:absolute;left:18px;right:18px;bottom:16px;color:#fff">'+
+        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">'+
+          (k.verified === 'approved' ? '✓ VERIFIED CREW' : '⏳ PENDING VERIFICATION')+
+        '</div>'+
+        '<div style="font-size:20px;font-weight:900;letter-spacing:-.04em;margin-top:6px">'+k.name+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-top:14px;line-height:1.5">'+k.desc+'</div>'+
+    '<div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap">'+
+      '<span class="badge badge--orange">'+k.members.toLocaleString()+' members</span>'+
+      '<span class="badge badge--soft">'+k.dist+' m away</span>'+
+      (creator ? '<span class="badge badge--soft">Led by '+creator.name.split(' ')[0]+'</span>' : '')+
+      (k.monthlyFee ? '<span class="fee-tag">'+money(k.monthlyFee)+'/mo</span>' : '')+
+    '</div>'+
+    '<div class="sec-title">Members nearby</div>'+
+    members.map(u =>
+      '<div class="row" data-act="player" data-id="'+u.id+'">'+
+        avatarHTML(u, 'av--sm')+
+        '<div class="row__main">'+
+          '<div class="row__title">'+u.name+'<span class="lvl">'+u.position+'</span></div>'+
+          '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+' · '+u.dist+' m</div>'+
+        '</div>'+
+        '<button class="btn btn--sm btn--primary" data-act="request" data-id="'+u.id+'">Invite · $'+PRICES.requestPlayer+'</button>'+
+      '</div>').join('')+
+    '<div class="sticky-bar">'+
+      '<div class="sticky-bar__price" style="flex:1">'+
+        (k.monthlyFee ? '<b>'+money(k.monthlyFee)+'</b><span>monthly + '+money(crewFee(k.monthlyFee))+' fee</span>' : '<b>Free</b><span>to join the crew</span>')+
+      '</div>'+
+      '<button class="btn btn--primary" data-act="joincrew" data-id="'+k.id+'">Join Crew</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 38 — TRAINER DASHBOARD
+   ============================================================ */
+function screenTrainerDashboard(){
+  const me = getMe();
+  const c = courtById(me.trainerCourt);
+  if (!c) return '<div class="empty">No court assigned. Apply as a trainer first.</div>';
+  const bookings = c.bookings || [];
+  return '<div class="admin-shell" style="background:#F4F1EA;color:var(--ink)">'+
+    '<div class="dash-hero dash-hero--trainer">'+
+      '<div class="dash-hero__inner">'+
+        '<div class="dash-hero__eyebrow"><span style="width:6px;height:6px;background:var(--orange);border-radius:50%"></span>TRAINER DASHBOARD</div>'+
+        '<h2>'+c.name+'</h2>'+
+        '<p>'+me.name+' · '+c.address+'</p>'+
+      '</div>'+
+    '</div>'+
+    '<div class="dash-stat-grid">'+
+      '<div class="dstat"><b>'+bookings.length+'</b><span>Sessions today</span></div>'+
+      '<div class="dstat"><b>'+bookings.filter(b => b.status === 'active').length+'</b><span>On court now</span></div>'+
+      '<div class="dstat"><b>'+bookings.filter(b => b.status === 'upcoming').length+'</b><span>Upcoming</span></div>'+
+    '</div>'+
+    '<div style="padding:0 18px 22px">'+
+      '<div class="court-status-card">'+
+        '<div class="court-status-card__t">Court status</div>'+
+        '<div class="court-status-opts">'+
+          '<div class="court-status-opt '+(c.courtStatus==='open'?'is-on':'')+'" data-act="setcourtstatus" data-v="open">Open</div>'+
+          '<div class="court-status-opt '+(c.courtStatus==='closed'?'is-on is-closed':'')+'" data-act="setcourtstatus" data-v="closed">Closed</div>'+
+          '<div class="court-status-opt '+(c.courtStatus==='maintenance'?'is-on is-maint':'')+'" data-act="setcourtstatus" data-v="maintenance">Maintenance</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="sec-title">Today\'s sessions <small>'+bookings.length+' total</small></div>'+
+      (bookings.length === 0
+        ? '<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:12.5px;font-weight:600">No sessions for today.</div>'
+        : bookings.map(b => {
+            const u = userById(b.userId);
+            const pillClass = 'status-pill status-pill--'+(b.status === 'completed' ? 'done' : b.status);
+            return '<div class="booking-row">'+
+              '<div class="booking-row__head">'+
+                '<div class="booking-row__time">'+b.time+'</div>'+
+                (u ? avatarHTML(u, 'av--xs') : '')+
+                '<div class="booking-row__main">'+
+                  '<div class="booking-row__who">'+(u ? u.name : 'Guest')+'</div>'+
+                  '<div class="booking-row__meta">'+b.duration+' · '+b.date+'</div>'+
+                '</div>'+
+                '<span class="'+pillClass+'">'+b.status+'</span>'+
+              '</div>'+
+              (b.status !== 'completed' && b.status !== 'cancelled'
+                ? '<div class="booking-row__actions">'+
+                    (b.status === 'upcoming' ? '<button class="btn btn--primary" data-act="bookingaction" data-court="'+c.id+'" data-b="'+b.id+'" data-s="active">Start</button>' : '')+
+                    (b.status === 'active' ? '<button class="btn btn--ok" data-act="bookingaction" data-court="'+c.id+'" data-b="'+b.id+'" data-s="completed">Complete</button>' : '')+
+                    '<button class="btn btn--danger" data-act="bookingaction" data-court="'+c.id+'" data-b="'+b.id+'" data-s="cancelled">Cancel</button>'+
+                  '</div>'
+                : '')+
+            '</div>';
+          }).join(''))+
+      '<div class="sec-title">Earnings</div>'+
+      '<div class="wallet-hero">'+
+        '<div class="wallet-hero__inner">'+
+          '<div class="wallet-hero__label">TRAINER EARNINGS</div>'+
+          '<div class="wallet-hero__balance" style="font-size:32px">'+money(me.earnings || 0)+'</div>'+
+          '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:14px">After '+PRICES.trainerPct+'% platform fee · paid out weekly</div>'+
+        '</div>'+
+      '</div>'+
+      '<button class="btn btn--ghost btn--block" style="margin-top:14px" data-act="back">← Back</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 39 — CREW DASHBOARD
+   ============================================================ */
+function screenCrewDashboard(){
+  const me = getMe();
+  const k = me.crewId ? crewById(me.crewId) : null;
+  if (!k) return '<div class="empty">You don\'t lead a crew yet.</div>';
+  const members = DB.users.filter(u => u.crewId === k.id || (u.id !== 'me' && u.id !== k.createdBy)).slice(0, 8);
+  const pending = DB.users.filter(u => u.id !== 'me').slice(0, 3);
+  return '<div class="admin-shell" style="background:#F4F1EA;color:var(--ink)">'+
+    '<div class="dash-hero dash-hero--crew">'+
+      '<div class="dash-hero__inner">'+
+        '<div class="dash-hero__eyebrow"><span style="width:6px;height:6px;background:var(--orange);border-radius:50%"></span>CREW DASHBOARD</div>'+
+        '<h2>'+k.name+'</h2>'+
+        '<p>Managed by '+me.name+' · '+k.members.toLocaleString()+' members</p>'+
+      '</div>'+
+    '</div>'+
+    '<div class="dash-stat-grid">'+
+      '<div class="dstat"><b>'+k.members.toLocaleString()+'</b><span>Members</span></div>'+
+      '<div class="dstat"><b>'+(k.pendingMembers||0)+'</b><span>Pending</span></div>'+
+      '<div class="dstat"><b>'+(k.events||0)+'</b><span>Events</span></div>'+
+    '</div>'+
+    '<div style="padding:0 18px 22px">'+
+      '<div class="sec-title">Pending join requests <small>'+pending.length+'</small></div>'+
+      pending.map(u =>
+        '<div class="member-row">'+
+          avatarHTML(u, 'av--sm')+
+          '<div class="member-row__main">'+
+            '<div class="member-row__t">'+u.name+'</div>'+
+            '<div class="member-row__s">'+u.position+' · '+u.city+'</div>'+
+          '</div>'+
+          '<button class="btn btn--sm btn--danger" data-act="toast" data-msg="Rejected '+u.name.split(' ')[0]+'">Reject</button>'+
+          '<button class="btn btn--sm btn--primary" data-act="toast" data-msg="Approved '+u.name.split(' ')[0]+'">Approve</button>'+
+        '</div>').join('')+
+      '<div class="sec-title">Members <small>'+members.length+' shown</small></div>'+
+      members.slice(0, 5).map(u =>
+        '<div class="member-row">'+
+          avatarHTML(u, 'av--sm')+
+          '<div class="member-row__main">'+
+            '<div class="member-row__t">'+u.name+'</div>'+
+            '<div class="member-row__s">'+u.city+' · '+u.position+'</div>'+
+          '</div>'+
+          '<span class="badge badge--soft" style="font-size:9px">Member</span>'+
+        '</div>').join('')+
+      '<div class="sec-title">Crew management</div>'+
+      '<div class="menu-row" data-act="toast" data-msg="Post an announcement">'+
+        '<div class="menu-row__ico">'+ico('megaphone')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Post announcement</div><div class="menu-row__s">Notify all members</div></div>'+
+        ico('chev')+
+      '</div>'+
+      '<div class="menu-row" data-act="toast" data-msg="Create a new run">'+
+        '<div class="menu-row__ico">'+ico('calendar')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Create run</div><div class="menu-row__s">Schedule a meetup or tournament</div></div>'+
+        ico('chev')+
+      '</div>'+
+      '<button class="btn btn--ghost btn--block" style="margin-top:14px" data-act="back">← Back</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ════════════════════════════════════════════════════════════
+   END OF SESSION 4 — continue with Session 5 below
+   ════════════════════════════════════════════════════════════ */
+/* ============================================================
+   SECTION 40 — ADMIN TABS
+   ============================================================ */
+const ADMIN_TABS = [
+  {id:'overview',   label:'Overview'},
+  {id:'analytics',  label:'Analytics'},
+  {id:'approvals',  label:'Approvals'},
+  {id:'users',      label:'Users'},
+  {id:'admins',     label:'Admins'},
+  {id:'national',   label:'National Squad'},
+  {id:'rankings',   label:'Rankings'},
+  {id:'moderation', label:'Moderation'},
+  {id:'wallet',     label:'Revenue'},
+  {id:'log',        label:'Log'}
+];
+
+/* ============================================================
+   ADMIN · OVERVIEW
+   ============================================================ */
+function adminOverview(){
+  const vendors = DB.pending.vendors.length;
+  const crews = DB.pending.crews.length;
+  const trainers = DB.pending.trainers.length;
+  const courts = DB.pending.courts.length;
+  const total = vendors + crews + trainers + courts;
+  const national = DB.users.filter(u => u.isNational).length;
+  const members = DB.users.filter(u => u.role !== 'admin' && u.id !== 'me').length;
+  const undone = ADMIN.log.filter(x => x.state === 'undone').length;
+  const openReports = DB.reports.filter(r => r.status === 'open').length;
+
+  return '<div class="admin-stat-grid">'+
+    '<div class="astat"><b>'+money(PLATFORM.revenue)+'</b><span>Platform revenue</span></div>'+
+    '<div class="astat"><b>'+total+'</b><span>Pending approvals</span></div>'+
+    '<div class="astat"><b>'+members+'</b><span>Members</span></div>'+
+    '<div class="astat"><b>'+national+'</b><span>National squad</span></div>'+
+    '<div class="astat"><b>'+openReports+'</b><span>Open reports</span></div>'+
+    '<div class="astat"><b>'+ADMIN.log.length+'</b><span>Actions logged</span></div>'+
+  '</div>'+
+  '<div style="padding:0 18px 22px">'+
+    '<div style="font-size:12px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:12px">QUICK JUMP</div>'+
+    [
+      {label:'Analytics', tab:'analytics'},
+      {label:'Approvals', tab:'approvals'},
+      {label:'Moderation queue', tab:'moderation'},
+      {label:'Revenue & fees', tab:'wallet'},
+      {label:'Admins', tab:'admins'}
+    ].map(x =>
+      '<div class="admin-row" data-act="admintab" data-v="'+x.tab+'">'+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+x.label+'</div>'+
+          '<div class="admin-row__s">Open '+x.label.toLowerCase()+'</div>'+
+        '</div>'+ ico('chev', 'style="color:rgba(255,255,255,.4)"')+
+      '</div>'
+    ).join('')+
+    (undone ? '<div style="margin-top:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;font-size:12px;font-weight:600;color:rgba(255,255,255,.55);line-height:1.5">'+
+      '<b style="color:var(--orange)">'+undone+'</b> reversed action'+(undone>1?'s':'')+' in the log — tap the Log tab to inspect and reapply.'+
+    '</div>' : '')+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · ANALYTICS
+   ============================================================ */
+function adminAnalytics(){
+  const DAU = [42,58,61,73,89,102,88];
+  const max = Math.max(...DAU);
+  const retention = 62;
+  const matchRate = 78;
+  return '<div style="padding:0 18px 22px">'+
+    '<div class="chart-card">'+
+      '<div class="chart-card__t">Daily active users · Last 7 days</div>'+
+      '<div class="chart">'+
+        DAU.map((v,i) =>
+          '<div class="chart__bar" style="height:'+Math.round(v/max*100)+'%"><span>'+['M','T','W','T','F','S','S'][i]+'</span></div>'
+        ).join('')+
+      '</div>'+
+      '<div class="chart-legend"><span>7d ago</span><span>Today</span></div>'+
+    '</div>'+
+    '<div class="analytics-kpi">'+
+      '<div class="analytics-kpi__main">'+
+        '<div class="analytics-kpi__t">7-day retention</div>'+
+        '<div class="analytics-kpi__s">Users who returned within a week</div>'+
+      '</div>'+
+      '<div class="analytics-kpi__v">'+retention+'%</div>'+
+    '</div>'+
+    '<div class="analytics-kpi">'+
+      '<div class="analytics-kpi__main">'+
+        '<div class="analytics-kpi__t">Game completion rate</div>'+
+        '<div class="analytics-kpi__s">Confirmed games / invites sent</div>'+
+      '</div>'+
+      '<div class="analytics-kpi__v">'+matchRate+'%</div>'+
+    '</div>'+
+    '<div class="analytics-kpi">'+
+      '<div class="analytics-kpi__main">'+
+        '<div class="analytics-kpi__t">Avg. wallet balance</div>'+
+        '<div class="analytics-kpi__s">Across all active users</div>'+
+      '</div>'+
+      '<div class="analytics-kpi__v neutral">'+money(18.75)+'</div>'+
+    '</div>'+
+    '<div class="analytics-kpi">'+
+      '<div class="analytics-kpi__main">'+
+        '<div class="analytics-kpi__t">Court utilisation</div>'+
+        '<div class="analytics-kpi__s">Booked hours / available hours · all courts</div>'+
+      '</div>'+
+      '<div class="analytics-kpi__v">48%</div>'+
+    '</div>'+
+    '<div class="chart-card" style="margin-top:14px">'+
+      '<div class="chart-card__t">Top performing courts</div>'+
+      DB.courts.slice(0, 4).map(c =>
+        '<div class="admin-row" style="margin-bottom:8px">'+
+          '<div style="width:34px;height:34px;border-radius:12px;background:rgba(255,107,53,.15);color:var(--orange);display:grid;place-items:center;font-size:15px;flex:0 0 auto">🏀</div>'+
+          '<div class="admin-row__main">'+
+            '<div class="admin-row__t">'+c.name+'</div>'+
+            '<div class="admin-row__s">$'+c.price+'/hr · '+c.courtCount+' courts</div>'+
+          '</div>'+
+          '<div class="analytics-kpi__v" style="font-size:14px">'+(60 + Math.floor(Math.random()*30))+'%</div>'+
+        '</div>'
+      ).join('')+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · APPROVALS
+   ============================================================ */
+function adminApprovals(){
+  const t = state.adminAppTab;
+  const chips = [
+    ['vendors','Vendors', DB.pending.vendors.length],
+    ['crews','Crews', DB.pending.crews.length],
+    ['trainers','Trainers', DB.pending.trainers.length],
+    ['courts','Courts', DB.pending.courts.length]
+  ];
+  let body = '';
+
+  if (t === 'vendors'){
+    body = DB.pending.vendors.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending vendor applications.</div>'
+      : DB.pending.vendors.map(v => {
+          const u = userById(v.userId);
+          return '<div class="approval" data-act="adminappdetail" data-type="vendor" data-id="'+v.id+'">'+
+            '<div class="approval__head">'+ avatarHTML(u, 'av--sm')+
+              '<div class="approval__main">'+
+                '<div class="approval__t">'+v.itemName+'</div>'+
+                '<div class="approval__s">'+u.name+' · '+v.category+' · $'+v.price+'</div>'+
+              '</div>'+ ico('chev', 'style="color:rgba(255,255,255,.4)"')+
+            '</div>'+
+            '<div class="approval__meta">"'+escapeHTML(v.note)+'"</div>'+
+            '<div class="approval__hint">Tap to view full application →</div>'+
+          '</div>';
+        }).join('');
+  }
+  if (t === 'crews'){
+    body = DB.pending.crews.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending crew verifications.</div>'
+      : DB.pending.crews.map(k => {
+          const u = userById(k.creatorId);
+          return '<div class="approval" data-act="adminappdetail" data-type="crew" data-id="'+k.id+'">'+
+            '<div class="approval__head">'+
+              '<div class="av av--sm" style="background:linear-gradient(140deg,#FF6B35,#E85D04)"><span class="av__ini">👥</span></div>'+
+              '<div class="approval__main">'+
+                '<div class="approval__t">'+k.name+'</div>'+
+                '<div class="approval__s">'+u.name+' · '+k.members+' members</div>'+
+              '</div>'+ ico('chev', 'style="color:rgba(255,255,255,.4)"')+
+            '</div>'+
+            '<div class="approval__meta">"'+escapeHTML(k.desc)+'"</div>'+
+            '<div class="approval__hint">Tap to view full details →</div>'+
+          '</div>';
+        }).join('');
+  }
+  if (t === 'trainers'){
+    body = DB.pending.trainers.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending trainer verifications.</div>'
+      : DB.pending.trainers.map(a => {
+          const u = userById(a.userId);
+          const c = courtById(a.courtId);
+          return '<div class="approval" data-act="adminappdetail" data-type="trainer" data-id="'+a.id+'">'+
+            '<div class="approval__head">'+ avatarHTML(u, 'av--sm')+
+              '<div class="approval__main">'+
+                '<div class="approval__t">'+u.name+'</div>'+
+                '<div class="approval__s">'+(c ? c.name : 'Unknown court')+'</div>'+
+              '</div>'+ ico('chev', 'style="color:rgba(255,255,255,.4)"')+
+            '</div>'+
+            '<div class="approval__meta">'+a.spec+' · '+a.exp+' · $'+a.rate+'/hr</div>'+
+            '<div class="approval__hint">Tap to view full application →</div>'+
+          '</div>';
+        }).join('');
+  }
+  if (t === 'courts'){
+    body = DB.pending.courts.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending court submissions.</div>'
+      : DB.pending.courts.map(ct => {
+          const u = userById(ct.submittedBy);
+          return '<div class="approval" data-act="adminappdetail" data-type="court" data-id="'+ct.id+'">'+
+            '<div class="approval__head">'+
+              '<div class="av av--sm" style="background:linear-gradient(140deg,#4A6B9E,#263F6B)"><span class="av__ini">🏀</span></div>'+
+              '<div class="approval__main">'+
+                '<div class="approval__t">'+ct.name+'</div>'+
+                '<div class="approval__s">📍 '+ct.address+'</div>'+
+              '</div>'+ ico('chev', 'style="color:rgba(255,255,255,.4)"')+
+            '</div>'+
+            '<div class="approval__meta">'+ct.courtCount+' courts · '+ct.surface+' · $'+ct.price+'/hr · by '+u.name+'</div>'+
+            '<div class="approval__hint">Tap to view full submission →</div>'+
+          '</div>';
+        }).join('');
+  }
+
+  return '<div style="padding:0 18px 22px">'+
+    '<div class="chips chips--pad" style="padding-left:0">'+
+      chips.map(([v,l,n]) =>
+        '<button class="chip '+(t===v?'is-on':'')+'" data-act="admingotoapp" data-v="'+v+'">'+l+(n?' · '+n:'')+'</button>'
+      ).join('')+
+    '</div>'+
+    body+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · USERS
+   ============================================================ */
+function adminUsers(){
+  const q = state.adminUserQuery.toLowerCase();
+  let list = DB.users.filter(u => u.id !== 'admin');
+  if (q) list = list.filter(u => u.name.toLowerCase().indexOf(q) > -1);
+  return '<div style="padding:0 18px 22px">'+
+    '<div class="search" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);box-shadow:none">'+ico('search')+
+      '<input data-input="adminUserQuery" value="'+state.adminUserQuery.replace(/"/g,'&quot;')+'" placeholder="Search users…" style="color:#fff">'+
+    '</div>'+
+    list.map(u => {
+      const roleChip = u.role === 'trainer' ? '<span class="badge" style="background:rgba(255,107,53,.2);color:var(--orange);font-size:9px;padding:2px 6px">TRAINER</span>' : '';
+      const vendChip = u.vendorStatus === 'approved' ? '<span class="badge" style="background:rgba(37,194,110,.2);color:#9BE8C2;font-size:9px;padding:2px 6px">VENDOR</span>' : '';
+      const natChip = u.isNational ? '<span class="badge" style="background:rgba(255,107,53,.2);color:var(--orange);font-size:9px;padding:2px 6px">NATIONAL</span>' : '';
+      const crewChip = u.crewId ? '<span class="badge" style="background:rgba(255,138,61,.2);color:#FFB27A;font-size:9px;padding:2px 6px">CREW</span>' : '';
+      return '<div class="admin-row" data-act="adminuseredit" data-id="'+u.id+'">'+
+        avatarHTML(u, 'av--sm')+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+u.name+' '+roleChip+' '+vendChip+' '+natChip+' '+crewChip+'</div>'+
+          '<div class="admin-row__s">'+u.city+' · '+u.position+' · Skill '+u.skill+(u.rankN?' · Nat #'+u.rankN:'')+(u.rankG?' · Gen #'+u.rankG:'')+'</div>'+
+        '</div>'+ ico('chev')+
+      '</div>';
+    }).join('')+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · ADMINS
+   ============================================================ */
+function adminAdmins(){
+  return '<div style="padding:0 18px 22px">'+
+    '<div style="background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.22);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">ADMIN ACCOUNTS</div>'+
+      '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Admins are separate from players, trainers and crew accounts. Each has its own email and passcode.</div>'+
+    '</div>'+
+    ADMINS.map(a =>
+      '<div class="adm-card">'+
+        '<div class="adm-card__inner">'+
+          '<div class="adm-card__photo">'+ a.initials+
+            '<img src="'+img('admin-'+a.id,160,160)+'" alt="" onerror="this.remove()">'+
+          '</div>'+
+          '<div class="adm-card__main">'+
+            '<div class="adm-card__t">'+a.name+'</div>'+
+            '<div class="adm-card__s">'+a.email+'</div>'+
+            '<div class="adm-card__meta">'+
+              '<span>ADMIN</span>'+
+              (a.isDefault ? '<span>DEFAULT</span>' : '<span class="dim">CUSTOM</span>')+
+              (SESSION.adminId === a.id ? '<span class="dim">SIGNED IN</span>' : '')+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'
+    ).join('')+
+    '<button class="abtn abtn--ok" style="width:100%;padding:15px;margin-top:8px" data-act="adminadd">+ Add Admin Account</button>'+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · NATIONAL SQUAD
+   ============================================================ */
+function adminNational(){
+  const nat = DB.users.filter(u => u.isNational && u.role !== 'admin').sort((a,b) => a.rankN - b.rankN);
+  const pool = DB.users.filter(u => !u.isNational && u.role !== 'admin' && u.id !== 'me').sort((a,b) => b.points - a.points);
+  return '<div style="padding:0 18px 22px">'+
+    '<div style="background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.22);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">NATIONAL SQUAD</div>'+
+      '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Only admin can add or remove players. National rankings are completely separate from the general pool.</div>'+
+    '</div>'+
+    '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:10px">CURRENT ROSTER · '+nat.length+'</div>'+
+    nat.map(u =>
+      '<div class="admin-row">'+
+        '<div style="width:28px;text-align:center;font-size:15px;font-weight:900;color:var(--orange);flex:0 0 auto">'+u.rankN+'</div>'+
+        avatarHTML(u, 'av--sm')+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+u.name+'</div>'+
+          '<div class="admin-row__s">'+u.points.toLocaleString()+' pts · '+u.position+' · '+u.region+'</div>'+
+        '</div>'+
+        '<button class="abtn abtn--no" style="padding:8px 12px;font-size:11px" data-act="removenational" data-id="'+u.id+'">Remove</button>'+
+      '</div>'
+    ).join('')+
+    '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 10px">ELIGIBLE — PROMOTE TO NATIONAL</div>'+
+    pool.slice(0, 8).map(u =>
+      '<div class="admin-row">'+ avatarHTML(u, 'av--sm')+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+u.name+'</div>'+
+          '<div class="admin-row__s">'+u.points.toLocaleString()+' pts · '+u.position+' · Gen #'+u.rankG+'</div>'+
+        '</div>'+
+        '<button class="abtn abtn--ok" style="padding:8px 12px;font-size:11px" data-act="addnational" data-id="'+u.id+'">+ Add</button>'+
+      '</div>'
+    ).join('')+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · RANKINGS
+   ============================================================ */
+function adminRankings(){
+  const general = DB.users.filter(u => !u.isNational && u.role !== 'admin' && u.id !== 'me')
+    .sort((a,b) => b.points - a.points);
+  return '<div style="padding:0 18px 22px">'+
+    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">GENERAL PLAYER POOL</div>'+
+      '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Adjust points ±50 per tap. Every change is reversible from the Log.</div>'+
+    '</div>'+
+    general.map((u, i) =>
+      '<div class="admin-row">'+
+        '<div style="width:28px;text-align:center;font-size:14px;font-weight:900;color:rgba(255,255,255,.4);flex:0 0 auto">'+(i+1)+'</div>'+
+        avatarHTML(u, 'av--sm')+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+u.name+'</div>'+
+          '<div class="admin-row__s">'+u.position+' · '+u.region+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;margin-right:8px">'+
+          '<div style="font-size:13px;font-weight:900;color:#fff">'+u.points.toLocaleString()+'</div>'+
+          '<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,.4)">PTS</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:4px">'+
+          '<button class="abtn abtn--ghost" style="padding:6px 10px;font-size:14px" data-act="ptsminus" data-id="'+u.id+'">−</button>'+
+          '<button class="abtn abtn--ghost" style="padding:6px 10px;font-size:14px" data-act="ptsplus" data-id="'+u.id+'">+</button>'+
+        '</div>'+
+      '</div>'
+    ).join('')+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · MODERATION
+   ============================================================ */
+function adminModeration(){
+  const f = state.adminReportFilter;
+  const list = DB.reports.filter(r => f === 'all' || r.status === f);
+  const typeLabel = {
+    harass:'Harassment', spam:'Spam', fake:'Fake profile', noshow:'No-show'
+  };
+  return '<div style="padding:0 18px 22px">'+
+    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;margin-bottom:14px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">MODERATION QUEUE</div>'+
+      '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Review user reports and take action. All decisions are reversible.</div>'+
+    '</div>'+
+    '<div class="chips chips--pad" style="padding-left:0;margin-bottom:6px">'+
+      [['open','Open'],['resolved','Resolved'],['all','All']].map(([v,l]) =>
+        '<button class="chip '+(f===v?'is-on':'')+'" data-act="reportfilter" data-v="'+v+'">'+l+'</button>').join('')+
+    '</div>'+
+    (list.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No reports in this view.</div>'
+      : list.map(r => {
+          const reporter = userById(r.reporterId);
+          const target = userById(r.targetId);
+          return '<div class="report-card">'+
+            '<div class="report-card__head">'+
+              '<span class="report-card__type report-card__type--'+r.type+'">'+ (typeLabel[r.type] || r.type) +'</span>'+
+              '<div style="flex:1"></div>'+
+              '<span style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4)">'+timeAgo(r.ts)+'</span>'+
+            '</div>'+
+            '<div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">'+
+              (reporter ? avatarHTML(reporter, 'av--xs') : '')+
+              '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6)">'+reporter.name+' → '+target.name+'</div>'+
+              (target ? avatarHTML(target, 'av--xs') : '')+
+            '</div>'+
+            '<div class="report-card__s">"'+escapeHTML(r.text)+'"</div>'+
+            (r.status === 'open'
+              ? '<div class="report-card__btns">'+
+                  '<button class="abtn abtn--ghost" data-act="reportresolve" data-id="'+r.id+'" data-action="dismiss">Dismiss</button>'+
+                  '<button class="abtn abtn--no" data-act="reportresolve" data-id="'+r.id+'" data-action="warn">Warn</button>'+
+                  '<button class="abtn abtn--no" data-act="reportresolve" data-id="'+r.id+'" data-action="ban">Ban</button>'+
+                '</div>'
+              : '<div style="font-size:10.5px;font-weight:800;color:rgba(37,194,110,.8);letter-spacing:.06em;margin-top:10px">✓ RESOLVED</div>')+
+          '</div>';
+        }).join(''))+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · REVENUE
+   ============================================================ */
+function adminWallet(){
+  const history = PLATFORM.history.slice().reverse().slice(0, 30);
+  const byKind = {};
+  PLATFORM.history.forEach(h => {
+    byKind[h.kind] = (byKind[h.kind] || 0) + h.fee;
+  });
+  const kpi = [
+    { k:'court',      l:'Court bookings',   feePct: PRICES.courtPct },
+    { k:'trainer',    l:'Trainer sessions', feePct: PRICES.trainerPct },
+    { k:'tournament', l:'Tournaments',      feePct: PRICES.tournamentPct },
+    { k:'chat',       l:'Chat unlocks',     fee: PRICES.chatUnlock },
+    { k:'request',    l:'Run invites',      fee: PRICES.requestPlayer },
+    { k:'vendor',     l:'Vendor listings',  fee: PRICES.vendorListing },
+    { k:'shop',       l:'Shop sales',       feePct: PRICES.shopPct }
+  ];
+  return '<div style="padding:0 18px 22px">'+
+    '<div class="wallet-hero" style="margin-bottom:14px">'+
+      '<div class="wallet-hero__inner">'+
+        '<div class="wallet-hero__label">PLATFORM REVENUE</div>'+
+        '<div class="wallet-hero__balance">'+money(PLATFORM.revenue)+'</div>'+
+        '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:14px">All-time fees collected across the platform</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="font-size:11px;font-weight:900;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:10px">FEE STRUCTURE</div>'+
+    kpi.map(x =>
+      '<div class="admin-row">'+
+        '<div class="admin-row__main">'+
+          '<div class="admin-row__t">'+x.l+'</div>'+
+          '<div class="admin-row__s">'+(x.feePct != null ? x.feePct + '% of transaction' : money(x.fee) + ' flat')+'</div>'+
+        '</div>'+
+        '<div class="analytics-kpi__v" style="font-size:16px">'+money(byKind[x.k] || 0)+'</div>'+
+      '</div>'
+    ).join('')+
+    '<div style="font-size:11px;font-weight:900;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 10px">RECENT REVENUE EVENTS</div>'+
+    (history.length === 0
+      ? '<div style="text-align:center;padding:30px 20px;color:rgba(255,255,255,.4);font-size:12.5px;font-weight:600">No platform revenue yet.</div>'
+      : history.map(h =>
+          '<div class="admin-row" style="margin-bottom:6px">'+
+            '<div style="width:36px;height:36px;border-radius:13px;background:rgba(255,107,53,.15);color:var(--orange);display:grid;place-items:center;font-size:15px;flex:0 0 auto">💵</div>'+
+            '<div class="admin-row__main">'+
+              '<div class="admin-row__t">'+h.kind+' · '+money(h.gross)+'</div>'+
+              '<div class="admin-row__s">'+timeAgo(h.ts)+' · net paid out '+money(h.net)+'</div>'+
+            '</div>'+
+            '<div class="analytics-kpi__v" style="font-size:15px">+'+money(h.fee)+'</div>'+
+          '</div>'
+        ).join(''))+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · ACTION LOG
+   ============================================================ */
+function adminLog(){
+  const log = ADMIN.log.slice().reverse();
+  const undone = log.filter(x => x.state === 'undone').length;
+  return '<div style="padding:0 18px 22px">'+
+    '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:center">'+
+      '<div style="flex:1">'+
+        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">ACTION LOG</div>'+
+        '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Every action is reversible. Tap a log entry to reverse or reapply it.</div>'+
+      '</div>'+
+      '<div style="text-align:right">'+
+        '<div style="font-size:22px;font-weight:900;color:var(--orange);line-height:1">'+log.length+'</div>'+
+        '<div style="font-size:9.5px;font-weight:800;color:rgba(255,255,255,.4);letter-spacing:.1em">ACTIONS</div>'+
+      '</div>'+
+    '</div>'+
+    (log.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No actions yet.<br><span style="opacity:.6;font-size:11px">Approve something to see it here.</span></div>'
+      : log.map((a, i) =>
+          '<div class="log-entry '+(a.state==='undone'?'undone':'')+'">'+
+            '<div class="log-entry__main">'+
+              '<div class="log-entry__t">'+(log.length - i)+'. '+a.label+'</div>'+
+              '<div class="log-entry__m">'+new Date(a.t).toLocaleTimeString()+' · by '+a.by+' · '+(a.state==='undone'?'REVERSED':'ACTIVE')+'</div>'+
+            '</div>'+
+            '<button class="log-entry__undo" data-act="adminlogtoggle" data-id="'+a.id+'">'+
+              (a.state === 'undone' ? ico('redo') + ' Reapply' : ico('undo') + ' Undo')+
+            '</button>'+
+          '</div>'
+        ).join(''))+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · MAIN DISPATCHER
+   ============================================================ */
+function screenAdmin(){
+  if (!SESSION.adminId){
+    return screenAdminLogin();
+  }
+  const admin = adminById(SESSION.adminId);
+  if (!admin){ SESSION.adminId = null; return screenAdminLogin(); }
+  const t = state.adminTab;
+  let body = '';
+  if (t === 'overview')   body = adminOverview();
+  if (t === 'analytics')  body = adminAnalytics();
+  if (t === 'approvals')  body = adminApprovals();
+  if (t === 'users')      body = adminUsers();
+  if (t === 'admins')     body = adminAdmins();
+  if (t === 'national')   body = adminNational();
+  if (t === 'rankings')   body = adminRankings();
+  if (t === 'moderation') body = adminModeration();
+  if (t === 'wallet')     body = adminWallet();
+  if (t === 'log')        body = adminLog();
+
+  const pendingCount = DB.pending.vendors.length + DB.pending.crews.length +
+    DB.pending.trainers.length + DB.pending.courts.length;
+  const openReports = DB.reports.filter(r => r.status === 'open').length;
+
+  return '<div class="admin-shell">'+
+    '<div class="admin-top">'+
+      '<div class="admin-top__inner">'+
+        '<div style="flex:1;min-width:0">'+
+          '<h2>Admin Console</h2>'+
+          '<div class="admin-top__who">SIGNED IN AS '+admin.name.toUpperCase()+'</div>'+
+        '</div>'+
+        '<button class="admin-top__exit" data-act="exitgate">'+ico('power')+'Exit</button>'+
+      '</div>'+
+      '<div class="admin-top__chips">'+
+        ADMIN_TABS.map(x =>
+          '<button class="achip '+(t===x.id?'is-on':'')+'" data-act="admintab" data-v="'+x.id+'">'+x.label+
+            (x.id === 'approvals' && pendingCount ? '<span class="achip__n">'+pendingCount+'</span>' : '')+
+            (x.id === 'moderation' && openReports ? '<span class="achip__n">'+openReports+'</span>' : '')+
+          '</button>'
+        ).join('')+
+      '</div>'+
+    '</div>'+
+    body+
+  '</div>';
+}
+
+/* ============================================================
+   ADMIN · APPROVAL DETAIL
+   ============================================================ */
+function screenAdminDetail(params){
+  const type = params.type;
+  const id = params.id;
+  let item, user;
+
+  if (type === 'vendor'){
+    item = DB.pending.vendors.find(x => x.id === id);
+    if (!item) return '<div class="empty">Application not found.</div>';
+    user = userById(item.userId);
+    return '<div class="admin-shell" style="padding-bottom:0">'+
+      '<div class="detail-hdr">'+
+        '<div class="detail-hdr__inner">'+
+          '<div class="detail-hdr__eyebrow">VENDOR APPLICATION</div>'+
+          '<h2>'+item.itemName+'</h2>'+
+          '<p>Submitted '+item.submitted+' · '+item.category+' · $'+item.price+'</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Applicant</div>'+
+        '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · '+user.position+' · Skill '+user.skill+'</div>'+
+            '<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap">'+
+              '<span class="badge badge--soft" style="font-size:9px">'+user.idNumber+'</span>'+
+              (user.vendorStatus === 'approved' ? '<span class="badge badge--ok" style="font-size:9px">Already vendor</span>' : '')+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Item details</div>'+
+        '<div class="detail-field"><span class="detail-field__k">Item name</span><span class="detail-field__v">'+item.itemName+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Category</span><span class="detail-field__v">'+item.category+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Asking price</span><span class="detail-field__v">$'+item.price+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Photos attached</span><span class="detail-field__v">'+item.photos+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Weight</span><span class="detail-field__v">'+item.weight+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Shipping</span><span class="detail-field__v">'+item.shipping+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Listing fee</span><span class="detail-field__v">'+money(PRICES.vendorListing)+' · paid</span></div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Applicant note</div>'+
+        '<div class="detail-note">"'+escapeHTML(item.note)+'"</div>'+
+      '</div>'+
+      '<div class="detail-actions">'+
+        '<button class="btn btn--danger" data-act="rejectvendor" data-id="'+item.id+'">Reject</button>'+
+        '<button class="btn btn--primary" data-act="approvevendor" data-id="'+item.id+'">Approve Vendor</button>'+
+      '</div>'+
+    '</div>';
+  }
+
+  if (type === 'crew'){
+    item = DB.pending.crews.find(x => x.id === id);
+    if (!item) return '<div class="empty">Application not found.</div>';
+    user = userById(item.creatorId);
+    return '<div class="admin-shell" style="padding-bottom:0">'+
+      '<div class="detail-hdr">'+
+        '<div class="detail-hdr__inner">'+
+          '<div class="detail-hdr__eyebrow">CREW VERIFICATION</div>'+
+          '<h2>'+item.name+'</h2>'+
+          '<p>Submitted '+item.submitted+' · '+item.members+' members · '+item.region+'</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Creator</div>'+
+        '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · '+user.position+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Crew details</div>'+
+        '<div class="detail-field"><span class="detail-field__k">Name</span><span class="detail-field__v">'+item.name+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Members</span><span class="detail-field__v">'+item.members+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Region</span><span class="detail-field__v">'+item.region+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Meeting place</span><span class="detail-field__v">'+item.meetingPlace+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Schedule</span><span class="detail-field__v">'+item.schedule+'</span></div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Description</div>'+
+        '<div class="detail-note">"'+escapeHTML(item.desc)+'"</div>'+
+      '</div>'+
+      '<div class="detail-actions">'+
+        '<button class="btn btn--danger" data-act="rejectcrew" data-id="'+item.id+'">Reject</button>'+
+        '<button class="btn btn--primary" data-act="approvecrew" data-id="'+item.id+'">Verify Crew</button>'+
+      '</div>'+
+    '</div>';
+  }
+
+  if (type === 'trainer'){
+    item = DB.pending.trainers.find(x => x.id === id);
+    if (!item) return '<div class="empty">Application not found.</div>';
+    user = userById(item.userId);
+    const c = courtById(item.courtId);
+    return '<div class="admin-shell" style="padding-bottom:0">'+
+      '<div class="detail-hdr">'+
+        '<div class="detail-hdr__inner">'+
+          '<div class="detail-hdr__eyebrow">TRAINER VERIFICATION</div>'+
+          '<h2>'+user.name+'</h2>'+
+          '<p>Submitted '+item.submitted+' · Stationed at '+(c ? c.name : 'unknown')+'</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Trainer profile</div>'+
+        '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · '+user.position+' · Skill '+user.skill+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Application details</div>'+
+        '<div class="detail-field"><span class="detail-field__k">Specialty</span><span class="detail-field__v">'+item.spec+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Experience</span><span class="detail-field__v">'+item.exp+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Certification</span><span class="detail-field__v">'+item.cert+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Hourly rate</span><span class="detail-field__v">$'+item.rate+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Availability</span><span class="detail-field__v">'+item.availability+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Platform fee</span><span class="detail-field__v">'+PRICES.trainerPct+'% per session</span></div>'+
+      '</div>'+
+      (c
+        ? '<div class="detail-block">'+
+            '<div class="detail-block__t">Requested court</div>'+
+            '<div class="detail-field"><span class="detail-field__k">Court</span><span class="detail-field__v">'+c.name+'</span></div>'+
+            '<div class="detail-field"><span class="detail-field__k">Address</span><span class="detail-field__v">'+c.address+'</span></div>'+
+            '<div class="detail-field"><span class="detail-field__k">Surface</span><span class="detail-field__v">'+c.surface+'</span></div>'+
+          '</div>'
+        : '')+
+      '<div class="detail-actions">'+
+        '<button class="btn btn--danger" data-act="rejecttrainer" data-id="'+item.id+'">Reject</button>'+
+        '<button class="btn btn--primary" data-act="approvetrainer" data-id="'+item.id+'">Verify Trainer</button>'+
+      '</div>'+
+    '</div>';
+  }
+
+  if (type === 'court'){
+    item = DB.pending.courts.find(x => x.id === id);
+    if (!item) return '<div class="empty">Submission not found.</div>';
+    user = userById(item.submittedBy);
+    return '<div class="admin-shell" style="padding-bottom:0">'+
+      '<div class="detail-hdr">'+
+        '<div class="detail-hdr__inner">'+
+          '<div class="detail-hdr__eyebrow">COURT SUBMISSION</div>'+
+          '<h2>'+item.name+'</h2>'+
+          '<p>Submitted '+item.submitted+' · '+item.courtCount+' courts · $'+item.price+'/hr</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Submitted by</div>'+
+        '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · '+user.position+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Court details</div>'+
+        '<div class="detail-field"><span class="detail-field__k">Name</span><span class="detail-field__v">'+item.name+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Address</span><span class="detail-field__v">'+item.address+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Surface</span><span class="detail-field__v">'+item.surface+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Courts</span><span class="detail-field__v">'+item.courtCount+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Price / hour</span><span class="detail-field__v">$'+item.price+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Hours</span><span class="detail-field__v">'+item.hours+'</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Contact</span><span class="detail-field__v">'+item.contact+'</span></div>'+
+      '</div>'+
+      '<div class="detail-block">'+
+        '<div class="detail-block__t">Amenities</div>'+
+        '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
+          item.amenities.map(a => '<span style="padding:7px 12px;border-radius:11px;background:#EFEBE2;font-size:11px;font-weight:700;color:#5C6B7A">'+a+'</span>').join('')+
+        '</div>'+
+      '</div>'+
+      (item.notes
+        ? '<div class="detail-block">'+
+            '<div class="detail-block__t">Submitter notes</div>'+
+            '<div class="detail-note">"'+escapeHTML(item.notes)+'"</div>'+
+          '</div>'
+        : '')+
+      '<div class="detail-actions">'+
+        '<button class="btn btn--danger" data-act="rejectcourt" data-id="'+item.id+'">Reject</button>'+
+        '<button class="btn btn--primary" data-act="approvecourt" data-id="'+item.id+'">Approve Court</button>'+
+      '</div>'+
+    '</div>';
+  }
+
+  return '<div class="empty">Unknown item type.</div>';
+}
+
+/* ============================================================
+   ADMIN · USER EDIT
+   ============================================================ */
+function screenAdminUser(params){
+  const u = userById(params.id);
+  if (!u) return '<div class="empty">User not found.</div>';
+  const isVendor = u.vendorStatus === 'approved';
+  return '<div class="admin-shell" style="padding-bottom:40px">'+
+    '<div class="admin-top">'+
+      '<div class="admin-top__inner" style="display:flex;gap:14px;align-items:center">'+ avatarHTML(u, 'av--lg')+
+        '<div style="flex:1;min-width:0">'+
+          '<h2 style="font-size:21px">'+u.name+'</h2>'+
+          '<p>'+u.city+' · '+u.position+' · '+u.idNumber+'</p>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="padding:22px 18px">'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:12px">IDENTITY</div>'+
+      '<div class="form-field"><label class="form-label" style="color:rgba(255,255,255,.5)">Display name</label>'+
+        '<input class="form-input" id="au-name" value="'+u.name.replace(/"/g,'&quot;')+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
+      '<div class="form-row">'+
+        '<div class="form-field"><label class="form-label" style="color:rgba(255,255,255,.5)">Skill</label>'+
+          '<input class="form-input" id="au-skill" value="'+u.skill+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
+        '<div class="form-field"><label class="form-label" style="color:rgba(255,255,255,.5)">Region</label>'+
+          '<input class="form-input" id="au-region" value="'+u.region+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
+      '</div>'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 12px">WALLET</div>'+
+      '<div class="wallet-hero" style="margin-bottom:16px">'+
+        '<div class="wallet-hero__inner">'+
+          '<div class="wallet-hero__label">CURRENT BALANCE</div>'+
+          '<div class="wallet-hero__balance" style="font-size:30px">'+money(u.wallet)+'</div>'+
+          '<div style="display:flex;gap:8px;margin-top:14px">'+
+            '<button class="abtn abtn--ok" data-act="admincredit" data-id="'+u.id+'" data-amount="10">+ $10</button>'+
+            '<button class="abtn abtn--ghost" data-act="admincredit" data-id="'+u.id+'" data-amount="-10">− $10</button>'+
+            '<button class="abtn abtn--ghost" data-act="admincredit" data-id="'+u.id+'" data-amount="25">+ $25</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 12px">ROLE</div>'+
+      '<div class="form-chips">'+
+        ['user','trainer','crew','admin'].map(r =>
+          '<button class="form-chip '+(u.role===r?'is-on':'')+'" data-act="adminrole" data-id="'+u.id+'" data-v="'+r+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+r.charAt(0).toUpperCase()+r.slice(1)+'</button>').join('')+
+      '</div>'+
+      (u.role === 'trainer'
+        ? '<div class="form-field" style="margin-top:20px">'+
+            '<label class="form-label" style="color:rgba(255,255,255,.5)">Stationed at court</label>'+
+            '<select class="form-input" id="au-trainercourt" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+
+              '<option value="">— None —</option>'+
+              DB.courts.map(c => '<option value="'+c.id+'"'+(u.trainerCourt===c.id?' selected':'')+'>'+c.name+'</option>').join('')+
+            '</select>'+
+          '</div>'
+        : '')+
+      (u.role === 'crew'
+        ? '<div class="form-field" style="margin-top:20px">'+
+            '<label class="form-label" style="color:rgba(255,255,255,.5)">Leads crew</label>'+
+            '<select class="form-input" id="au-crew" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+
+              '<option value="">— None —</option>'+
+              DB.crews.map(c => '<option value="'+c.id+'"'+(u.crewId===c.id?' selected':'')+'>'+c.name+'</option>').join('')+
+            '</select>'+
+          '</div>'
+        : '')+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 12px">STATUS FLAGS</div>'+
+      '<div class="toggle-row" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">'+
+        '<div><div class="toggle-row__t" style="color:#fff">Verified profile</div><div class="toggle-row__s" style="color:rgba(255,255,255,.5)">Shows the verified badge</div></div>'+
+        '<div class="toggle '+(u.verified?'is-on':'')+'" data-act="admintoggle" data-id="'+u.id+'" data-f="verified"></div>'+
+      '</div>'+
+      '<div class="toggle-row" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">'+
+        '<div><div class="toggle-row__t" style="color:#fff">Approved vendor</div><div class="toggle-row__s" style="color:rgba(255,255,255,.5)">Can list items in the shop</div></div>'+
+        '<div class="toggle '+(isVendor?'is-on':'')+'" data-act="admintoggle" data-id="'+u.id+'" data-f="vendor"></div>'+
+      '</div>'+
+      '<div class="toggle-row" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">'+
+        '<div><div class="toggle-row__t" style="color:#fff">National squad</div><div class="toggle-row__s" style="color:rgba(255,255,255,.5)">Adds to national ranking</div></div>'+
+        '<div class="toggle '+(u.isNational?'is-on':'')+'" data-act="admintoggle" data-id="'+u.id+'" data-f="national"></div>'+
+      '</div>'+
+      '<button class="abtn abtn--ok" style="width:100%;padding:16px;margin-top:24px" data-act="adminusersave" data-id="'+u.id+'">Save Changes</button>'+
+      (u.id !== 'me' ? '<button class="abtn abtn--no" style="width:100%;padding:16px;margin-top:10px" data-act="admindelete" data-id="'+u.id+'">Delete User</button>' : '')+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   SECTION 41 — SCREEN REGISTRY
+   ============================================================ */
+const SCREENS = {
+  entry:         screenEntry,
+  onboarding:    screenOnboarding,
+  discover:      screenDiscover,
+  tournaments:   screenTournaments,
+  tourney:       screenTourney,
+  rankings:      screenRankings,
+  courts:        screenCourts,
+  court:         screenCourt,
+  profile:       screenProfile,
+  profileform:   screenProfileForm,
+  idcard:        screenIdCard,
+  postcomposer:  screenPostComposer,
+  postdetail:    screenPostDetail,
+  chats:         screenChats,
+  chatview:      screenChatView,
+  feed:          screenFeed,
+  badges:        screenBadges,
+  ai:            screenAI,
+  wallet:        screenWallet,
+  safety:        screenSafety,
+  notifprefs:    screenNotifPrefs,
+  more:          screenMore,
+  lostfound:     screenLostFound,
+  shop:          screenShop,
+  shopitem:      screenShopItem,
+  trainer:       screenTrainer,
+  crew:          screenCrew,
+  vendorapply:   screenVendorApply,
+  trainerapply:  screenTrainerApply,
+  submitcourt:   screenSubmitCourt,
+  hosttourney:   screenHostTourney,
+  trainerdash:   screenTrainerDashboard,
+  crewdash:      screenCrewDashboard,
+  admin:         screenAdmin,
+  admindetail:   screenAdminDetail,
+  adminuser:     screenAdminUser
+};
+
+/* ============================================================
+   SECTION 42 — HEADER + TABS RENDERING
+   ============================================================ */
+function headerHTML(scr){
+  if (!SESSION.mode) return '';
+
+  /* Overlay header for Discover */
+  if (scr.screen === 'discover' && !nav.stack.length){
+    return '<div class="hdr hdr--overlay">'+
+      '<div class="brand"><span class="brand__mark">🏀</span>RUBIX HOOPS</div>'+
+      '<div class="hdr__spacer"></div>'+
+      '<button class="icon-btn" data-act="tab" data-tab="profile">'+avatarHTML(getMe(), 'av--xs')+'</button>'+
+    '</div>';
+  }
+
+  /* Stack header for pushed screens */
+  if (nav.stack.length){
+    const isAdmin = scr.screen === 'admin' || scr.screen === 'admindetail' || scr.screen === 'adminuser';
+    const isChat = scr.screen === 'chatview';
+    const isComposer = scr.screen === 'postcomposer';
+    if (isComposer) return '';
+    return '<div class="hdr hdr--solid" style="'+(isAdmin?'background:#0A0A0A;color:#fff;border-bottom:1px solid rgba(255,255,255,.06)':'')+'">'+
+      '<button class="icon-btn" style="'+(isAdmin?'background:rgba(255,255,255,.08);color:#fff':'')+'" data-act="back">'+ico('back')+'</button>'+
+      '<div class="hdr__title" style="font-size:19px">'+(scr.title || '')+'</div>'+
+      '<div class="hdr__spacer"></div>'+
+      (isChat ? '<button class="icon-btn" data-act="toast" data-msg="More options (demo)">'+ico('settings')+'</button>' : '')+
+    '</div>';
+  }
+
+  /* Solid top-level headers */
+  const titles = {
+    tournaments:'Tournaments',
+    rankings:'Rankings',
+    courts:'Book a Court',
+    profile:'My Profile',
+    more:'More'
+  };
+  const right = {
+    tournaments:'<button class="icon-btn" data-act="hosttourney">'+ico('plus')+'</button>',
+    rankings:'<button class="icon-btn" data-act="toast" data-msg="Filters applied">'+ico('filter')+'</button>',
+    courts:'<button class="icon-btn" data-act="toast" data-msg="Map view (demo)">'+ico('pin')+'</button>',
+    profile:'<button class="icon-btn" data-act="idcard">'+ico('shield')+'</button>',
+    more:'<button class="icon-btn" data-act="toast" data-msg="No ads. Ever.">'+ico('star')+'</button>'
+  }[scr.screen] || '';
+
+  if (!titles[scr.screen]) return '';
+
+  return '<div class="hdr hdr--solid">'+
+    '<div class="hdr__title">'+titles[scr.screen]+'</div>'+
+    '<div class="hdr__spacer"></div>'+right+
+  '</div>';
+}
+
+function tabsHTML(){
+  const unread = Chat.unreadCount();
+  return TABS.filter(t => VISIBLE_TABS.includes(t.id)).map(t => {
+    const on = nav.tab === t.id ? ' is-active' : '';
+    return '<button class="tab'+on+'" data-act="tab" data-tab="'+t.id+'">'+
+      '<span class="tab__ico">'+ico(t.icon)+'</span>'+
+      '<span>'+t.label+'</span>'+
+    '</button>';
+  }).join('');
+}
+
+/* ============================================================
+   SECTION 43 — RENDER
+   ============================================================ */
+function render(){
+  /* ---- GATE ---- */
+  if (!SESSION.mode){
+    hdrEl.innerHTML = '';
+    mainEl.className = 'main';
+    mainEl.style.background = '#0A0A0A';
+    const top = nav.stack.length ? nav.stack[nav.stack.length - 1] : null;
+    if (top && top.screen === 'adminlogin'){
+      mainEl.innerHTML = screenAdminLogin();
+    } else {
+      mainEl.innerHTML = screenEntry();
+    }
+    tabsEl.innerHTML = '';
+    tabsEl.style.display = 'none';
+    return;
+  }
+
+  /* ---- ADMIN MODE ---- */
+  if (SESSION.mode === 'admin'){
+    if (!SESSION.adminId){
+      hdrEl.innerHTML = '';
+      mainEl.className = 'main';
+      mainEl.style.background = '#0A0A0A';
+      mainEl.innerHTML = screenAdminLogin();
+      tabsEl.innerHTML = '';
+      tabsEl.style.display = 'none';
+      return;
+    }
+    const scr = nav.stack.length ? nav.stack[nav.stack.length - 1] : { screen:'admin' };
+    hdrEl.innerHTML = '';
+    mainEl.className = 'main';
+    mainEl.style.background = '#0A0A0A';
+    mainEl.innerHTML = (SCREENS[scr.screen] || (() => '<div class="empty">Coming soon.</div>'))(scr.params);
+    tabsEl.innerHTML = '';
+    tabsEl.style.display = 'none';
+    return;
+  }
+
+  /* ---- PLAYER MODE ---- */
+  const scr = nav.stack.length ? nav.stack[nav.stack.length - 1] : { screen: nav.tab };
+  hdrEl.innerHTML = headerHTML(scr);
+  mainEl.className = 'main' +
+    ((scr.screen === 'discover' && !nav.stack.length) || scr.screen === 'chatview' || scr.screen === 'postcomposer' ? ' main--map' : '');
+  mainEl.style.background = '';
+  mainEl.innerHTML = (SCREENS[scr.screen] || (() => '<div class="empty">Coming soon.</div>'))(scr.params);
+  tabsEl.innerHTML = tabsHTML();
+  tabsEl.style.display = nav.stack.length ? 'none' : 'flex';
+
+  if (scr.screen === 'discover' && !nav.stack.length) maybeProximity();
+
+  if (scr.screen === 'chatview'){
+    const sc = document.getElementById('chatScroll');
+    if (sc) sc.scrollTop = sc.scrollHeight;
+  }
+
+  /* Re-attach file pickers after every render (guarded to avoid double-bind) */
+  attachImagePicker('avatar-file', dataUrl => {
+    getMe().avatarDataUrl = dataUrl;
+    render();
+    toast('Photo updated ✓');
+  });
+  attachImagePicker('cover-file', dataUrl => {
+    getMe().coverDataUrl = dataUrl;
+    render();
+    toast('Cover updated ✓');
+  });
+  attachImagePicker('post-image-file', dataUrl => {
+    state.postDraft = state.postDraft || {};
+    state.postDraft.imageDataUrl = dataUrl;
+    state.postDraft.imageUrl = null;
+    render();
+  });
+}
+
+/* ============================================================
+   SECTION 44 — EVENT BUS
+   ============================================================ */
+document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;
   const act = el.dataset.act;
-  const id = el.dataset.id;
-  const v = el.dataset.v;
+  const me = getMe();
 
-  if (act === 'enterplayer'){
-    SESSION.mode = 'player';
-    nav.tab = 'discover'; nav.stack = [];
-    render();
-    setTimeout(() => {
-      if (SESSION.mode === 'player' && !nav.stack.length && nav.tab === 'discover' && !state._nearbyShown){
-        state._nearbyShown = true;
-        openSheet('<h3>A baller is close to you!</h3>' +
-          '<p>' + escapeHTML(DB.users[0].name) + ' is 0.4 km away and looking for a run right now. Send a direct invite for $0.99.</p>' +
-          '<div class="card" style="margin-top:14px"><div class="row">' + avatar(DB.users[0],'md') +
-          '<div class="grow"><div class="t" style="font-size:14px;font-weight:800">' + escapeHTML(DB.users[0].name) + '</div>' +
-          '<div class="s tiny">' + DB.users[0].position + ' · ' + DB.users[0].skill.toFixed(1) + ' skill · East Legon</div></div></div></div>' +
-          '<div style="display:flex;gap:10px;margin-top:6px">' +
-            '<button class="btn btn-soft" style="flex:1" data-act="close-layer">Not now</button>' +
-            '<button class="btn btn-primary" style="flex:1.4" data-act="request" data-id="' + DB.users[0].id + '">Invite · $0.99</button></div>');
+  switch (act){
+
+    /* ---------- GATE ---------- */
+    case 'enterplayer':
+      SESSION.mode = 'player';
+      nav.tab = 'discover'; nav.stack = [];
+      proximityShown = false;
+      render();
+      break;
+
+    case 'startfresh':
+      SESSION.mode = 'player';
+      state.onboardStep = 1;
+      state.onboardDraft = blankDraft();
+      /* Force me.profileComplete false during onboarding so the wizard shows */
+      nav.stack = [{ screen:'onboarding', params:{}, title:'' }];
+      render();
+      break;
+
+    case 'enteradmin':
+      nav.stack = [{ screen:'adminlogin', params:{}, title:'Admin Sign-in' }];
+      render();
+      break;
+
+    case 'exitgate':
+      SESSION.mode = null;
+      SESSION.adminId = null;
+      nav.stack = []; nav.tab = 'discover';
+      state.onboardDraft = null;
+      state.onboardStep = 1;
+      proximityShown = false;
+      render();
+      break;
+
+    case 'returnadmin':
+      SESSION.mode = 'admin';
+      nav.stack = [];
+      render();
+      break;
+
+    case 'adminauth': {
+      const email = (document.getElementById('adminEmail')?.value || '').trim().toLowerCase();
+      const pin = (document.getElementById('adminPin')?.value || '').trim();
+      state.gateAdminEmail = email;
+      state.gateAdminPin = pin;
+      const a = ADMINS.find(x => x.email.toLowerCase() === email && x.pin === pin);
+      if (a){
+        a.lastLogin = new Date().toISOString();
+        SESSION.mode = 'admin';
+        SESSION.adminId = a.id;
+        nav.stack = [];
+        state.adminTab = 'overview';
+        render();
+        toast('Welcome, ' + a.name + ' ✓');
+      } else {
+        toast('Invalid email or passcode');
       }
-    }, 3200);
-    return;
-  }
-  if (act === 'enteradmin'){
-    state.gateScreen = 'adminlogin';
-    state.gateAdminEmail = '';
-    state.gateAdminPin = '';
-    render();
-    return;
-  }
-  if (act === 'gateback'){ state.gateScreen = 'entry'; render(); return; }
-  if (act === 'adminauth'){
-    const email = (state.gateAdminEmail||'').trim().toLowerCase();
-    const pin = (state.gateAdminPin||'').trim();
-    const found = ADMINS.find(a => a.email.toLowerCase() === email && a.pin === pin);
-    if (!found){
-      const box = $('#loginErr');
-      if (box) box.innerHTML = '<div class="err">Invalid operator credentials. Try admin@rubix.app / 1234</div>';
-      return;
+      break;
     }
-    SESSION.mode = 'admin';
-    SESSION.adminId = found.id;
-    state.gateScreen = 'entry';
-    nav.tab = 'admin'; nav.stack = [];
-    state.adminTab = 'overview';
-    render();
-    toast('Signed in as ' + found.name);
-    return;
-  }
-  if (act === 'tab'){ setTab(v); return; }
-  if (act === 'back'){
-    if (state.gateScreen === 'adminlogin'){ state.gateScreen = 'entry'; render(); return; }
-    back(); return;
-  }
-  if (act === 'close-layer'){ closeLayer(); return; }
-  if (act === 'noop'){ return; }
 
-  if (act === 'dfilter'){ state.discoverFilter = v; render(); return; }
-  if (act === 'player'){ go('player', { id }, 'Player'); return; }
-  if (act === 'profile'){ go('player', { id:id||'me' }, 'Profile'); return; }
-  if (act === 'court'){ go('court', { id }, 'Court'); return; }
-  if (act === 'crew'){ go('crew', { id }, 'Crew'); return; }
-  if (act === 'trainer'){ go('trainer', { id }, 'Trainer'); return; }
-  if (act === 'chats'){ go('chats', {}, 'Chats'); return; }
-  if (act === 'feed'){ go('feed', {}, 'Feed'); return; }
-  if (act === 'badges'){ go('badges', {}, 'Badges & Streaks'); return; }
-  if (act === 'ai'){ go('ai', {}, 'AI Recommendations'); return; }
-  if (act === 'wallet'){ go('wallet', {}, 'Wallet'); return; }
-  if (act === 'safety'){ go('safety', {}, 'Trust & Safety'); return; }
-  if (act === 'notifs'){ go('notifs', {}, 'Notifications'); return; }
-  if (act === 'idcard'){ go('idcard', {}, 'Player ID Card'); return; }
-  if (act === 'profileedit'){ state.form = {}; go('profileedit', {}, 'Edit Profile'); return; }
-  if (act === 'lost'){ go('lost', {}, 'Lost & Found'); return; }
-  if (act === 'shop'){ go('shop', {}, 'Shop'); return; }
-  if (act === 'shopitem'){ go('shopitem', { id }, 'Listing'); return; }
-  if (act === 'ranks'){ setTab('rankings'); return; }
-  if (act === 'vendorapply'){ go('vendorapply', {}, 'Become a Vendor'); return; }
-  if (act === 'trainerapply'){ go('trainerapply', {}, 'Become a Trainer'); return; }
-  if (act === 'courtsubmit'){ go('courtsubmit', {}, 'Submit a Court'); return; }
-  if (act === 'host'){ go('host', {}, 'Host Tournament'); return; }
-  if (act === 'trainerdash'){ go('trainerdash', {}, 'Trainer Dashboard'); return; }
-  if (act === 'crewdash'){ go('crewdash', {}, 'Crew Dashboard'); return; }
-  if (act === 'returnadmin'){ nav.tab = 'admin'; nav.stack = []; render(); return; }
-
-  if (act === 'bookdate'){ state.booking.date = v; state.booking.time = null; render(); return; }
-  if (act === 'bookslot'){ state.booking.time = v; render(); return; }
-  if (act === 'courtsurface'){ state.courtSurface = (v === 'All' ? null : v); render(); return; }
-
-  if (act === 'request'){
-    const u = userById(id);
-    if (!u) return;
-    if (state.requestsSent[u.id]){ toast('Invite already sent to ' + u.name); return; }
-    openPaywall({
-      title:'Send run invite',
-      body:'Send a direct invite to ' + u.name + ' to run a game. RUBIX charges a $0.99 flat coordination fee per invite.',
-      amount:PRICES.requestPlayer.flat, rate:0,
-      onConfirm:() => {
-        const res = charge('me', { kind:'requestPlayer', amount:0.99, note:'Run invite · ' + u.name });
-        if (!res.ok){ toast('Insufficient balance'); return false; }
-        state.requestsSent[u.id] = true;
-        toast('Invite sent to ' + u.name);
-        return true;
+    /* ---------- NAVIGATION ---------- */
+    case 'tab': setTab(el.dataset.tab); break;
+    case 'back':
+      if (nav.stack[nav.stack.length-1] && nav.stack[nav.stack.length-1].screen === 'onboarding'){
+        /* Cancelling onboarding returns to gate */
+        SESSION.mode = null;
+        nav.stack = [];
+        state.onboardDraft = null;
+        state.onboardStep = 1;
+        render();
+        break;
       }
-    });
-    return;
-  }
-  if (act === 'unlock-chat'){
-    const u = userById(id);
-    if (!u) return;
-    openPaywall({
-      title:'Unlock conversation',
-      body:'Unlock your thread with ' + u.name + ' permanently. One-time fee per person.',
-      amount:PRICES.unlockChat.flat, rate:0,
-      onConfirm:() => {
-        const res = charge('me', { kind:'unlockChat', amount:1.99, note:'Chat unlock · ' + u.name });
-        if (!res.ok){ toast('Insufficient balance'); return false; }
-        const c = Chat.ensureThread(u.id);
-        c.unlocked = true;
-        toast('Conversation unlocked');
-        return true;
+      back();
+      break;
+    case 'close-layer': closeLayer(); break;
+
+    /* ---------- DISCOVER ---------- */
+    case 'dfilter': state.discoverFilter = el.dataset.v; render(); break;
+    case 'ranklist': state.rankList = el.dataset.v; render(); break;
+    case 'region': state.rankRegion = el.dataset.v; render(); break;
+    case 'skill': state.rankSkill = el.dataset.v; render(); break;
+    case 'lffilter': state.lfFilter = el.dataset.v; render(); break;
+    case 'tourneyfilter': state.tourneyFilter = el.dataset.v; render(); break;
+    case 'reportfilter': state.adminReportFilter = el.dataset.v; render(); break;
+    case 'feed-tab': state.feedTab = el.dataset.v; render(); break;
+
+    /* ---------- OPEN ENTITIES ---------- */
+    case 'player': {
+      const id = el.dataset.id;
+      if (!id) return;
+      const u = userById(id);
+      if (!u) return;
+      if (id === 'me'){ nav.stack = []; nav.tab = 'profile'; render(); return; }
+      go('profile', { id }, u.name.split(' ')[0] + "'s Profile");
+      break;
+    }
+
+    case 'court': {
+      const c = courtById(el.dataset.id);
+      if (!c) return;
+      state.booking = { date:'Today', time:null };
+      go('court', { id:c.id }, c.name);
+      break;
+    }
+
+    case 'crew': {
+      const k = crewById(el.dataset.id);
+      if (!k) return;
+      go('crew', { id:k.id }, 'Crew');
+      break;
+    }
+
+    case 'trainer':
+      go('trainer', { id:el.dataset.id, court:el.dataset.court }, 'Trainer Profile');
+      break;
+
+    case 'shopitem':
+      go('shopitem', { id:el.dataset.id }, 'Item Details');
+      break;
+
+    case 'tourney':
+      go('tourney', { id:el.dataset.id }, 'Tournament');
+      break;
+
+    /* ---------- SCREEN SHORTCUTS ---------- */
+    case 'lostfound':   go('lostfound', {}, 'Lost & Found'); break;
+    case 'shop':        go('shop', {}, 'RUBIX Shop'); break;
+    case 'idcard':      go('idcard', {}, 'My RUBIX ID'); break;
+    case 'editprofile': go('profileform', {}, 'Edit Profile'); break;
+    case 'vendorapply': go('vendorapply', {}, 'Become a Vendor'); break;
+    case 'trainerapply':go('trainerapply', {}, 'Apply as Trainer'); break;
+    case 'submitcourt': go('submitcourt', {}, 'Submit a Court'); break;
+    case 'trainerdash': go('trainerdash', {}, 'Trainer Dashboard'); break;
+    case 'crewdash':    go('crewdash', {}, 'Crew Dashboard'); break;
+    case 'hosttourney': go('hosttourney', {}, 'Host Tournament'); break;
+    case 'wallet':      go('wallet', {}, 'RUBIX Wallet'); break;
+    case 'chats':       go('chats', {}, 'Chats'); break;
+    case 'ai':          go('ai', {}, 'AI Match Recommendations'); break;
+    case 'feed':        go('feed', {}, 'RUBIX Feed'); break;
+    case 'badges':      go('badges', {}, 'Badges & Streaks'); break;
+    case 'safety':      go('safety', {}, 'Trust & Safety'); break;
+    case 'notifprefs':  go('notifprefs', {}, 'Notifications'); break;
+
+    /* ---------- ONBOARDING ---------- */
+    case 'pick-avatar':
+      document.getElementById('avatar-file').click();
+      break;
+
+    case 'pick-cover':
+      document.getElementById('cover-file').click();
+      break;
+
+    case 'pick-post-image':
+      document.getElementById('post-image-file').click();
+      break;
+
+    case 'onboard-next': {
+      const step = state.onboardStep;
+      const d = state.onboardDraft;
+      if (step === 1 && !d.name.trim()){ toast('Enter your name first'); break; }
+      if (step === 3 && !d.city.trim()){ toast('Enter your city first'); break; }
+      state.onboardStep = Math.min(4, step + 1);
+      render();
+      mainEl.scrollTop = 0;
+      break;
+    }
+
+    case 'onboard-back':
+      state.onboardStep = Math.max(1, state.onboardStep - 1);
+      render();
+      mainEl.scrollTop = 0;
+      break;
+
+    case 'onboard-skip-photo':
+      state.onboardDraft.avatarDataUrl = null;
+      render();
+      toast('You can add a photo later');
+      break;
+
+    case 'onboard-field': {
+      const f = el.dataset.f;
+      const v = el.dataset.v;
+      state.onboardDraft[f] = v;
+      render();
+      break;
+    }
+
+    case 'onboard-toggle': {
+      const f = el.dataset.f;
+      const v = el.dataset.v;
+      const arr = state.onboardDraft[f];
+      const i = arr.indexOf(v);
+      if (i > -1) arr.splice(i, 1); else arr.push(v);
+      render();
+      break;
+    }
+
+    case 'onboard-finish': {
+      const d = state.onboardDraft;
+      me.name = d.name.trim() || 'New Player';
+      me.initials = me.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+      me.skill = d.skill;
+      me.position = d.position;
+      me.preferredCourt = d.preferredCourt;
+      me.city = d.city || 'Accra';
+      me.region = d.region || 'Greater Accra';
+      me.bio = d.bio || '';
+      me.playstyle = d.playstyle.slice();
+      me.interests = d.interests.slice();
+      me.status = d.status;
+      me.avail = d.avail;
+      me.avatarDataUrl = d.avatarDataUrl;
+      me.profileComplete = true;
+      state.onboardDraft = null;
+      state.onboardStep = 1;
+      nav.stack = []; nav.tab = 'profile';
+      render();
+      toast('Welcome to RUBIX, ' + me.name.split(' ')[0] + ' 🏀');
+      break;
+    }
+
+    /* ---------- PROFILE / POSTS ---------- */
+    case 'compose-post':
+      state.postDraft = null;
+      go('postcomposer', {}, 'New Post');
+      break;
+
+    case 'save-profile': {
+      const d = state.profileDraft;
+      if (!d) return;
+      me.name = d.name.trim() || me.name;
+      me.initials = me.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+      me.bio = d.bio;
+      me.city = d.city;
+      me.region = d.region;
+      me.skill = d.skill;
+      me.position = d.position;
+      me.preferredCourt = d.preferredCourt;
+      me.dominant = d.dominant;
+      me.playstyle = d.playstyle.slice();
+      me.interests = d.interests.slice();
+      me.status = d.status;
+      me.avail = d.avail;
+      state.profileDraft = null;
+      toast('Profile saved ✓');
+      setTimeout(() => { back(); }, 400);
+      break;
+    }
+
+    case 'shuffle-avatar':
+      me.avatarDataUrl = null;
+      me.photo = (Math.random()*100000)|0;
+      render();
+      toast('Placeholder refreshed');
+      break;
+
+    case 'remove-avatar':
+      me.avatarDataUrl = null;
+      render();
+      toast('Photo removed');
+      break;
+
+    case 'delete-account':
+      toast('Account deletion is disabled in this demo');
+      break;
+
+    case 'profile-field': {
+      const f = el.dataset.f;
+      const v = el.dataset.v;
+      if (!state.profileDraft) state.profileDraft = {};
+      state.profileDraft[f] = v;
+      if (f === 'status' && el.dataset.avail) state.profileDraft.avail = el.dataset.avail;
+      render();
+      break;
+    }
+
+    case 'profile-toggle': {
+      const f = el.dataset.f;
+      const v = el.dataset.v;
+      if (!state.profileDraft) state.profileDraft = {};
+      const arr = state.profileDraft[f] || [];
+      const i = arr.indexOf(v);
+      if (i > -1) arr.splice(i, 1); else arr.push(v);
+      state.profileDraft[f] = arr;
+      render();
+      break;
+    }
+
+    case 'post-submit': {
+      const d = state.postDraft;
+      if (!d) break;
+      const hasText = d.text && d.text.trim().length > 0;
+      const hasImage = !!(d.imageDataUrl || d.imageUrl);
+      if (!hasText && !hasImage){ toast('Add text or a photo'); break; }
+
+      if (d._for){
+        /* Editing existing */
+        const p = DB.posts.find(x => x.id === d._for);
+        if (p){
+          p.text = d.text;
+          if (d.imageDataUrl) { p.imageDataUrl = d.imageDataUrl; p.imageUrl = null; }
+          else if (!d.imageUrl) { p.imageDataUrl = null; p.imageUrl = null; }
+          p.editedAt = now();
+          p.isEdited = true;
+        }
+        toast('Post updated ✓');
+      } else {
+        /* New post */
+        const newPost = {
+          id: uid('p'),
+          authorId: 'me',
+          text: d.text || '',
+          imageUrl: d.imageUrl || null,
+          imageDataUrl: d.imageDataUrl || null,
+          likes: [],
+          comments: [],
+          createdAt: now(),
+          editedAt: null,
+          isEdited: false,
+          visibility: 'public'
+        };
+        DB.posts.unshift(newPost);
+        me.posts = DB.posts.filter(p => p.authorId === 'me');
+        toast('Posted ✓');
       }
-    });
-    return;
-  }
-  if (act === 'chat'){
-    const u = userById(id);
-    if (!u) return;
-    const c = Chat.ensureThread(u.id);
-    if (!c.unlocked){
-      openPaywall({
-        title:'Unlock conversation',
-        body:u.name + ' sent you a message. Unlock this thread to read and reply — one-time $1.99.',
-        amount:PRICES.unlockChat.flat, rate:0,
-        onConfirm:() => {
-          const res = charge('me', { kind:'unlockChat', amount:1.99, note:'Chat unlock · ' + u.name });
-          if (!res.ok){ toast('Insufficient balance'); return false; }
-          c.unlocked = true;
-          toast('Conversation unlocked');
-          return true;
+      state.postDraft = null;
+      setTimeout(() => { nav.stack = []; nav.tab = 'profile'; render(); }, 400);
+      break;
+    }
+
+    case 'remove-post-image':
+      if (state.postDraft){
+        state.postDraft.imageDataUrl = null;
+        state.postDraft.imageUrl = null;
+        render();
+      }
+      break;
+
+    case 'post-like': {
+      const p = DB.posts.find(x => x.id === el.dataset.id);
+      if (!p) break;
+      const i = p.likes.indexOf('me');
+      if (i > -1) p.likes.splice(i, 1);
+      else p.likes.push('me');
+      render();
+      break;
+    }
+
+    case 'post-open': {
+      const id = el.dataset.id;
+      if (!id) return;
+      go('postdetail', { postId: id }, 'Post');
+      break;
+    }
+
+    case 'post-share':
+      toast('Link copied to clipboard ✓');
+      break;
+
+    case 'post-menu': {
+      const p = DB.posts.find(x => x.id === el.dataset.id);
+      if (!p) break;
+      const isMine = p.authorId === 'me';
+      layerEl.innerHTML =
+        '<div class="scrim" data-act="close-layer"></div>'+
+        '<div class="action-sheet">'+
+          (isMine
+            ? '<button class="action-sheet__item" data-act="post-edit" data-id="'+p.id+'">'+ico('edit')+' Edit post</button>'+
+              '<button class="action-sheet__item" data-act="post-delete" data-id="'+p.id+'">'+ico('trash')+' Delete post</button>'+
+              '<div class="action-sheet__sep"></div>'
+            : '')+
+          '<button class="action-sheet__item" data-act="post-share" data-id="'+p.id+'">'+ico('share')+' Copy link</button>'+
+          '<button class="action-sheet__item action-sheet__item--danger" data-act="toast" data-msg="Report submitted to moderation">'+ico('flag')+' Report</button>'+
+          '<button class="action-sheet__item" data-act="close-layer">'+ico('close')+' Cancel</button>'+
+        '</div>';
+      break;
+    }
+
+    case 'post-edit': {
+      const id = el.dataset.id;
+      state.postDraft = null;
+      go('postcomposer', { postId: id }, 'Edit Post');
+      break;
+    }
+
+    case 'post-delete': {
+      const p = DB.posts.find(x => x.id === el.dataset.id);
+      if (!p) break;
+      layerEl.innerHTML =
+        '<div class="scrim" data-act="close-layer"></div>'+
+        '<div class="popup">'+
+          '<div class="popup__pill" style="background:var(--red);color:#fff">DELETE POST</div>'+
+          '<h3>Delete this post?</h3>'+
+          '<p>This can\'t be undone. Your likes and comments will also be removed.</p>'+
+          '<div class="popup__btns">'+
+            '<button class="btn btn--ghost" data-act="close-layer">Cancel</button>'+
+            '<button class="btn btn--danger" data-act="post-delete-confirm" data-id="'+p.id+'">Delete</button>'+
+          '</div>'+
+        '</div>';
+      break;
+    }
+
+    case 'post-delete-confirm': {
+      const id = el.dataset.id;
+      DB.posts = DB.posts.filter(x => x.id !== id);
+      me.posts = DB.posts.filter(x => x.authorId === 'me');
+      closeLayer();
+      toast('Post deleted');
+      /* Go back to profile if we were viewing the post detail */
+      const top = nav.stack[nav.stack.length - 1];
+      if (top && top.screen === 'postdetail'){
+        nav.stack.pop();
+      }
+      render();
+      break;
+    }
+
+    case 'post-image-view': {
+      const p = DB.posts.find(x => x.id === el.dataset.id);
+      if (!p) break;
+      const src = p.imageDataUrl || p.imageUrl;
+      if (!src) break;
+      layerEl.innerHTML =
+        '<div class="lightbox" data-act="close-lightbox">'+
+          '<div class="lightbox__close" data-act="close-lightbox">'+ico('close')+'</div>'+
+          '<img src="'+src+'" alt="">'+
+        '</div>';
+      break;
+    }
+
+    case 'close-lightbox':
+      closeLayer();
+      break;
+
+    case 'post-comment-send': {
+      const id = el.dataset.id;
+      const p = DB.posts.find(x => x.id === id);
+      if (!p) break;
+      const text = (state.commentDraft || '').trim();
+      if (!text) break;
+      p.comments = p.comments || [];
+      p.comments.push({ id: uid('cm'), fromId: 'me', text, ts: now() });
+      state.commentDraft = '';
+      render();
+      break;
+    }
+
+    /* ---------- PAYWALL-GATED ACTIONS ---------- */
+    case 'request': {
+      e.stopPropagation();
+      const u = userById(el.dataset.id);
+      if (!u) return;
+      if (state.requestsSent[u.id]){ toast('Already sent'); break; }
+      paywallPopup({
+        title: 'Send invite to ' + u.name.split(' ')[0],
+        body: 'One-time fee to send a run invite. They\'ll see your profile and can accept or decline.',
+        price: PRICES.requestPlayer,
+        platformFee: PRICES.requestPlayer,
+        cta: 'Send Invite · $' + PRICES.requestPlayer,
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'request', amount: PRICES.requestPlayer,
+            note:'Run invite to ' + u.name, sourceId: null,
+            platformFee: PRICES.requestPlayer
+          });
+          if (res.ok){
+            state.requestsSent[u.id] = true;
+            Chat.ensureThread(u.id);
+            closeLayer();
+            toast('Invite sent to ' + u.name.split(' ')[0] + ' ✓');
+            render();
+          } else toast('Insufficient balance');
         }
       });
-      return;
+      break;
     }
-    go('chat', { id:u.id }, u.name);
-    return;
-  }
-  if (act === 'send-msg'){
-    const u = userById(id);
-    if (!u) return;
-    const text = (state.chatMsg||'').trim();
-    if (!text){ toast('Type a message first'); return; }
-    Chat.send(u.id, text);
-    state.chatMsg = '';
-    render();
-    return;
-  }
-  if (act === 'book'){
-    const c = DB.courts.find(x => x.id === id);
-    if (!c) return;
-    if (!state.booking.time){ toast('Select a time slot first'); return; }
-    const courtFee = c.price;
-    const platformFee = round2(courtFee * RATES.court.rate);
-    const total = round2(courtFee + platformFee);
-    openPaywall({
-      title:'Confirm booking',
-      body:c.name + ' · ' + state.booking.date + ' at ' + state.booking.time + '. RUBIX takes a 10% platform fee; the venue receives ' + money(courtFee) + '.',
-      amount:total, rate:RATES.court.rate, rateLabel:'Court time',
-      onConfirm:() => {
-        const res = charge('me', { kind:'court', amount:total, rate:RATES.court.rate,
-          note:c.name + ' · ' + state.booking.date + ' ' + state.booking.time, sourceId:null });
-        if (!res.ok){ toast('Insufficient balance'); return false; }
-        c.bookings.push({ user:'me', date:state.booking.date, time:state.booking.time });
-        toast('Court booked · ' + state.booking.time);
-        return true;
-      }
-    });
-    return;
-  }
-  if (act === 'book-trainer'){
-    const t = userById(id);
-    if (!t) return;
-    const rate = t.trainerRate || 30;
-    const fee = round2(rate * RATES.trainer.rate);
-    const total = round2(rate + fee);
-    openPaywall({
-      title:'Book training session',
-      body:'One session with ' + t.name + '. RUBIX takes 12%; ' + t.name.split(' ')[0] + ' receives ' + money(rate) + '.',
-      amount:total, rate:RATES.trainer.rate, rateLabel:'Session',
-      onConfirm:() => {
-        const res = charge('me', { kind:'trainer', amount:total, rate:RATES.trainer.rate,
-          note:'Session · ' + t.name, sourceId:t.id });
-        if (!res.ok){ toast('Insufficient balance'); return false; }
-        toast('Session booked with ' + t.name);
-        return true;
-      }
-    });
-    return;
-  }
-  if (act === 'buy-item'){
-    const s = DB.shop.find(x => x.id === id);
-    if (!s) return;
-    const fee = round2(s.price * RATES.shop.rate);
-    const total = round2(s.price + fee);
-    openPaywall({
-      title:'Confirm purchase',
-      body:s.title + ' from the RUBIX marketplace. RUBIX takes 8%; the seller receives ' + money(s.price) + '.',
-      amount:total, rate:RATES.shop.rate, rateLabel:'Item price',
-      onConfirm:() => {
-        const res = charge('me', { kind:'shop', amount:total, rate:RATES.shop.rate,
-          note:'Purchase · ' + s.title, sourceId:s.seller });
-        if (!res.ok){ toast('Insufficient balance'); return false; }
-        toast('Purchased ' + s.title);
-        return true;
-      }
-    });
-    return;
-  }
-  if (act === 'join-crew'){
-    const c = DB.crews.find(x => x.id === id);
-    if (!c) return;
-    DB.me.crews = DB.me.crews || [];
-    if (DB.me.crews.indexOf(c.id) >= 0){ toast('You are already a member'); return; }
-    if (!c.fee){
-      DB.me.crews.push(c.id);
-      c.members++;
-      toast('Joined ' + c.name);
+
+    case 'unlockchat': {
+      const u = userById(el.dataset.id);
+      if (!u) return;
+      const thread = Chat.ensureThread(u.id);
+      if (thread.unlocked){ go('chatview', { id:u.id }, u.name); break; }
+      paywallPopup({
+        title: 'Unlock chat with ' + u.name.split(' ')[0],
+        body: 'One-time payment to open a chat thread. No subscription.',
+        price: PRICES.chatUnlock,
+        platformFee: PRICES.chatUnlock,
+        cta: 'Unlock · $' + PRICES.chatUnlock,
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'chat-unlock', amount: PRICES.chatUnlock,
+            note:'Chat with ' + u.name, sourceId: null,
+            platformFee: PRICES.chatUnlock
+          });
+          if (res.ok){
+            thread.unlocked = true;
+            closeLayer();
+            toast('Chat unlocked ✓');
+            go('chatview', { id:u.id }, u.name);
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    case 'openthread': {
+      const u = userById(el.dataset.id);
+      if (!u) return;
+      const thread = Chat.ensureThread(u.id);
+      if (!thread.unlocked){ toast('Unlock this chat first'); break; }
+      go('chatview', { id:u.id }, u.name);
+      break;
+    }
+
+    case 'chatsend': {
+      const u = userById(el.dataset.id);
+      if (!u) return;
+      const inp = document.getElementById('chatInput');
+      const text = inp?.value.trim();
+      if (!text) return;
+      const thread = Chat.threadWith(u.id);
+      if (!thread) return;
+      Chat.send(thread.id, 'me', text);
       render();
-      return;
+      break;
     }
-    const fee = c.fee;
-    const platformFee = round2(fee * RATES.crew.rate);
-    openPaywall({
-      title:'Join ' + c.name,
-      body:'Monthly crew membership. RUBIX takes 5%; the crew leader receives ' + money(fee - platformFee) + '.',
-      amount:fee, rate:RATES.crew.rate, rateLabel:'Membership',
-      onConfirm:() => {
-        const res = charge('me', { kind:'crew', amount:fee, rate:RATES.crew.rate,
-          note:'Crew membership · ' + c.name, sourceId:c.leader });
-        if (!res.ok){ toast('Insufficient balance'); return false; }
-        DB.me.crews.push(c.id);
-        c.members++;
-        toast('Joined ' + c.name);
-        return true;
-      }
-    });
-    return;
-  }
-  if (act === 'join-tourney'){
-    const t = DB.tourneys.find(x => x.id === id);
-    if (!t) return;
-    const fee = t.entry;
-    const platformFee = round2(fee * RATES.tourney.rate);
-    openPaywall({
-      title:'Join ' + t.name,
-      body:'Entry fee for the ' + t.format + ' bracket. RUBIX takes 15%; ' + money(fee - platformFee) + ' flows into the prize pool.',
-      amount:fee, rate:RATES.tourney.rate, rateLabel:'Entry',
-      onConfirm:() => {
-        const res = charge('me', { kind:'tourney', amount:fee, rate:RATES.tourney.rate,
-          note:'Entry · ' + t.name, sourceId:t.host });
-        if (!res.ok){ toast('Insufficient balance'); return false; }
-        t.teams.push('Marcus Bell');
-        t.bracket = Tournaments.buildBracket(t.teams);
-        toast('You are in · ' + t.name);
-        return true;
-      }
-    });
-    return;
-  }
-  if (act === 'submit-host'){
-    const name = (state.form.hostName||'').trim() || 'Untitled Tournament';
-    const entry = Number(state.form.hostEntry || 5);
-    const prize = Number(state.form.hostPrize || 60);
-    const max = Number(state.form.hostMax || 8);
-    const courtId = state.form.hostCourt || DB.courts[0].id;
-    openPaywall({
-      title:'Host tournament',
-      body:name + '. Flat $9.99 host fee, plus RUBIX takes 15% of every entry fee collected.',
-      amount:PRICES.tournamentHost.flat, rate:0,
-      onConfirm:() => {
-        const res = charge('me', { kind:'tournamentHost', amount:9.99, note:'Host fee · ' + name });
-        if (!res.ok){ toast('Insufficient balance'); return false; }
-        const t = {
-          id:uid('t'), name, format:state.hostFormat||'3v3', entry, prize,
-          court:courtId, teams:[], maxTeams:max,
-          agreeBy:Date.now()+86400e3*7, status:'open', host:'me', seed:uid('ts')
-        };
-        t.bracket = Tournaments.buildBracket(t.teams);
-        DB.tourneys.unshift(t);
-        state.form = {};
-        toast('Tournament created');
-        nav.stack = []; nav.tab = 'tourneys';
-        return true;
-      }
-    });
-    return;
-  }
-  if (act === 'submit-vendor'){
-    const name = (state.form.vendorName||'').trim();
-    if (!name){ toast('Enter an item name'); return; }
-    const price = Number(state.form.vendorPrice||0);
-    if (!price){ toast('Enter a price'); return; }
-    openPaywall({
-      title:'Publish listing',
-      body:name + '. Flat $4.99 listing fee, plus 8% commission on the final sale price.',
-      amount:PRICES.vendorListing.flat, rate:0,
-      onConfirm:() => {
-        const res = charge('me', { kind:'vendorListing', amount:4.99, note:'Listing · ' + name });
-        if (!res.ok){ toast('Insufficient balance'); return false; }
-        DB.pending.vendors.unshift({
-          id:uid('pv'), name, category:state.form.vendorCategory||'Sneakers',
-          price, condition:state.form.vendorCondition||'Good',
-          seller:'me', notes:state.form.vendorNotes||'Submitted via app.', t:Date.now()
-        });
-        state.form = {};
-        toast('Listing submitted for review');
-        nav.stack = [];
-        return true;
-      }
-    });
-    return;
-  }
-  if (act === 'topup-open'){ openSheet(topupSheetHTML()); return; }
-  if (act === 'topup'){ state.topupPick = Number(v); openSheet(topupSheetHTML()); return; }
-  if (act === 'topup-confirm'){
-    const amt = Number(state.topupPick||25);
-    DB.me.wallet = round2(DB.me.wallet + amt);
-    DB.me.tx.unshift({ ts:Date.now(), kind:'topup', amount:amt, fee:0, note:'Wallet top-up' });
-    closeLayer();
-    toast('Added ' + money(amt) + ' to your wallet');
-    render();
-    return;
-  }
-  if (act === 'withdraw'){ toast('Withdrawals open after your first verified payout'); return; }
-  if (act === 'paywall-confirm'){
-    const m = MODAL;
-    if (!m) return;
-    const ok = m.onConfirm ? m.onConfirm() : true;
-    if (ok === false) return;
-    closeLayer();
-    render();
-    return;
-  }
 
-  if (act === 'ranklist'){ state.rankList = v; render(); return; }
-  if (act === 'rankregion'){ state.rankRegion = v; render(); return; }
-  if (act === 'ranklevel'){ state.rankLevel = v; render(); return; }
-  if (act === 'shopfilter'){ state.shopFilter = v; render(); return; }
-  if (act === 'lffilter'){ state.lfFilter = v; render(); return; }
-  if (act === 'tourneyfilter'){ state.tourneyFilter = v; render(); return; }
-  if (act === 'tourney'){ go('tourneydetail', { id }, 'Tournament'); return; }
-  if (act === 'like'){ state.feedLikes[id] = !state.feedLikes[id]; render(); return; }
-  if (act === 'contact-item'){ toast('The poster has been notified'); return; }
-  if (act === 'lfadd'){ toast('Item report submitted to Lost & Found'); return; }
-
-  if (act === 'form-position'){ state.form.position = v; render(); return; }
-  if (act === 'form-court'){ state.form.preferredCourt = v; render(); return; }
-  if (act === 'form-avail'){ state.form.avail = v; render(); return; }
-  if (act === 'form-style'){
-    state.form.playstyle = state.form.playstyle || [];
-    const i = state.form.playstyle.indexOf(v);
-    if (i >= 0) state.form.playstyle.splice(i,1);
-    else state.form.playstyle.push(v);
-    render();
-    return;
-  }
-  if (act === 'shuffle-photo'){ DB.me.seed = uid('photo'); toast('Profile photo shuffled'); render(); return; }
-  if (act === 'profile-save'){
-    const f = state.form;
-    if (f.name) DB.me.name = f.name;
-    if (f.bio != null) DB.me.bio = f.bio;
-    if (f.city) DB.me.city = f.city;
-    if (f.region) DB.me.region = f.region;
-    if (f.position) DB.me.position = f.position;
-    if (f.preferredCourt) DB.me.preferredCourt = f.preferredCourt;
-    if (f.skill) DB.me.skill = Number(f.skill);
-    if (f.avail) DB.me.avail = f.avail;
-    if (f.playstyle) DB.me.playstyle = f.playstyle;
-    DB.me.initials = initials(DB.me.name);
-    state.form = {};
-    toast('Profile updated');
-    back();
-    return;
-  }
-  if (act === 'vendor-cat'){ state.form.vendorCategory = v; render(); return; }
-  if (act === 'vendor-cond'){ state.form.vendorCondition = v; render(); return; }
-  if (act === 'court-surface'){ state.form.courtSurface = v; render(); return; }
-  if (act === 'host-format'){ state.hostFormat = v; render(); return; }
-  if (act === 'host-court'){ state.form.hostCourt = v; render(); return; }
-  if (act === 'trainer-court'){
-    state.form.trainerCourts = state.form.trainerCourts || [];
-    const i = state.form.trainerCourts.indexOf(v);
-    if (i >= 0) state.form.trainerCourts.splice(i,1);
-    else state.form.trainerCourts.push(v);
-    render();
-    return;
-  }
-  if (act === 'submit-trainer'){
-    const name = (state.form.trainerName||'').trim();
-    if (!name){ toast('Enter a display name'); return; }
-    DB.pending.trainers.unshift({
-      id:uid('pt'), name, user:'me',
-      court:(state.form.trainerCourts && state.form.trainerCourts[0]) || 'h1',
-      specialty:state.form.trainerSpecialty||'Skills training',
-      rate:Number(state.form.trainerRate||30),
-      exp:state.form.trainerExp||'Submitted via app.',
-      certs:'—', contact:'me@rubix.app', t:Date.now()
-    });
-    state.form = {};
-    toast('Trainer application submitted');
-    back();
-    return;
-  }
-  if (act === 'submit-court'){
-    const name = (state.form.courtName||'').trim();
-    if (!name){ toast('Enter a court name'); return; }
-    DB.pending.courts.unshift({
-      id:uid('ph'), name,
-      address:state.form.courtAddress||'—',
-      surface:state.form.courtSurface||'Indoor',
-      price:Number(state.form.courtPrice||20),
-      courtCount:Number(state.form.courtCount||2),
-      amenities:(state.form.courtAmenities||'Lighting').split(',').map(s => s.trim()).filter(Boolean),
-      contact:'me@rubix.app', t:Date.now()
-    });
-    state.form = {};
-    toast('Court submitted for review');
-    back();
-    return;
-  }
-  if (act === 'submit-score'){
-    const t = DB.tourneys.find(x => x.id === id);
-    if (!t) return;
-    const ri = Number(el.dataset.r), gi = Number(el.dataset.g);
-    const r = rngFrom(t.id + ri + gi);
-    const sa = 60 + Math.floor(r()*30);
-    const sb = 60 + Math.floor(r()*30);
-    Tournaments.recordResult(t, ri, gi, sa, sb);
-    toast('Score submitted · ' + sa + '–' + sb);
-    render();
-    return;
-  }
-  if (act === 'court-status'){ state.form.courtStatus = v; toast('Court status set to ' + v); render(); return; }
-  if (act === 'session-act'){ toast('Session ' + v + ' · updated'); return; }
-  if (act === 'crew-req'){ toast('Request ' + v + 'd'); return; }
-  if (act === 'toggle'){
-    const path = el.dataset.k;
-    const parts = path.split('.');
-    if (parts.length === 2 && state[parts[0]]) state[parts[0]][parts[1]] = !state[parts[0]][parts[1]];
-    render();
-    return;
-  }
-  if (act === 'verify-id'){ state.safety.idVerified = true; toast('ID verified'); render(); return; }
-  if (act === 'verify-photo'){ state.safety.photoVerified = true; toast('Photo verified'); render(); return; }
-  if (act === 'emergency'){ toast('Emergency contact saved'); return; }
-  if (act === 'report-user'){ toast('Report submitted to Trust & Safety'); return; }
-
-  if (act === 'admintab'){ state.adminTab = v; render(); return; }
-  if (act === 'adminapptab'){ state.adminAppTab = v; render(); return; }
-  if (act === 'adminreportfilter'){ state.adminReportFilter = v; render(); return; }
-  if (act === 'adminapp'){ go('adminappdetail', { type:el.dataset.type, id }, 'Application Review'); return; }
-  if (act === 'adminuser'){ go('adminuseredit', { id }, 'User Detail'); return; }
-
-  if (act === 'adminapprove' || act === 'adminreject'){
-    const type = el.dataset.type;
-    const itemId = el.dataset.id;
-    const arr = DB.pending[type];
-    const idx = arr.findIndex(x => x.id === itemId);
-    if (idx < 0){ toast('Item no longer pending'); return; }
-    const item = arr[idx];
-    const approving = act === 'adminapprove';
-    let added = null;
-    if (approving){
-      if (type === 'vendors'){
-        added = { id:uid('s'), title:item.name, price:item.price, condition:item.condition,
-          seller:item.seller, category:item.category, place:'Accra', status:'approved', seed:item.id };
-      } else if (type === 'crews'){
-        added = { id:uid('c'), name:item.name, members:item.members, fee:0, dist:3.0,
-          leader:item.leader, hue:260, status:'approved', verified:true, desc:item.notes };
-      } else if (type === 'trainers'){
-        added = { id:uid('tr'), user:item.user, court:item.court, rate:item.rate, specialty:item.specialty };
-      } else {
-        added = { id:uid('h'), name:item.name, address:item.address, surface:item.surface,
-          price:item.price, courtCount:item.courtCount, hue:190, rating:4.5, dist:3.2,
-          status:'approved', amenities:item.amenities, trainers:[], playersHere:[], courtStatus:'open', bookings:[] };
-      }
-    }
-    adminDo(
-      () => {
-        arr.splice(idx, 1);
-        if (type === 'vendors' && added) DB.shop.unshift(added);
-        if (type === 'crews' && added) DB.crews.push(added);
-        if (type === 'courts' && added) DB.courts.push(added);
-        if (type === 'trainers' && added){
-          const u = userById(added.user);
-          if (u){
-            u.roles = u.roles || [];
-            if (u.roles.indexOf('trainer') < 0) u.roles.push('trainer');
-            u.trainerRate = added.rate; u.specialty = added.specialty; u.coachCourt = added.court;
+    /* ---------- JOIN CREW ---------- */
+    case 'joincrew': {
+      e.stopPropagation();
+      const k = crewById(el.dataset.id);
+      if (!k) return;
+      if (k.monthlyFee && k.monthlyFee > 0){
+        paywallPopup({
+          title: 'Join ' + k.name,
+          body: 'First month of membership. Renews monthly. ' + PRICES.crewPct + '% platform fee applies.',
+          price: k.monthlyFee,
+          platformFee: crewFee(k.monthlyFee),
+          cta: 'Join · ' + money(k.monthlyFee),
+          onConfirm: () => {
+            const res = charge('me', {
+              kind:'crew-join', amount: k.monthlyFee,
+              note:'Joined ' + k.name, sourceId: k.createdBy,
+              platformFee: crewFee(k.monthlyFee)
+            });
+            if (res.ok){
+              closeLayer();
+              toast('Joined ' + k.name + ' ✓');
+              render();
+            } else toast('Insufficient balance');
           }
-          const c = DB.courts.find(x => x.id === added.court);
-          if (c && c.trainers.indexOf(added.user) < 0) c.trainers.push(added.user);
-        }
-      },
-      () => {
-        if (type === 'vendors' && added) DB.shop.splice(DB.shop.indexOf(added), 1);
-        if (type === 'crews' && added) DB.crews.splice(DB.crews.indexOf(added), 1);
-        if (type === 'courts' && added) DB.courts.splice(DB.courts.indexOf(added), 1);
-        arr.splice(idx, 0, item);
-      },
-      (approving?'Approved ':'Rejected ') + type.replace(/s$/,'') + ' · ' + item.name
-    );
-    toast(approving ? 'Approved · ' + item.name : 'Rejected · ' + item.name);
-    nav.stack = [];
-    render();
-    return;
-  }
-  if (act === 'adminverify'){
-    const u = userById(id); if (!u) return;
-    const before = u.verified;
-    adminDo(() => { u.verified = !before; }, () => { u.verified = before; },
-      (before?'Unverified ':'Verified ') + u.name);
-    toast(before ? 'Verification removed' : 'Player verified');
-    render();
-    return;
-  }
-  if (act === 'adminrole'){
-    const u = userById(id); if (!u) return;
-    const role = v;
-    u.roles = u.roles || [];
-    const had = u.roles.indexOf(role) >= 0;
-    adminDo(
-      () => { if (had) u.roles.splice(u.roles.indexOf(role), 1); else u.roles.push(role); },
-      () => { if (had) u.roles.push(role); else u.roles.splice(u.roles.indexOf(role), 1); },
-      (had?'Revoked ':'Granted ') + role + ' role · ' + u.name
-    );
-    toast(had ? 'Role revoked' : 'Role granted');
-    render();
-    return;
-  }
-  if (act === 'adminsquad'){
-    const u = userById(id); if (!u) return;
-    const had = u.rankN != null;
-    const prev = u.rankN;
-    adminDo(
-      () => {
-        if (had) u.rankN = null;
-        else {
-          const used = DB.users.filter(x => x.rankN != null).map(x => x.rankN);
-          let n = 1; while (used.indexOf(n) >= 0) n++;
-          u.rankN = n;
-        }
-      },
-      () => { u.rankN = prev; },
-      (had?'Removed from national squad · ':'Added to national squad · ') + u.name
-    );
-    toast(had ? 'Removed from squad' : 'Added to national squad');
-    render();
-    return;
-  }
-  if (act === 'adminpoints'){
-    const u = userById(id); if (!u) return;
-    const delta = Number(v); const before = u.points;
-    adminDo(() => { u.points = Math.max(0, u.points + delta); }, () => { u.points = before; },
-      (delta>0?'+':'') + delta + ' pts · ' + u.name);
-    toast((delta>0?'+':'') + delta + ' points');
-    render();
-    return;
-  }
-  if (act === 'adminwallet'){
-    const u = userById(id); if (!u) return;
-    const delta = Number(v); const before = u.wallet || 0;
-    adminDo(() => { u.wallet = round2(Math.max(0, before + delta)); }, () => { u.wallet = before; },
-      (delta>0?'Credited ':'Debited ') + money(Math.abs(delta)) + ' · ' + u.name);
-    toast((delta>0?'Credited ':'Debited ') + money(Math.abs(delta)));
-    render();
-    return;
-  }
-  if (act === 'admindelete'){
-    const u = userById(id); if (!u) return;
-    if (u.id === 'me'){ toast('You cannot delete the demo account'); return; }
-    const idx = DB.users.indexOf(u);
-    adminDo(() => { DB.users.splice(idx, 1); }, () => { DB.users.splice(idx, 0, u); },
-      'Deleted user · ' + u.name);
-    toast('User deleted');
-    nav.stack = [];
-    render();
-    return;
-  }
-  if (act === 'adminadd'){
-    const n = ADMINS.length + 1;
-    const a = { id:uid('adm'), name:'Operator ' + n, initials:'O' + n, hue:20 + n*30,
-      email:'operator' + n + '@rubix.app', pin:String(1000 + Math.floor(Math.random()*8999)), isDefault:false };
-    adminDo(() => { ADMINS.push(a); }, () => { ADMINS.splice(ADMINS.indexOf(a), 1); },
-      'Created admin account · ' + a.email);
-    toast(a.email + ' / ' + a.pin);
-    render();
-    return;
-  }
-  if (act === 'adminreport'){
-    const r = DB.reports.find(x => x.id === id);
-    if (!r) return;
-    const action = v; const prev = r.status;
-    if (action === 'reopen'){
-      adminDo(() => { r.status = 'open'; }, () => { r.status = prev; }, 'Reopened report · ' + r.type);
-      toast('Report reopened');
-      render();
-      return;
+        });
+      } else {
+        me.crewId = k.id;
+        toast('Joined ' + k.name + ' ✓');
+        el.textContent = 'Joined';
+        el.classList.add('is-sent');
+        el.disabled = true;
+      }
+      break;
     }
-    adminDo(
-      () => { r.status = 'resolved'; r.resolution = action; },
-      () => { r.status = prev; delete r.resolution; },
-      'Resolved report (' + action + ') · ' + r.type
-    );
-    toast('Report ' + action + 'ed');
-    render();
-    return;
-  }
-  if (act === 'adminlogtoggle'){ adminToggleLog(id); return; }
-  if (act === 'logoutadmin'){
-    SESSION.mode = 'player'; SESSION.adminId = null;
-    nav.tab = 'more'; nav.stack = [];
-    render();
-    toast('Signed out of console');
-    return;
+
+    /* ---------- BOOKING FLOW ---------- */
+    case 'date':
+      state.booking.date = el.dataset.v;
+      render();
+      break;
+
+    case 'slot':
+      state.booking.time = (state.booking.time === el.dataset.v) ? null : el.dataset.v;
+      render();
+      break;
+
+    case 'book': {
+      const c = courtById(el.dataset.id);
+      if (!c || !state.booking.time) return;
+      const fee = courtFee(c.price);
+      const total = c.price + fee;
+      paywallPopup({
+        title: 'Confirm court booking',
+        body: c.name + ' · ' + state.booking.date + ' at ' + state.booking.time + '. ' + PRICES.courtPct + '% platform fee applies.',
+        price: total,
+        platformFee: fee,
+        cta: 'Pay ' + money(total),
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'court-booking', amount: total,
+            note: c.name + ' · ' + state.booking.time,
+            sourceId: null, platformFee: fee
+          });
+          if (res.ok){
+            (c.bookings ||= []).push({
+              id: uid('bk'), userId:'me', time: state.booking.time,
+              duration:'90 min', status:'upcoming', date: state.booking.date
+            });
+            closeLayer();
+            toast('Booked · ' + c.name + ' ✓');
+            state.booking.time = null;
+            setTimeout(render, 400);
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    /* ---------- TRAINER BOOKING ---------- */
+    case 'trainerbook': {
+      const c = courtById(el.dataset.court);
+      const tr = c && c.trainers.find(x => x.id === el.dataset.trainer);
+      if (!c || !tr) return;
+      const fee = trainerFee(tr.rate);
+      const time = el.dataset.time || 'next available slot';
+      paywallPopup({
+        title: 'Book ' + tr.name,
+        body: 'Session at ' + c.name + ' · ' + time + '. Trainer receives ' + (100 - PRICES.trainerPct) + '%; ' + PRICES.trainerPct + '% platform fee.',
+        price: tr.rate,
+        platformFee: fee,
+        cta: 'Book · $' + tr.rate,
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'trainer-session', amount: tr.rate,
+            note: tr.name + ' · ' + time, sourceId: tr.userId,
+            platformFee: fee
+          });
+          if (res.ok){
+            closeLayer();
+            toast('Session booked with ' + tr.name + ' ✓');
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    /* ---------- SHOP PURCHASE ---------- */
+    case 'shopbuy': {
+      const it = shopById(el.dataset.id);
+      if (!it) return;
+      const fee = shopFee(it.price);
+      const seller = userById(it.sellerId);
+      paywallPopup({
+        title: 'Buy ' + it.title,
+        body: 'Seller: ' + (seller ? seller.name : 'Unknown') + '. ' + PRICES.shopPct + '% platform fee · ' + (100 - PRICES.shopPct) + '% goes to seller.',
+        price: it.price,
+        platformFee: fee,
+        cta: 'Pay ' + money(it.price),
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'shop-sale', amount: it.price,
+            note:'Bought ' + it.title, sourceId: it.sellerId,
+            platformFee: fee
+          });
+          if (res.ok){
+            closeLayer();
+            toast('Purchase complete ✓');
+            DB.shop = DB.shop.filter(x => x.id !== it.id);
+            render();
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    /* ---------- TOURNAMENT JOIN ---------- */
+    case 'tourneyjoin': {
+      const t = tourneyById(el.dataset.id);
+      if (!t) return;
+      if (t.status === 'draft'){ toast('Tournament not yet open'); break; }
+      if (Tournaments.isRegistered(t, 'me')){ toast('Already registered'); break; }
+      if (t.teams.length >= t.maxTeams){ toast('Tournament full'); break; }
+      const fee = tourneyFee(t.entry);
+      paywallPopup({
+        title: 'Join ' + t.name,
+        body: 'Entry fee $' + t.entry + ' + $' + fee + ' platform fee. Prize pool: $' + t.prize + '.',
+        price: t.entry,
+        platformFee: fee,
+        cta: 'Join · $' + t.entry,
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'tournament-entry', amount: t.entry,
+            note:'Entry: ' + t.name, sourceId: t.hostId,
+            platformFee: fee
+          });
+          if (res.ok){
+            t.teams.push({
+              id: uid('tt'), name: me.name + ' / TBD',
+              members: ['me'], joined: now()
+            });
+            if (t.teams.length >= 2 && !t.bracket){
+              Tournaments.buildBracket(t);
+            }
+            closeLayer();
+            toast('Registered for ' + t.name + ' ✓');
+            render();
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    case 'tourneyreport': {
+      const t = tourneyById(el.dataset.t);
+      if (!t) return;
+      layerEl.innerHTML =
+        '<div class="scrim" data-act="close-layer"></div>'+
+        '<div class="popup">'+
+          '<div class="popup__pill">SUBMIT SCORE</div>'+
+          '<h3>Log game result</h3>'+
+          '<p>Enter the final score. The opposing team will be notified to confirm.</p>'+
+          '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:16px">'+
+            '<input class="form-input" id="ms-a" type="number" min="0" max="200" placeholder="0" style="text-align:center;font-size:22px;font-weight:900">'+
+            '<div style="font-size:11px;font-weight:900;color:var(--muted);letter-spacing:.1em">VS</div>'+
+            '<input class="form-input" id="ms-b" type="number" min="0" max="200" placeholder="0" style="text-align:center;font-size:22px;font-weight:900">'+
+          '</div>'+
+          '<div class="popup__btns">'+
+            '<button class="btn btn--ghost" data-act="close-layer">Cancel</button>'+
+            '<button class="btn btn--primary" data-act="tourneyreportsave" data-t="'+t.id+'" data-m="'+el.dataset.m+'">Submit</button>'+
+          '</div>'+
+        '</div>';
+      break;
+    }
+
+    case 'tourneyreportsave': {
+      const t = tourneyById(el.dataset.t);
+      if (!t) return;
+      const a = parseInt(document.getElementById('ms-a')?.value) || 0;
+      const b = parseInt(document.getElementById('ms-b')?.value) || 0;
+      if (t.bracket){
+        Tournaments.recordResult(t, t.bracket.currentRound, el.dataset.m, a, b, 'me');
+      }
+      closeLayer();
+      toast('Score submitted · awaiting confirmation');
+      render();
+      break;
+    }
+
+    case 'tourneybracket': {
+      const t = tourneyById(el.dataset.id);
+      if (!t) return;
+      go('tourney', { id: t.id }, 'Tournament');
+      break;
+    }
+
+    /* ---------- TRAINER DASHBOARD ---------- */
+    case 'setcourtstatus': {
+      const c = courtById(me.trainerCourt);
+      if (!c) break;
+      const next = el.dataset.v;
+      if (c.courtStatus === next) break;
+      c.courtStatus = next;
+      render();
+      toast('Court set to ' + next);
+      break;
+    }
+
+    case 'bookingaction': {
+      const c = courtById(el.dataset.court);
+      if (!c) break;
+      const b = (c.bookings || []).find(x => x.id === el.dataset.b);
+      if (!b) break;
+      b.status = el.dataset.s;
+      render();
+      toast('Session ' + b.status);
+      break;
+    }
+
+    /* ---------- LOST & FOUND ---------- */
+    case 'lfadd':
+      DB.lostFound.unshift({
+        id:'l'+Date.now(), type:'lost', title:'Green basketball shorts',
+        emoji:'🩳', hue:150, place:'Riverside Basketball Club', time:'just now',
+        note:'Added from the demo composer.'
+      });
+      render();
+      toast('Post created ✓');
+      break;
+
+    /* ---------- APPLICATIONS ---------- */
+    case 'vendorfield':
+      state.vendorDraft = state.vendorDraft || {};
+      state.vendorDraft.category = el.dataset.v;
+      render();
+      break;
+
+    case 'vendorsubmit': {
+      const item = document.getElementById('v-item')?.value.trim();
+      const price = document.getElementById('v-price')?.value;
+      const note = document.getElementById('v-note')?.value.trim();
+      if (!item || !state.vendorDraft?.category){ toast('Please fill in all fields'); break; }
+      paywallPopup({
+        title: 'Vendor listing fee',
+        body: 'One-time fee to submit your listing. ' + PRICES.shopPct + '% of any future sale also applies.',
+        price: PRICES.vendorListing,
+        platformFee: PRICES.vendorListing,
+        cta: 'Pay ' + money(PRICES.vendorListing),
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'vendor-listing', amount: PRICES.vendorListing,
+            note:'Listing: ' + item, sourceId: null,
+            platformFee: PRICES.vendorListing
+          });
+          if (res.ok){
+            DB.pending.vendors.push({
+              id:'pv'+Date.now(), userId:me.id, itemName:item,
+              category: state.vendorDraft.category,
+              price: parseInt(price)||0,
+              submitted:'just now', note: note || 'No notes.',
+              photos:0, weight:'—', shipping:'Pickup only',
+              listingFeePaid:true
+            });
+            me.vendorStatus = 'pending';
+            state.vendorDraft = null;
+            closeLayer();
+            toast('Application submitted ✓');
+            setTimeout(() => { nav.stack = []; nav.tab = 'more'; render(); }, 500);
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    case 'trainercourt':
+      state.trainerCourt = state.trainerCourt === el.dataset.id ? null : el.dataset.id;
+      render();
+      break;
+
+    case 'trainersubmit': {
+      const spec = document.getElementById('tr-spec')?.value.trim();
+      const rate = parseInt(document.getElementById('tr-rate')?.value) || 30;
+      const exp = document.getElementById('tr-exp')?.value.trim() || '5 yrs';
+      if (!state.trainerCourt || !spec){ toast('Please complete all fields'); break; }
+      DB.pending.trainers.push({
+        id:'ptr'+Date.now(), userId:me.id, courtId:state.trainerCourt,
+        rate, spec, exp, submitted:'just now',
+        cert:'—', availability:'Weekdays 5–8pm'
+      });
+      state.trainerCourt = null;
+      toast('Trainer application submitted ✓');
+      setTimeout(() => { nav.stack = []; nav.tab = 'more'; render(); }, 500);
+      break;
+    }
+
+    case 'courtsurface':
+      state.courtSurface = el.dataset.v;
+      render();
+      break;
+
+    case 'courtsubmit': {
+      const name = document.getElementById('nc-name')?.value.trim();
+      const addr = document.getElementById('nc-addr')?.value.trim();
+      const price = parseInt(document.getElementById('nc-price')?.value) || 0;
+      const count = parseInt(document.getElementById('nc-count')?.value) || 0;
+      if (!name || !addr || !state.courtSurface){ toast('Please complete all fields'); break; }
+      DB.pending.courts.push({
+        id:'pct'+Date.now(), name, address:addr, price,
+        surface:state.courtSurface, courtCount:count,
+        amenities:['New submission'],
+        submittedBy:me.id, submitted:'just now',
+        contact:'—', hours:'—', notes:'—'
+      });
+      state.courtSurface = null;
+      toast('Court submitted for review ✓');
+      setTimeout(() => { nav.stack = []; nav.tab = 'courts'; render(); }, 500);
+      break;
+    }
+
+    case 'hostfield':
+      state.hostFormat = el.dataset.v;
+      render();
+      break;
+
+    case 'hosttourneysubmit': {
+      const name = document.getElementById('ht-name')?.value.trim();
+      const court = document.getElementById('ht-court')?.value;
+      const max = parseInt(document.getElementById('ht-max')?.value) || 8;
+      const entry = parseInt(document.getElementById('ht-entry')?.value) || 5;
+      const prize = parseInt(document.getElementById('ht-prize')?.value) || 60;
+      if (!name || !state.hostFormat){ toast('Please complete all fields'); break; }
+      paywallPopup({
+        title: 'Host tournament',
+        body: 'Publishing fee for "' + name + '". ' + PRICES.tournamentPct + '% of each entry fee is retained as platform revenue.',
+        price: PRICES.tournamentHost,
+        platformFee: PRICES.tournamentHost,
+        cta: 'Pay ' + money(PRICES.tournamentHost),
+        onConfirm: () => {
+          const res = charge('me', {
+            kind:'tournament-host', amount: PRICES.tournamentHost,
+            note:'Hosting: ' + name, sourceId: null,
+            platformFee: PRICES.tournamentHost
+          });
+          if (res.ok){
+            const teamSize = parseInt(state.hostFormat[0]);
+            DB.tournaments.push({
+              id:'t'+Date.now(), name, hostId:me.id, format: state.hostFormat,
+              entry, prize, maxTeams:max, courts:court,
+              hue: (Math.random()*360)|0, status:'open',
+              created: now(), agreeBy: now() + 7*86400000,
+              teamSize, teams:[], bracket:null, completed:false
+            });
+            state.hostFormat = null;
+            closeLayer();
+            toast('Tournament created ✓');
+            setTimeout(() => { nav.stack = []; nav.tab = 'tournaments'; render(); }, 500);
+          } else toast('Insufficient balance');
+        }
+      });
+      break;
+    }
+
+    /* ---------- SAFETY ---------- */
+    case 'verifyid':
+      me.idVerified = true;
+      me.verified = true;
+      render();
+      toast('ID verified ✓');
+      break;
+
+    case 'verifyphoto':
+      me.photoVerified = true;
+      render();
+      toast('Photo verified ✓');
+      break;
+
+    case 'safetytoggle': {
+      const f = el.dataset.f;
+      me.safety[f] = !me.safety[f];
+      render();
+      break;
+    }
+
+    case 'emergencycontact': {
+      const v = prompt('Emergency contact name + phone:', me.safety.emergencyContact || '');
+      if (v != null) me.safety.emergencyContact = v;
+      render();
+      break;
+    }
+
+    case 'unblock':
+      me.safety.blocked = me.safety.blocked.filter(id => id !== el.dataset.id);
+      render();
+      toast('Unblocked');
+      break;
+
+    case 'report-abuse':
+      toast('Report submitted to moderation ✓');
+      break;
+
+    /* ---------- NOTIFICATION PREFS ---------- */
+    case 'notiftoggle': {
+      const k = el.dataset.k;
+      me.notifPrefs[k] = !me.notifPrefs[k];
+      render();
+      break;
+    }
+
+    /* ---------- WALLET ---------- */
+    case 'topup':
+      topupPopup();
+      break;
+
+    case 'topup-pick': {
+      state.topupPick = parseInt(el.dataset.v);
+      const btns = layerEl.querySelectorAll('[data-act="topup-pick"]');
+      btns.forEach(b => b.classList.toggle('is-on', parseInt(b.dataset.v) === state.topupPick));
+      const confirm = layerEl.querySelector('[data-act="topup-confirm"]');
+      if (confirm){
+        confirm.dataset.v = state.topupPick;
+        confirm.textContent = 'Add ' + money(state.topupPick);
+      }
+      break;
+    }
+
+    case 'topup-confirm': {
+      const amt = parseInt(el.dataset.v || state.topupPick) || 25;
+      topup('me', amt);
+      closeLayer();
+      toast('Added ' + money(amt) + ' to wallet ✓');
+      render();
+      break;
+    }
+
+    case 'paywall-confirm': {
+      const opts = layerEl._paywall;
+      if (opts && opts.onConfirm) opts.onConfirm();
+      break;
+    }
+
+    /* ---------- ADMIN ---------- */
+    case 'admintab':
+      state.adminTab = el.dataset.v;
+      render();
+      mainEl.scrollTop = 0;
+      break;
+
+    case 'admingotoapp':
+      state.adminTab = 'approvals';
+      state.adminAppTab = el.dataset.v;
+      render();
+      break;
+
+    case 'adminappdetail':
+      go('admindetail', { type:el.dataset.type, id:el.dataset.id },
+        { vendor:'Vendor Application', crew:'Crew Verification',
+          trainer:'Trainer Verification', court:'Court Submission' }[el.dataset.type] || 'Details');
+      break;
+
+    case 'adminlogtoggle':
+      adminToggleLog(el.dataset.id);
+      break;
+
+    /* ---- Approvals ---- */
+    case 'approvevendor': {
+      const v = DB.pending.vendors.find(x => x.id === el.dataset.id);
+      if (!v) break;
+      const u = userById(v.userId);
+      const prevStatus = u.vendorStatus;
+      const newListing = {
+        id:'s'+Date.now(), title:v.itemName, price:v.price,
+        cond:v.category + ' · Verified', emoji: '🏀', hue:u.hue,
+        sellerId:u.id, place:u.city, status:'approved'
+      };
+      adminDo(
+        () => {
+          u.vendorStatus = 'approved';
+          DB.pending.vendors = DB.pending.vendors.filter(x => x.id !== v.id);
+          DB.shop.unshift(newListing);
+        },
+        () => {
+          u.vendorStatus = prevStatus;
+          DB.pending.vendors.push(v);
+          DB.shop = DB.shop.filter(x => x.id !== newListing.id);
+        },
+        'Approved vendor: ' + v.itemName
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      toast('✓ Approved vendor');
+      break;
+    }
+    case 'rejectvendor': {
+      const v = DB.pending.vendors.find(x => x.id === el.dataset.id);
+      if (!v) break;
+      const u = userById(v.userId);
+      const prevStatus = u.vendorStatus;
+      adminDo(
+        () => {
+          u.vendorStatus = 'rejected';
+          DB.pending.vendors = DB.pending.vendors.filter(x => x.id !== v.id);
+        },
+        () => { u.vendorStatus = prevStatus; DB.pending.vendors.push(v); },
+        'Rejected vendor: ' + v.itemName
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+
+    case 'approvecrew': {
+      const k = DB.pending.crews.find(x => x.id === el.dataset.id);
+      if (!k) break;
+      const newCrew = {
+        id:'c'+Date.now(), name:k.name,
+        members: parseInt(k.members)||0,
+        dist:600, hue:30, desc:k.desc,
+        verified:'approved', createdBy:k.creatorId,
+        founded:'2025', events:0, pendingMembers:0, monthlyFee:0
+      };
+      adminDo(
+        () => {
+          DB.crews.push(newCrew);
+          DB.pending.crews = DB.pending.crews.filter(x => x.id !== k.id);
+        },
+        () => {
+          DB.crews = DB.crews.filter(x => x.id !== newCrew.id);
+          DB.pending.crews.push(k);
+        },
+        'Verified crew: ' + k.name
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+    case 'rejectcrew': {
+      const k = DB.pending.crews.find(x => x.id === el.dataset.id);
+      if (!k) break;
+      adminDo(
+        () => { DB.pending.crews = DB.pending.crews.filter(x => x.id !== k.id); },
+        () => { DB.pending.crews.push(k); },
+        'Rejected crew: ' + k.name
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+
+    case 'approvetrainer': {
+      const a = DB.pending.trainers.find(x => x.id === el.dataset.id);
+      if (!a) break;
+      const u = userById(a.userId);
+      const c = courtById(a.courtId);
+      const prevRole = u.role;
+      const prevCourt = u.trainerCourt;
+      const newTrainerEntry = {
+        id:'tr'+Date.now(), userId:u.id, name:u.name,
+        rate:a.rate, spec:a.spec, exp:a.exp, verified:true
+      };
+      adminDo(
+        () => {
+          u.role = 'trainer';
+          u.trainerCourt = a.courtId;
+          if (c) c.trainers.push(newTrainerEntry);
+          DB.pending.trainers = DB.pending.trainers.filter(x => x.id !== a.id);
+        },
+        () => {
+          u.role = prevRole;
+          u.trainerCourt = prevCourt;
+          if (c) c.trainers = c.trainers.filter(x => x.id !== newTrainerEntry.id);
+          DB.pending.trainers.push(a);
+        },
+        'Verified trainer: ' + u.name
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+    case 'rejecttrainer': {
+      const a = DB.pending.trainers.find(x => x.id === el.dataset.id);
+      if (!a) break;
+      adminDo(
+        () => { DB.pending.trainers = DB.pending.trainers.filter(x => x.id !== a.id); },
+        () => { DB.pending.trainers.push(a); },
+        'Rejected trainer application'
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+
+    case 'approvecourt': {
+      const ct = DB.pending.courts.find(x => x.id === el.dataset.id);
+      if (!ct) break;
+      const newCourt = {
+        id:'h'+Date.now(), name:ct.name, rating:4.0, price:ct.price,
+        dist:800, surface:ct.surface, courtCount:ct.courtCount, hue:200,
+        status:'approved', address:ct.address, amenities:ct.amenities,
+        trainers:[], playersHere:[], courtStatus:'open', bookings:[]
+      };
+      adminDo(
+        () => {
+          DB.courts.push(newCourt);
+          DB.pending.courts = DB.pending.courts.filter(x => x.id !== ct.id);
+        },
+        () => {
+          DB.courts = DB.courts.filter(x => x.id !== newCourt.id);
+          DB.pending.courts.push(ct);
+        },
+        'Approved court: ' + ct.name
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+    case 'rejectcourt': {
+      const ct = DB.pending.courts.find(x => x.id === el.dataset.id);
+      if (!ct) break;
+      adminDo(
+        () => { DB.pending.courts = DB.pending.courts.filter(x => x.id !== ct.id); },
+        () => { DB.pending.courts.push(ct); },
+        'Rejected court: ' + ct.name
+      );
+      nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
+      render();
+      break;
+    }
+
+    /* ---- National squad ---- */
+    case 'addnational': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const prevNat = u.isNational;
+      const prevRank = u.rankN;
+      const nextRank = DB.users.filter(x => x.isNational).reduce((m,x) => Math.max(m, x.rankN||0), 0) + 1;
+      adminDo(
+        () => { u.isNational = true; u.rankN = nextRank; recomputeGeneralRanks(); },
+        () => { u.isNational = prevNat; u.rankN = prevRank; recomputeGeneralRanks(); },
+        'Added to National Squad: ' + u.name
+      );
+      toast('Added to National Squad');
+      break;
+    }
+    case 'removenational': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const prevRank = u.rankN;
+      adminDo(
+        () => { u.isNational = false; u.rankN = null; recomputeGeneralRanks(); },
+        () => { u.isNational = true; u.rankN = prevRank; recomputeGeneralRanks(); },
+        'Removed from National Squad: ' + u.name
+      );
+      toast('Removed from National Squad');
+      break;
+    }
+
+    /* ---- Points adjustment ---- */
+    case 'ptsplus': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const prev = u.points;
+      adminDo(
+        () => { u.points += 50; recomputeGeneralRanks(); },
+        () => { u.points = prev; recomputeGeneralRanks(); },
+        '+50 pts to ' + u.name
+      );
+      break;
+    }
+    case 'ptsminus': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const prev = u.points;
+      adminDo(
+        () => { u.points = Math.max(0, u.points - 50); recomputeGeneralRanks(); },
+        () => { u.points = prev; recomputeGeneralRanks(); },
+        '−50 pts from ' + u.name
+      );
+      break;
+    }
+
+    /* ---- User edit ---- */
+    case 'adminuseredit':
+      go('adminuser', { id:el.dataset.id }, 'Edit User');
+      break;
+
+    case 'adminrole': {
+      const u = userById(el.dataset.id);
+      const r = el.dataset.v;
+      if (!u) break;
+      const prev = u.role;
+      adminDo(
+        () => { u.role = r; },
+        () => { u.role = prev; },
+        'Changed role of ' + u.name + ' → ' + r
+      );
+      break;
+    }
+
+    case 'admintoggle': {
+      const u = userById(el.dataset.id);
+      const f = el.dataset.f;
+      if (!u) break;
+      if (f === 'verified'){
+        const prev = u.verified;
+        adminDo(
+          () => { u.verified = !prev; },
+          () => { u.verified = prev; },
+          (prev ? 'Unverified: ' : 'Verified: ') + u.name
+        );
+      } else if (f === 'vendor'){
+        const prev = u.vendorStatus;
+        adminDo(
+          () => { u.vendorStatus = prev === 'approved' ? 'none' : 'approved'; },
+          () => { u.vendorStatus = prev; },
+          (prev === 'approved' ? 'Revoked vendor: ' : 'Approved vendor: ') + u.name
+        );
+      } else if (f === 'national'){
+        const prevNat = u.isNational;
+        const prevRank = u.rankN;
+        const nextRank = DB.users.filter(x => x.isNational).reduce((m,x) => Math.max(m, x.rankN||0), 0) + 1;
+        adminDo(
+          () => { u.isNational = !prevNat; u.rankN = prevNat ? null : nextRank; recomputeGeneralRanks(); },
+          () => { u.isNational = prevNat; u.rankN = prevRank; recomputeGeneralRanks(); },
+          (prevNat ? 'Removed from National: ' : 'Added to National: ') + u.name
+        );
+      }
+      break;
+    }
+
+    case 'adminusersave': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const name = document.getElementById('au-name')?.value.trim();
+      const skill = document.getElementById('au-skill')?.value.trim();
+      const region = document.getElementById('au-region')?.value.trim();
+      const tc = document.getElementById('au-trainercourt')?.value;
+      const cm = document.getElementById('au-crew')?.value;
+      if (name) u.name = name;
+      if (skill) u.skill = skill;
+      if (region) u.region = region;
+      if (tc != null) u.trainerCourt = tc || null;
+      if (cm != null) u.crewId = cm || null;
+      u.initials = u.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+      toast('User saved ✓');
+      setTimeout(() => back(), 400);
+      break;
+    }
+
+    case 'admincredit': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const amt = parseFloat(el.dataset.amount);
+      const prev = u.wallet;
+      adminDo(
+        () => {
+          u.wallet = Math.max(0, u.wallet + amt);
+          DB.transactions.push({
+            id: uid('tx'), userId: u.id,
+            kind: amt > 0 ? 'admin-credit' : 'admin-debit',
+            amount: amt, note: 'Admin adjustment', ts: now()
+          });
+        },
+        () => { u.wallet = prev; },
+        (amt > 0 ? 'Credited ' : 'Debited ') + money(Math.abs(amt)) + ' · ' + u.name
+      );
+      break;
+    }
+
+    case 'admindelete': {
+      const u = userById(el.dataset.id);
+      if (!u) break;
+      const idx = DB.users.indexOf(u);
+      adminDo(
+        () => { DB.users.splice(idx, 1); },
+        () => { DB.users.splice(idx, 0, u); },
+        'Deleted user: ' + u.name
+      );
+      setTimeout(() => back(), 300);
+      break;
+    }
+
+    case 'adminadd': {
+      const n = ADMINS.length + 1;
+      const id = 'admin' + n;
+      const email = 'admin' + n + '@rubix.app';
+      const pin = String(1000 + Math.floor(Math.random()*9000));
+      const newAdmin = {
+        id, email, pin, name:'Admin ' + n, initials:'A' + n,
+        hue:(n*47) % 360, photo: n,
+        createdAt: new Date().toISOString(), lastLogin:null
+      };
+      adminDo(
+        () => { ADMINS.push(newAdmin); },
+        () => { ADMINS.splice(ADMINS.indexOf(newAdmin), 1); },
+        'Created admin: ' + newAdmin.name
+      );
+      toast('Admin created · ' + email + ' / ' + pin);
+      break;
+    }
+
+    /* ---- Moderation ---- */
+    case 'reportresolve': {
+      const r = DB.reports.find(x => x.id === el.dataset.id);
+      if (!r) break;
+      const prev = r.status;
+      const action = el.dataset.action;
+      adminDo(
+        () => {
+          r.status = 'resolved';
+          r.action = action;
+          if (action === 'ban'){
+            const t = userById(r.targetId);
+            if (t){ t.safety.blocked.push('admin-ban'); t.status = 'Banned'; t.avail = 'off'; }
+          }
+        },
+        () => {
+          r.status = prev;
+          r.action = null;
+          if (action === 'ban'){
+            const t = userById(r.targetId);
+            if (t) t.safety.blocked = t.safety.blocked.filter(x => x !== 'admin-ban');
+          }
+        },
+        'Report ' + action + ': ' + r.type
+      );
+      toast('Report ' + action);
+      break;
+    }
+
+    /* ---------- GENERIC TOAST ---------- */
+    case 'toast':
+      toast(el.dataset.msg || 'Done');
+      break;
+
+    default:
+      break;
   }
 });
 
-/* 57. INPUT HANDLERS */
-function setInput(path, val){
-  const parts = path.split('.');
-  if (parts.length === 1) state[parts[0]] = val;
-  else {
-    if (!state[parts[0]]) state[parts[0]] = {};
-    state[parts[0]][parts[1]] = val;
-  }
-}
-document.addEventListener('input', function(e){
+/* ============================================================
+   SECTION 45 — INPUT HANDLERS
+   ============================================================ */
+document.addEventListener('input', e => {
   const el = e.target.closest('[data-input]');
   if (!el) return;
   const key = el.dataset.input;
-  setInput(key, el.value);
-  if (el.dataset.live){ focusKey = key; render(); }
-});
-document.addEventListener('change', function(e){
-  const el = e.target.closest('[data-input]');
-  if (!el) return;
-  setInput(el.dataset.input, el.value);
-});
-document.addEventListener('keydown', function(e){
-  if (e.key !== 'Enter') return;
-  const el = e.target.closest('[data-input="chatMsg"]');
-  if (!el) return;
-  e.preventDefault();
-  const btn = document.querySelector('[data-act="send-msg"]');
-  if (btn) btn.click();
+
+  if (key === 'rankQuery'){
+    state.rankQuery = el.value;
+    const box = document.getElementById('rankList');
+    if (box) box.innerHTML = rankListHTML();
+    return;
+  }
+
+  if (key === 'adminUserQuery'){
+    state.adminUserQuery = el.value;
+    const pos = el.selectionStart;
+    render();
+    const newInp = mainEl.querySelector('[data-input="adminUserQuery"]');
+    if (newInp){ newInp.focus(); if (pos != null) newInp.setSelectionRange(pos, pos); }
+    return;
+  }
+
+  if (key === 'adminEmail'){ state.gateAdminEmail = el.value; return; }
+  if (key === 'adminPin'){ state.gateAdminPin = el.value; return; }
+
+  if (key === 'onboard-name'){ state.onboardDraft.name = el.value; return; }
+  if (key === 'onboard-city'){ state.onboardDraft.city = el.value; return; }
+  if (key === 'onboard-region'){ state.onboardDraft.region = el.value; return; }
+  if (key === 'onboard-bio'){
+    state.onboardDraft.bio = el.value.slice(0, 240);
+    return;
+  }
+  if (key === 'onboard-skill'){
+    state.onboardDraft.skill = parseFloat(el.value).toFixed(1);
+    render();
+    return;
+  }
+
+  if (key === 'profile-name'){ state.profileDraft.name = el.value; return; }
+  if (key === 'profile-bio'){ state.profileDraft.bio = el.value.slice(0, 240); return; }
+  if (key === 'profile-city'){ state.profileDraft.city = el.value; return; }
+  if (key === 'profile-region'){ state.profileDraft.region = el.value; return; }
+
+  if (key === 'post-text'){
+    state.postDraft = state.postDraft || {};
+    state.postDraft.text = el.value.slice(0, 500);
+    const cnt = document.querySelector('.post-composer__count');
+    if (cnt){
+      cnt.textContent = state.postDraft.text.length + ' / 500';
+      cnt.classList.toggle('is-warn', state.postDraft.text.length > 400 && state.postDraft.text.length <= 450);
+      cnt.classList.toggle('is-over', state.postDraft.text.length > 450);
+    }
+    const btn = document.querySelector('[data-act="post-submit"]');
+    if (btn){
+      const canPost = state.postDraft.text.trim().length > 0 || !!(state.postDraft.imageDataUrl || state.postDraft.imageUrl);
+      btn.disabled = !canPost;
+    }
+    return;
+  }
+
+  if (key === 'post-comment'){
+    state.commentDraft = el.value;
+    const btn = document.querySelector('[data-act="post-comment-send"]');
+    if (btn) btn.disabled = el.value.trim().length === 0;
+    return;
+  }
 });
 
-/* 58. BOOT */
-seed();
+/* Enter handlers for auth and chat */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter'){
+    if (!SESSION.mode){
+      const top = nav.stack.length ? nav.stack[nav.stack.length - 1] : null;
+      if (top && top.screen === 'adminlogin'){
+        const btn = mainEl.querySelector('[data-act="adminauth"]');
+        if (btn) btn.click();
+      }
+    }
+    const chatInp = document.getElementById('chatInput');
+    if (chatInp && document.activeElement === chatInp){
+      const send = mainEl.querySelector('[data-act="chatsend"]');
+      if (send) send.click();
+    }
+    const cmtInp = mainEl.querySelector('[data-input="post-comment"]');
+    if (cmtInp && document.activeElement === cmtInp){
+      const send = mainEl.querySelector('[data-act="post-comment-send"]');
+      if (send && !send.disabled) send.click();
+    }
+  }
+  if (e.key === 'Escape'){
+    if (layerEl.innerHTML) closeLayer();
+    else if (nav.stack.length){
+      /* exiting onboarding resets session */
+      const top = nav.stack[nav.stack.length - 1];
+      if (top && top.screen === 'onboarding'){
+        SESSION.mode = null;
+        nav.stack = [];
+        state.onboardDraft = null;
+        state.onboardStep = 1;
+        render();
+      } else {
+        back();
+      }
+    }
+  }
+});
+
+/* ============================================================
+   SECTION 46 — BOOT
+   ============================================================ */
 render();
+
+/* ════════════════════════════════════════════════════════════
+   END OF SESSION 5 · END OF app.js
+   ════════════════════════════════════════════════════════════ */
