@@ -1,5 +1,5 @@
 /* ============================================================
-   RUBIX HOOPS — app.js
+   RUBIX TENNIS — app.js
    ────────────────────────────────────────────────────────────
    SECTION 1  : Icons
    SECTION 2  : Utilities
@@ -7,7 +7,7 @@
    SECTION 4  : Session · Wallet · Monetization
    SECTION 5  : Tournament engine
    SECTION 6  : Chat engine
-   SECTION 7  : Game verification engine
+   SECTION 7  : Match verification engine
    SECTION 8  : AI recommendations
    SECTION 9  : Weather
    [Sessions 3–5 continue below]
@@ -19,7 +19,7 @@
 const ICONS = {
   pin:'<path d="M12 21.5s7-6 7-11.5a7 7 0 1 0-14 0c0 5.5 7 11.5 7 11.5Z"/><circle cx="12" cy="10" r="2.6"/>',
   trophy:'<path d="M7.5 4h9v5.5a4.5 4.5 0 0 1-9 0V4Z"/><path d="M7.5 5.5H4.5v1.8a3.2 3.2 0 0 0 3.2 3.2M16.5 5.5h3v1.8a3.2 3.2 0 0 1-3.2 3.2"/><path d="M12 14v3.5M9 20.5h6M10.2 17.5h3.6"/>',
-  ball:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/>',
+  ball:'<circle cx="12" cy="12" r="9"/><path d="M5.3 6.4A9 9 0 0 1 12 21M18.7 6.4A9 9 0 0 0 12 21"/>',
   user:'<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-3.9 3.4-6 7.5-6s7.5 2.1 7.5 6"/>',
   grid:'<rect x="3.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2.2"/>',
   back:'<path d="M14.5 5.5 8 12l6.5 6.5"/>',
@@ -70,13 +70,8 @@ const ICONS = {
   briefcase:'<rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M9 7.5v-2a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5.5v2M3.5 13h17"/>',
   crown:'<path d="M3 8.5l3 9h12l3-9-5 3-4-6-4 6-5-3Z"/>',
   gift2:'<rect x="3.5" y="8.5" width="17" height="12" rx="2.5"/><path d="M3.5 13h17M12 8.5v12M12 8.5S10.5 4 8 4a2.2 2.2 0 0 0 0 4.5M12 8.5S13.5 4 16 4a2.2 2.2 0 0 1 0 4.5"/>',
-  image2:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.7"/><path d="m4.5 17 5-5 4 4 3-2.5 3.5 3.5"/>',
-  crop:'<path d="M6.5 2v15.5H22M2 6.5h15.5V22"/>',
-  sphere:'<circle cx="12" cy="12" r="9"/><path d="M4 12c0-1.5 3.6-3 8-3s8 1.5 8 3-3.6 3-8 3-8-1.5-8-3Z"/><path d="M12 3v18"/>',
-  tag:'<path d="M12 3.5 3.5 12v8.5H12l8.5-8.5L12 3.5Z"/><circle cx="8" cy="12" r="1.4"/>',
   dots:'<circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/>',
-  close:'<path d="M6 6l12 12M18 6 6 18"/>',
-  back2:'<path d="M15 5.5 8.5 12 15 18.5"/>'
+  close:'<path d="M6 6l12 12M18 6 6 18"/>'
 };
 function ico(n, cls){
   return '<svg class="'+(cls||'')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[n]||'')+'</svg>';
@@ -103,34 +98,28 @@ const timeAgo = (ts) => {
 const escapeHTML = (s) => String(s).replace(/[&<>"']/g, c => ({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
-const truncate = (s, n) => s.length > n ? s.slice(0, n-1) + '…' : s;
 
 /* ============================================================
    SECTION 3 — DATA MODELS
    ============================================================ */
 function img(seed, w, h){
-  return 'https://picsum.photos/seed/hoops-' + encodeURIComponent(seed) + '/' + w + '/' + h;
+  return 'https://picsum.photos/seed/rubix-' + encodeURIComponent(seed) + '/' + w + '/' + h;
 }
 
-/* -------- Platform owner config -------- */
 const PLATFORM = {
-  owner: 'RUBIX Hoops',
+  owner: 'RUBIX Ventures',
   feePct: {
-    request: 0,
-    chat: 0,
-    court: 10,
-    trainer: 12,
-    tournament: 15,
-    vendorListing: 0,
-    shopSale: 8,
-    crewJoin: 5
+    request: 0, chat: 0,
+    court: 10, coach: 12,
+    tournament: 15, vendorListing: 0,
+    shopSale: 8, communityJoin: 5
   },
   flatFees: {
     requestPlayer: 0.99,
     unlockChat: 1.99,
     vendorListing: 4.99,
     tournamentHost: 9.99,
-    crewCreate: 14.99,
+    communityCreate: 14.99,
     priorityBooking: 2.99
   },
   revenue: 0,
@@ -140,7 +129,7 @@ const PLATFORM = {
 const DB = {
   users: [],
   courts: [],
-  crews: [],
+  communities: [],
   shop: [],
   lostFound: [],
   tournaments: [],
@@ -149,7 +138,7 @@ const DB = {
   posts: [],
   reports: [],
   transactions: [],
-  pending: { vendors:[], crews:[], trainers:[], courts:[] }
+  pending: { vendors:[], communities:[], coaches:[], courts:[] }
 };
 
 const ADMINS = [
@@ -157,73 +146,70 @@ const ADMINS = [
     initials:'AD', hue:0, photo:42, isDefault:true, createdAt:'2024-01-01', lastLogin:null }
 ];
 
+/* ---- User factory ----
+   NOTE: profileComplete is FALSE by default.
+   Every account (player or admin) creates a profile on first entry. */
 function mkUser(o){
   const initials = (o.name || '? ?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
   return Object.assign({
     id: o.id, name: o.name, initials,
-    hue: o.hue != null ? o.hue : 22,
+    hue: o.hue != null ? o.hue : 158,
     city: o.city || 'Accra', region: o.region || 'Greater Accra',
-    skill: o.skill || '3.5', position: o.position || 'SG', dominant: o.dominant || 'Right',
-    preferredCourt: o.preferredCourt || 'Indoor',
+    level: o.level || '3.5', hand: o.hand || 'Right',
+    surface: o.surface || 'Hard', club: o.club || 'RUBIX Club',
     status: o.status || 'Available now', avail: o.avail || 'on',
     role:'user', vendorStatus:'none',
     verified:false, idVerified:false, photoVerified:false,
-    bio:'', interests:['Pickup runs','Social'],
-    playstyle:['Playmaker'],
+    bio:'', interests:['Singles','Social'],
+    playstyle:['Baseliner'],
     memberSince: o.memberSince || '2024',
-    idNumber: o.idNumber || 'RH-' + String(1000 + Math.floor(Math.random()*8999)),
+    idNumber: o.idNumber || 'RT-' + String(1000 + Math.floor(Math.random()*8999)),
     points: o.points || 800, dist: o.dist || 500,
     isNational:false, rankN:null, rankG:null,
     move:'up', moveBy:1,
-    trainerCourt:null, crewId:null,
+    coachCourt:null, communityId:null,
     wallet: o.wallet != null ? o.wallet : 0,
     earnings: 0,
     streaks:{ current:0, longest:0 },
     badges:[],
-    profileComplete: o.profileComplete !== false,
+    profileComplete: o.profileComplete === true,
     avatarDataUrl: null,
     coverDataUrl: null,
     posts: o.posts || [],
-    notifPrefs:{ push:true, email:false, nearby:true, invites:true, chat:true,
-      bookings:true, crew:true, quietHours:false },
+    notifPrefs:{ push:true, email:false, nearby:true, requests:true, chat:true,
+      bookings:true, community:true, quietHours:false },
     safety:{ emergencyContact:'', shareLocationBeforeMatch:true, blocked:[] },
-    stats:{ games:0, wins:0, losses:0, ppg:0, apg:0, rpg:0 },
+    stats:{ played:0, wins:0, losses:0 },
     matches:[],
     photo:(Math.random()*1000)|0
   }, o);
 }
 
-/* -------- ME -------- */
+/* ---- ME — starts INCOMPLETE. Onboarding required. ---- */
 DB.users.push(mkUser({
-  id:'me', name:'Marcus Bell', hue:22, city:'Accra', region:'Greater Accra',
-  skill:'4.0', position:'SG', dominant:'Right', preferredCourt:'Indoor',
-  status:'Available now', avail:'on',
-  bio:'Sharpshooter from deep. Always up for a run — indoor or street. Let\'s work.',
-  interests:['Pickup runs','3v3','Training','Social'], playstyle:['Sharpshooter','Playmaker'],
-  memberSince:'Mar 2024', idNumber:'RH-0001',
-  points:2140, dist:0, verified:true, idVerified:true, photoVerified:true,
-  wallet: 24.50, earnings: 0,
-  streaks:{ current: 3, longest: 8 },
-  badges:['first-game','10-games','sharp-shooter'],
-  profileComplete: true
+  id:'me',
+  name:'', // set during onboarding
+  hue:158,
+  profileComplete: false,
+  wallet: 24.50
 }));
 
-/* -------- Players -------- */
+/* ---- Players ---- */
 const RAW = [
-  {id:'b1',name:'Jaylen Carter',hue:150,skill:'4.5',dist:120,status:'Available now',avail:'on',position:'PG',preferredCourt:'Indoor',region:'Greater Accra',city:'East Legon',points:2450,isNational:true,rankN:4,move:'up',moveBy:3,crewId:'c1'},
-  {id:'b2',name:'Devin Osei',hue:18,skill:'4.0',dist:240,status:'In 1 hour',avail:'soon',position:'SG',preferredCourt:'Outdoor',region:'Greater Accra',city:'Osu',points:1980,isNational:true,rankN:6,move:'up',moveBy:1},
-  {id:'b3',name:'Tyler Nakamura',hue:280,skill:'5.0',dist:480,status:'Available now',avail:'on',position:'SF',preferredCourt:'Indoor',region:'Greater Accra',city:'Airport Hills',points:3120,isNational:true,rankN:2,move:'down',moveBy:1},
-  {id:'b4',name:'Sam Okafor',hue:210,skill:'3.5',dist:90,status:'Busy',avail:'off',position:'PF',preferredCourt:'Street',region:'Central',city:'Cape Coast',points:1120,move:'down',moveBy:2,role:'trainer',trainerCourt:'h1'},
-  {id:'b5',name:'Zion Mensah',hue:330,skill:'4.5',dist:350,status:'Available now',avail:'on',position:'PG',preferredCourt:'Indoor',region:'Greater Accra',city:'Labone',points:2510,isNational:true,rankN:3,move:'up',moveBy:4,crewId:'c3'},
-  {id:'b6',name:'Kwame Boateng',hue:96,skill:'4.0',dist:620,status:'Tomorrow',avail:'soon',position:'C',preferredCourt:'Indoor',region:'Ashanti',city:'Kumasi',points:1740,isNational:true,rankN:7,move:'up',moveBy:2},
-  {id:'b7',name:'Priya Sharma',hue:255,skill:'3.5',dist:180,status:'Available now',avail:'on',position:'SG',preferredCourt:'Outdoor',region:'Greater Accra',city:'Madina',points:1290,move:'down',moveBy:1},
-  {id:'b8',name:'Andre Williams',hue:195,skill:'5.5',dist:900,status:'Available now',avail:'on',position:'SF',preferredCourt:'Indoor',region:'Greater Accra',city:'Cantonments',points:3880,isNational:true,rankN:1,move:'up',moveBy:1},
-  {id:'b9',name:'Zara Diallo',hue:42,skill:'4.0',dist:430,status:'In 30 min',avail:'soon',position:'PG',preferredCourt:'Indoor',region:'Northern',city:'Tamale',points:1830,isNational:true,rankN:8,move:'down',moveBy:3},
-  {id:'b10',name:'Tomás Reyes',hue:6,skill:'3.0',dist:760,status:'Available now',avail:'on',position:'PF',preferredCourt:'Street',region:'Central',city:'Winneba',points:860,move:'up',moveBy:5},
-  {id:'b11',name:'Ivy Chen',hue:310,skill:'4.5',dist:250,status:'Busy',avail:'off',position:'SG',preferredCourt:'Indoor',region:'Ashanti',city:'Obuasi',points:2290,isNational:true,rankN:5,move:'down',moveBy:1},
-  {id:'b12',name:'Omar Bello',hue:170,skill:'3.5',dist:150,status:'Available now',avail:'on',position:'C',preferredCourt:'Outdoor',region:'Greater Accra',city:'Teshie',points:1350,move:'up',moveBy:2}
+  {id:'p1',name:'Maya Okafor',hue:150,level:'4.5',dist:120,status:'Available now',avail:'on',hand:'Right',surface:'Hard',region:'Greater Accra',city:'East Legon',points:2450,isNational:true,rankN:4,move:'up',moveBy:3,communityId:'k1'},
+  {id:'p2',name:'Diego Marín',hue:18,level:'4.0',dist:240,status:'In 1 hour',avail:'soon',hand:'Left',surface:'Clay',region:'Greater Accra',city:'Osu',points:1980,isNational:true,rankN:6,move:'up',moveBy:1},
+  {id:'p3',name:'Aiko Tanaka',hue:280,level:'5.0',dist:480,status:'Available now',avail:'on',hand:'Right',surface:'Hard',region:'Greater Accra',city:'Airport Hills',points:3120,isNational:true,rankN:2,move:'down',moveBy:1},
+  {id:'p4',name:'Sam Whitfield',hue:210,level:'3.5',dist:90,status:'Busy',avail:'off',hand:'Right',surface:'Grass',region:'Central',city:'Cape Coast',points:1120,move:'down',moveBy:2,role:'coach',coachCourt:'c1'},
+  {id:'p5',name:'Lena Fischer',hue:330,level:'4.5',dist:350,status:'Available now',avail:'on',hand:'Left',surface:'Clay',region:'Greater Accra',city:'Labone',points:2510,isNational:true,rankN:3,move:'up',moveBy:4,communityId:'k3'},
+  {id:'p6',name:'Kwame Mensah',hue:96,level:'4.0',dist:620,status:'Tomorrow',avail:'soon',hand:'Right',surface:'Hard',region:'Ashanti',city:'Kumasi',points:1740,isNational:true,rankN:7,move:'up',moveBy:2},
+  {id:'p7',name:'Priya Raman',hue:255,level:'3.5',dist:180,status:'Available now',avail:'on',hand:'Right',surface:'Clay',region:'Greater Accra',city:'Madina',points:1290,move:'down',moveBy:1},
+  {id:'p8',name:'Noah Bergström',hue:195,level:'5.5',dist:900,status:'Available now',avail:'on',hand:'Right',surface:'Hard',region:'Greater Accra',city:'Cantonments',points:3880,isNational:true,rankN:1,move:'up',moveBy:1},
+  {id:'p9',name:'Zara Haddad',hue:42,level:'4.0',dist:430,status:'In 30 min',avail:'soon',hand:'Left',surface:'Hard',region:'Northern',city:'Tamale',points:1830,isNational:true,rankN:8,move:'down',moveBy:3},
+  {id:'p10',name:'Tomás Silva',hue:6,level:'3.0',dist:760,status:'Available now',avail:'on',hand:'Right',surface:'Clay',region:'Central',city:'Winneba',points:860,move:'up',moveBy:5},
+  {id:'p11',name:'Ivy Chen',hue:310,level:'4.5',dist:250,status:'Busy',avail:'off',hand:'Right',surface:'Hard',region:'Ashanti',city:'Obuasi',points:2290,isNational:true,rankN:5,move:'down',moveBy:1},
+  {id:'p12',name:'Omar Diallo',hue:170,level:'3.5',dist:150,status:'Available now',avail:'on',hand:'Right',surface:'Hard',region:'Greater Accra',city:'Teshie',points:1350,move:'up',moveBy:2}
 ];
-RAW.forEach(p => DB.users.push(mkUser(p)));
+RAW.forEach(p => DB.users.push(mkUser(Object.assign({ profileComplete:true, verified:true }, p))));
 
 function recomputeGeneralRanks(){
   const g = DB.users.filter(u => u.role !== 'admin' && !u.isNational && u.id !== 'me')
@@ -232,101 +218,100 @@ function recomputeGeneralRanks(){
 }
 recomputeGeneralRanks();
 
-/* -------- Courts -------- */
+/* ---- Courts ---- */
 DB.courts = [
-  {id:'h1',name:'Riverside Basketball Club',rating:4.8,price:18,dist:400,surface:'Indoor',courtCount:6,hue:22,
+  {id:'c1',name:'Riverside Tennis Club',rating:4.8,price:18,dist:400,surface:'Hard',courtCount:6,hue:152,
    status:'approved',address:'12 Riverside Drive, East Legon',
-   amenities:['Indoor AC','Scoreboard','Bleachers','Locker rooms','Café','Free parking'],
-   trainers:[
-     {id:'tr1',userId:'b4',name:'Coach Sam O.',rate:35,spec:'Shooting mechanics · Post moves',exp:'12 yrs',verified:true},
-     {id:'tr2',userId:'b6',name:'Coach Kwame B.',rate:42,spec:'Ball handling · Game IQ',exp:'9 yrs',verified:true}
-   ], playersHere:['b1','b5','b7'], courtStatus:'open',
+   amenities:['Floodlights','Free parking','Pro shop','Locker rooms','Café'],
+   coaches:[
+     {id:'co1',userId:'p4',name:'Coach Nana A.',rate:35,spec:'Junior & adult fundamentals',exp:'12 yrs',verified:true},
+     {id:'co2',userId:'p6',name:'Coach Elena R.',rate:42,spec:'Serve mechanics · WTA prep',exp:'9 yrs',verified:true}
+   ], playersHere:['p1','p5','p7'], courtStatus:'open',
    bookings:[
-     {id:'bk1',userId:'me', time:'07:00', duration:'90 min', status:'upcoming', date:'Today'},
-     {id:'bk2',userId:'b1', time:'09:00', duration:'60 min', status:'active', date:'Today'},
-     {id:'bk3',userId:'b2', time:'11:30', duration:'60 min', status:'upcoming', date:'Today'},
-     {id:'bk4',userId:'b5', time:'15:00', duration:'90 min', status:'completed', date:'Today'}
+     {id:'b1',userId:'me', time:'07:00', duration:'90 min', status:'upcoming', date:'Today'},
+     {id:'b2',userId:'p1', time:'09:00', duration:'60 min', status:'active', date:'Today'},
+     {id:'b3',userId:'p2', time:'11:30', duration:'60 min', status:'upcoming', date:'Today'},
+     {id:'b4',userId:'p5', time:'15:00', duration:'90 min', status:'completed', date:'Today'}
    ]},
-  {id:'h2',name:'Northgate Outdoor Courts',rating:4.3,price:10,dist:700,surface:'Outdoor',courtCount:4,hue:96,
+  {id:'c2',name:'Northgate Park Courts',rating:4.3,price:10,dist:700,surface:'Hard',courtCount:4,hue:96,
    status:'approved',address:'Northgate Park, Osu',
-   amenities:['Lighting','Public access','Water fountain','Restrooms'],
-   trainers:[{id:'tr3',userId:'b10',name:'Coach Tomás R.',rate:28,spec:'Cardio hoops · Fundamentals',exp:'6 yrs',verified:true}],
-   playersHere:['b2','b9'], courtStatus:'open', bookings:[]},
-  {id:'h3',name:'Prime Hardwood Academy',rating:4.9,price:26,dist:1200,surface:'Indoor',courtCount:8,hue:18,
+   amenities:['Floodlights','Public access','Water fountain'],
+   coaches:[{id:'co3',userId:'p10',name:'Coach Kwesi B.',rate:28,spec:'Cardio tennis · Doubles tactics',exp:'6 yrs',verified:true}],
+   playersHere:['p2','p9'], courtStatus:'open', bookings:[]},
+  {id:'c3',name:'Clay Court Academy',rating:4.9,price:26,dist:1200,surface:'Clay',courtCount:8,hue:18,
    status:'approved',address:'7 Akosombo Rd, Labone',
-   amenities:['Hardwood floors','Film room','Physio','Lounge','Locker rooms','Pro shop'],
-   trainers:[
-     {id:'tr4',userId:'b3',name:'Coach Tyler N.',rate:55,spec:'Pro-level skill work · Scouting',exp:'16 yrs',verified:true},
-     {id:'tr5',userId:'b11',name:'Coach Ivy C.',rate:40,spec:'Conditioning · Footwork',exp:'10 yrs',verified:true}
-   ], playersHere:['b3','b6'], courtStatus:'open', bookings:[]},
-  {id:'h4',name:'Sunset Hoops Center',rating:4.6,price:22,dist:900,surface:'Indoor',courtCount:5,hue:330,
+   amenities:['Clay courts','Coaching academy','Physio','Lounge','Locker rooms'],
+   coaches:[
+     {id:'co4',userId:'p3',name:'Coach Marta L.',rate:55,spec:'Clay movement · ITF level',exp:'16 yrs',verified:true},
+     {id:'co5',userId:'p11',name:'Coach Yaw D.',rate:40,spec:'Fitness & footwork',exp:'10 yrs',verified:true}
+   ], playersHere:['p3','p6'], courtStatus:'open', bookings:[]},
+  {id:'c4',name:'Sunset Racket Center',rating:4.6,price:22,dist:900,surface:'Indoor Hard',courtCount:5,hue:330,
    status:'approved',address:'88 Ring Road Central',
-   amenities:['Indoor AC','Scoreboard','Bar','Showers','Sound system'],
-   trainers:[{id:'tr6',userId:'b7',name:'Coach Priya S.',rate:45,spec:'Shooting form · Video analysis',exp:'11 yrs',verified:true}],
-   playersHere:['b8','b11','b12'], courtStatus:'open', bookings:[]},
-  {id:'h5',name:'Harborview Street Courts',rating:4.1,price:14,dist:1600,surface:'Outdoor',courtCount:3,hue:195,
+   amenities:['Indoor','Climate control','Pro shop','Bar','Showers'],
+   coaches:[{id:'co6',userId:'p7',name:'Coach Ravi S.',rate:45,spec:'Video analysis · Match strategy',exp:'11 yrs',verified:true}],
+   playersHere:['p8','p11','p12'], courtStatus:'open', bookings:[]},
+  {id:'c5',name:'Harborview Courts',rating:4.1,price:14,dist:1600,surface:'Hard',courtCount:3,hue:195,
    status:'approved',address:'Harbour Rd, Tema',
-   amenities:['Sea view','Lighting','Free parking'],
-   trainers:[{id:'tr7',userId:'b12',name:'Coach Omar B.',rate:30,spec:'Street ball · Beginners',exp:'5 yrs',verified:false}],
-   playersHere:['b4','b10'], courtStatus:'open', bookings:[]}
+   amenities:['Sea view','Floodlights','Free parking'],
+   coaches:[{id:'co7',userId:'p12',name:'Coach Adjoa M.',rate:30,spec:'Beginners & kids',exp:'5 yrs',verified:false}],
+   playersHere:['p4','p10'], courtStatus:'open', bookings:[]}
 ];
 
-/* -------- Crews -------- */
-DB.crews = [
-  {id:'c1',name:'RUBIX Hoops Community',members:1240,dist:300,hue:22,desc:'Weekly runs · All levels',
-   verified:'approved',createdBy:'b1',founded:'2023', events:3, pendingMembers:2, monthlyFee:2.99},
-  {id:'c2',name:'Downtown 3v3 League',members:480,dist:800,hue:255,desc:'Competitive 3v3 ladder · Season 4',
-   verified:'approved',createdBy:'b3',founded:'2024', events:1, pendingMembers:0, monthlyFee:0},
-  {id:'c3',name:'Weekend Run Crew',members:156,dist:1100,hue:30,desc:'Sat & Sun morning runs only',
-   verified:'approved',createdBy:'b5',founded:'2024', events:2, pendingMembers:1, monthlyFee:0}
+/* ---- Communities ---- */
+DB.communities = [
+  {id:'k1',name:'RUBIX Tennis Community',members:1240,dist:300,hue:150,desc:'Weekly socials · All levels',
+   verified:'approved',createdBy:'p1',founded:'2023', events:3, pendingMembers:2, monthlyFee:2.99},
+  {id:'k2',name:'Downtown Tennis League',members:480,dist:800,hue:255,desc:'Competitive ladder · Season 4',
+   verified:'approved',createdBy:'p3',founded:'2024', events:1, pendingMembers:0, monthlyFee:0},
+  {id:'k3',name:'Weekend Doubles Crew',members:156,dist:1100,hue:30,desc:'Sat & Sun doubles only',
+   verified:'approved',createdBy:'p5',founded:'2024', events:2, pendingMembers:1, monthlyFee:0}
 ];
 
-/* -------- Shop -------- */
+/* ---- Shop ---- */
 DB.shop = [
-  {id:'sh1',title:'Nike LeBron 21 (US 10.5)',price:95,cond:'Used · Excellent',emoji:'👟',hue:22,sellerId:'b1',place:'East Legon · 120 m',status:'approved'},
-  {id:'sh2',title:'Adidas Harden Vol. 8',price:75,cond:'Used · Good',emoji:'👟',hue:255,sellerId:'b2',place:'Osu · 240 m',status:'approved'},
-  {id:'sh3',title:'Spalding NBA Official Ball',price:45,cond:'New · Boxed',emoji:'🏀',hue:30,sellerId:'b4',place:'Cape Coast',status:'approved'},
-  {id:'sh4',title:'Wilson Evolution Indoor',price:60,cond:'New',emoji:'🏀',hue:18,sellerId:'b3',place:'Airport Hills',status:'approved'},
-  {id:'sh5',title:'Mitchell & Ness Kobe Rookie',price:120,cond:'Used · Great',emoji:'👕',hue:280,sellerId:'b5',place:'Labone · 350 m',status:'approved'},
-  {id:'sh6',title:'Nike Shooting Sleeve',price:15,cond:'New',emoji:'💪',hue:200,sellerId:'b6',place:'Kumasi',status:'approved'},
-  {id:'sh7',title:'Ankle Brace (pair)',price:20,cond:'Used',emoji:'🦶',hue:180,sellerId:'b7',place:'Madina · 180 m',status:'approved'},
-  {id:'sh8',title:'Under Armour Compression Tights',price:30,cond:'New',emoji:'🩳',hue:340,sellerId:'b9',place:'Tamale',status:'approved'}
+  {id:'s1',title:'Wilson Pro Staff 97 v14',price:149,cond:'Used · Excellent',emoji:'🎾',hue:150,sellerId:'p1',place:'East Legon · 120 m',status:'approved'},
+  {id:'s2',title:'Babolat Pure Aero 2023',price:179,cond:'Used · Good',emoji:'🎾',hue:18,sellerId:'p2',place:'Osu · 240 m',status:'approved'},
+  {id:'s3',title:'Nike Vapor Cage 4 (UK 9)',price:65,cond:'New · Boxed',emoji:'👟',hue:210,sellerId:'p4',place:'Cape Coast',status:'approved'},
+  {id:'s4',title:'Tecnifibre X-One String Set',price:18,cond:'New',emoji:'🧵',hue:280,sellerId:'p3',place:'Airport Hills',status:'approved'},
+  {id:'s5',title:'Head Radical 12R Tour Bag',price:85,cond:'Used · Great',emoji:'🎒',hue:330,sellerId:'p5',place:'Labone · 350 m',status:'approved'},
+  {id:'s6',title:'Yonex Ezone 98',price:160,cond:'Used · Excellent',emoji:'🎾',hue:96,sellerId:'p6',place:'Kumasi',status:'approved'},
+  {id:'s7',title:'Ball Basket (72 balls)',price:40,cond:'Used',emoji:'🧺',hue:42,sellerId:'p7',place:'Madina · 180 m',status:'approved'},
+  {id:'s8',title:'Adidas Barricade 2023',price:70,cond:'New · Boxed',emoji:'👟',hue:6,sellerId:'p9',place:'Tamale',status:'approved'}
 ];
 
-/* -------- Lost & Found -------- */
+/* ---- Lost & Found ---- */
 DB.lostFound = [
-  {id:'l1',type:'lost',title:'Spalding NBA ball (scuffed)',emoji:'🏀',hue:30,place:'Riverside Basketball Club',time:'2h ago',note:'Left it on court 3 after the run. Reward!'},
-  {id:'l2',type:'found',title:'Black Nike drawstring bag',emoji:'🎒',hue:210,place:'Court 1, Northgate Outdoor',time:'5h ago',note:'Handed to the front desk.'},
-  {id:'l3',type:'lost',title:'LeBron 21s (left shoe only)',emoji:'👟',hue:22,place:'Sunset Hoops Center',time:'1d ago',note:'Weird, I know. But it happened.'},
-  {id:'l4',type:'found',title:'Gold chain with cross',emoji:'📿',hue:42,place:'Prime Hardwood Academy',time:'2d ago',note:'Turned into reception.'}
+  {id:'l1',type:'lost',title:'Black Wilson racket bag',emoji:'🎒',hue:210,place:'Riverside Tennis Club',time:'2h ago',note:'Has my keys and two rackets inside. Reward offered!'},
+  {id:'l2',type:'found',title:'Blue water bottle',emoji:'💧',hue:195,place:'Court 3, Northgate Park',time:'5h ago',note:'Left it with the front desk.'},
+  {id:'l3',type:'lost',title:'Keys with green keyring',emoji:'🔑',hue:96,place:'Sunset Racket Center',time:'1d ago',note:'Probably near the changing rooms.'},
+  {id:'l4',type:'found',title:'Babolat racket (grip worn)',emoji:'🎾',hue:18,place:'Clay Court Academy',time:'2d ago',note:'Handed to reception.'}
 ];
 
-/* -------- Tournaments -------- */
+/* ---- Tournaments ---- */
 function seedTourneys(){
   const d = (days) => now() + days*86400000;
   DB.tournaments = [
-    { id:'t1', name:'Riverside 3v3 Open', hostId:'b1', format:'3v3',
-      entry:5, prize:60, maxTeams:8, courts:'h1', hue:22, status:'open',
+    { id:'t1', name:'Riverside Doubles Open', hostId:'p1', format:'doubles-elim',
+      entry:5, prize:60, maxTeams:8, courts:'c1', hue:150, status:'open',
       created: now() - 2*86400000, agreeBy: d(7),
-      teamSize:3,
+      teamSize:2,
       teams:[
-        { id:'tt1', name:'Carter / Mensah / Chen', members:['b1','b5','b11'], joined: now()-1*86400000 },
-        { id:'tt2', name:'Osei / Sharma / Diallo', members:['b2','b7','b9'], joined: now()-1*86400000 + 3600000 },
-        { id:'tt3', name:'Nakamura / Boateng / Reyes', members:['b3','b6','b10'], joined: now()-1*86400000 + 7200000 }
+        { id:'tt1', name:'Okafor / Fischer', members:['p1','p5'], joined: now()-1*86400000 },
+        { id:'tt2', name:'Marín / Raman',   members:['p2','p7'], joined: now()-1*86400000 + 3600000 },
+        { id:'tt3', name:'Tanaka / Chen',   members:['p3','p11'],joined: now()-1*86400000 + 7200000 }
       ],
-      bracket:null,
-      completed:false
+      bracket:null, completed:false
     },
-    { id:'t2', name:'Weekend 5v5 League', hostId:'b5', format:'5v5',
-      entry:3, prize:75, maxTeams:6, courts:'h3', hue:330, status:'open',
+    { id:'t2', name:'Weekend Social Doubles', hostId:'p5', format:'doubles-roundrobin',
+      entry:3, prize:25, maxTeams:6, courts:'c3', hue:330, status:'open',
       created: now() - 1*86400000, agreeBy: d(6),
-      teamSize:5,
+      teamSize:2,
       teams:[
-        { id:'tt4', name:'Mensah / Williams / Okafor', members:['b5','b8','b4'], joined: now()-12*3600000 }
+        { id:'tt4', name:'Fischer / Bergström', members:['p5','p8'], joined: now()-12*3600000 }
       ],
       bracket:null, completed:false },
-    { id:'t3', name:'Sunset 1v1 Ladder', hostId:'b8', format:'1v1',
-      entry:4, prize:40, maxTeams:8, courts:'h4', hue:195, status:'draft',
+    { id:'t3', name:'Sunset Singles Ladder', hostId:'p8', format:'singles-elim',
+      entry:4, prize:40, maxTeams:8, courts:'c4', hue:195, status:'draft',
       created: now() - 4*3600000, agreeBy: d(7),
       teamSize:1,
       teams:[],
@@ -335,159 +320,158 @@ function seedTourneys(){
 }
 seedTourneys();
 
-/* -------- Chats -------- */
+/* ---- Chats ---- */
 function seedChats(){
   const d = (m) => now() - m*60000;
   DB.chats = [
-    { id:'ch1', withId:'b1', unlocked:true,
+    { id:'ch1', withId:'p1', unlocked:true,
       messages:[
-        { id:uid('m'), from:'me',  text:'Yo Jaylen! Saw you\'re nearby — up for a run this week?', ts: d(180) },
-        { id:'m2',        from:'b1',text:'Yo Marcus! Yeah for sure. Thursday 6pm at Riverside?', ts: d(175) },
-        { id:'m3',        from:'me', text:'Perfect, booking us a court now.', ts: d(170) }
+        { id:'m1', from:'me',  text:'Hey Maya! Saw you\'re nearby — up for a hit this week?', ts: d(180) },
+        { id:'m2', from:'p1',  text:'Hey! Yeah definitely. Thursday 6pm at Riverside?', ts: d(175) },
+        { id:'m3', from:'me',  text:'Perfect, booking us a court now.', ts: d(170) }
       ], lastRead: now() - 3600000 },
-    { id:'ch2', withId:'b3', unlocked:false,
+    { id:'ch2', withId:'p3', unlocked:false,
       messages:[
-        { id:'m4', from:'b3', text:'Hey Marcus — I can work with you on your shot. First session free?', ts: d(240) }
+        { id:'m4', from:'p3', text:'Hi — I can coach you on serve mechanics. Want to try a session?', ts: d(240) }
       ], lastRead: 0 },
-    { id:'ch3', withId:'b5', unlocked:true,
+    { id:'ch3', withId:'p5', unlocked:true,
       messages:[
-        { id:'m5', from:'b5', text:'Run crew is short one — Sunday 10am at Harborview?', ts: d(60) }
+        { id:'m5', from:'p5', text:'Doubles crew is short one — Sunday 10am?', ts: d(60) }
       ], lastRead: 0 }
   ];
 }
 seedChats();
 
-/* -------- Feed (legacy short posts — kept for compatibility) -------- */
+/* ---- Feed (legacy) ---- */
 function seedFeed(){
   DB.feed = [
-    { id:'f1', authorId:'b1', type:'win',
-      text:'Won 21-18 against Devin at Riverside last night. Buckets were falling 🔥',
-      media:true, likes:['b2','b5','b7','b11'], comments:3, ts: now()-1800000 },
-    { id:'f2', authorId:'b5', type:'joined',
-      text:'Joined Weekend Run Crew — looking for a 5th for Saturday!',
-      media:false, likes:['me','b1'], comments:1, ts: now()-10800000 },
-    { id:'f3', authorId:'b8', type:'achievement',
-      text:'Just hit a 12-game winning streak 🏆',
-      media:false, likes:['b1','b2','b3','b5','b7','b11'], comments:8, ts: now()-21600000 },
-    { id:'f4', authorId:'b3', type:'post',
-      text:'Sunrise session at Prime Hardwood. Floors are immaculate — 10/10 recommend.',
-      media:true, likes:['b1','b5'], comments:2, ts: now()-43200000 }
+    { id:'f1', authorId:'p1', type:'win',
+      text:'Won 6-4 6-3 against Diego at Riverside this morning. Court was 🔥',
+      media:true, likes:['p2','p5','p7','p11'], comments:3, ts: now()-1800000 },
+    { id:'f2', authorId:'p5', type:'joined',
+      text:'Joined Weekend Doubles Crew — looking for a 4th for Saturday!',
+      media:false, likes:['me','p1'], comments:1, ts: now()-10800000 },
+    { id:'f3', authorId:'p8', type:'achievement',
+      text:'Just hit a 12-match winning streak 🏆',
+      media:false, likes:['p1','p2','p3','p5','p7','p11'], comments:8, ts: now()-21600000 },
+    { id:'f4', authorId:'p3', type:'post',
+      text:'Sunrise session at Clay Academy. Courts are in beautiful condition — highly recommend.',
+      media:true, likes:['p1','p5'], comments:2, ts: now()-43200000 }
   ];
 }
 seedFeed();
 
-/* -------- User-authored posts -------- */
+/* ---- User-authored posts ---- */
 function seedPosts(){
   DB.posts = [
-    { id:'p1', authorId:'b1', text:'Won 21-18 against Devin at Riverside last night. Buckets were falling 🔥',
+    { id:'p1', authorId:'p1', text:'Won 6-4 6-3 against Diego at Riverside this morning. Court was 🔥',
       imageUrl: img('post-riverside', 800, 500), imageDataUrl: null,
-      likes:['b2','b5','b7','b11'], comments:[
-        { id:'cm1', fromId:'b2', text:'GG brother, rematch next week?', ts: now()-1700000 }
+      likes:['p2','p5','p7','p11'], comments:[
+        { id:'cm1', fromId:'p2', text:'GG Maya, rematch next week?', ts: now()-1700000 }
       ],
       createdAt: now()-1800000, editedAt: null, isEdited:false, visibility:'public' },
-    { id:'p2', authorId:'b5', text:'Just copped the LeBron 21s — fresh off the court, size 10.5. Straight flames.',
-      imageUrl: img('post-lebron', 800, 500), imageDataUrl: null,
-      likes:['me','b1','b3'], comments:[],
+    { id:'p2', authorId:'p5', text:'Just got the new Head Speed MP — first hit tomorrow at Clay Academy. Excited.',
+      imageUrl: img('post-racket', 800, 500), imageDataUrl: null,
+      likes:['me','p1','p3'], comments:[],
       createdAt: now()-7200000, editedAt: null, isEdited:false, visibility:'public' },
-    { id:'p3', authorId:'b8', text:'5v5 tonight at Prime Hardwood 8pm. Need 2 more — hit me in the DMs.',
+    { id:'p3', authorId:'p8', text:'Doubles tonight at Prime Hardwood 8pm. Need 2 more — hit me in the DMs.',
       imageUrl: null, imageDataUrl: null,
-      likes:['b1','b2','b3','b5','b7','b11'], comments:[
-        { id:'cm2', fromId:'b6', text:'I\'m in if you still need one', ts: now()-20000000 },
-        { id:'cm3', fromId:'b10', text:'Count me in too', ts: now()-19000000 }
+      likes:['p1','p2','p3','p5','p7','p11'], comments:[
+        { id:'cm2', fromId:'p6', text:'I\'m in if you still need one', ts: now()-20000000 },
+        { id:'cm3', fromId:'p10', text:'Count me in too', ts: now()-19000000 }
       ],
       createdAt: now()-21600000, editedAt: null, isEdited:false, visibility:'public' },
-    { id:'p4', authorId:'b3', text:'Working on the step-back all week. Progress is real.',
-      imageUrl: img('post-stepback', 800, 500), imageDataUrl: null,
-      likes:['b1','b5'], comments:[],
+    { id:'p4', authorId:'p3', text:'Working on the kick serve all week. Progress is real.',
+      imageUrl: img('post-serve', 800, 500), imageDataUrl: null,
+      likes:['p1','p5'], comments:[],
       createdAt: now()-43200000, editedAt: null, isEdited:false, visibility:'public' },
-    { id:'p5', authorId:'b2', text:'Lost my Spalding at Northgate last night — if anyone sees it please DM me 🙏',
+    { id:'p5', authorId:'p2', text:'Lost my Wilson bag at Northgate last night — if anyone sees it please DM me 🙏',
       imageUrl: null, imageDataUrl: null,
-      likes:['b7'], comments:[],
+      likes:['p7'], comments:[],
       createdAt: now()-54000000, editedAt: null, isEdited:false, visibility:'public' },
-    { id:'p6', authorId:'b5', text:'Sunday runs at Harborview are back. 10am, weather permitting. All levels welcome.',
-      imageUrl: img('post-harborview', 800, 500), imageDataUrl: null,
-      likes:['me','b1','b2','b3','b8'], comments:[
-        { id:'cm4', fromId:'b11', text:'I\'ll be there', ts: now()-60000000 }
+    { id:'p6', authorId:'p5', text:'Sunday socials at Riverside are back. 10am, weather permitting. All levels.',
+      imageUrl: img('post-social', 800, 500), imageDataUrl: null,
+      likes:['me','p1','p2','p3','p8'], comments:[
+        { id:'cm4', fromId:'p11', text:'I\'ll be there', ts: now()-60000000 }
       ],
       createdAt: now()-72000000, editedAt: null, isEdited:false, visibility:'public' },
-    { id:'p7', authorId:'b8', text:'12-game win streak. Legs tired but I\'m not stopping.',
+    { id:'p7', authorId:'p8', text:'12-match win streak. Legs tired but I\'m not stopping.',
       imageUrl: null, imageDataUrl: null,
-      likes:['b1','b5','b11'], comments:[],
+      likes:['p1','p5','p11'], comments:[],
       createdAt: now()-86400000, editedAt: null, isEdited:false, visibility:'public' },
-    { id:'p8', authorId:'b1', text:'Anyone got a good hardwood court in East Legon? Tired of driving 30 mins every time.',
+    { id:'p8', authorId:'p1', text:'Anyone got a good clay court in East Legon? Tired of driving 30 mins every time.',
       imageUrl: null, imageDataUrl: null,
-      likes:['b2','b7'], comments:[
-        { id:'cm5', fromId:'b5', text:'Riverside is your best bet, they open early', ts: now()-100000000 }
+      likes:['p2','p7'], comments:[
+        { id:'cm5', fromId:'p5', text:'Riverside has 2 clay courts, they open early', ts: now()-100000000 }
       ],
       createdAt: now()-108000000, editedAt: null, isEdited:false, visibility:'public' }
   ];
-  /* Cross-link: put posts into each user's array for quick access */
   DB.users.forEach(u => {
     u.posts = DB.posts.filter(p => p.authorId === u.id);
   });
 }
 seedPosts();
 
-/* -------- Reports -------- */
+/* ---- Reports ---- */
 DB.reports = [
-  { id:'r1', reporterId:'b5', targetId:'b10', type:'noshow',
-    text:'Didn\'t show up for confirmed run on 15 Jun. No message.',
+  { id:'r1', reporterId:'p5', targetId:'p10', type:'noshow',
+    text:'Didn\'t show up for confirmed match on 15 Jun. No message.',
     ts: now()-3600000, status:'open' },
-  { id:'r2', reporterId:'b3', targetId:'b12', type:'fake',
+  { id:'r2', reporterId:'p3', targetId:'p12', type:'fake',
     text:'Profile photo doesn\'t match the person I met at the court.',
     ts: now()-7200000, status:'open' }
 ];
 
-/* -------- Transactions -------- */
+/* ---- Transactions ---- */
 DB.transactions = [
   { id:'tx1', userId:'me', kind:'topup', amount: 30,  ts: now()-7*86400000, note:'Wallet top-up' },
   { id:'tx2', userId:'me', kind:'court-booking', amount: -18, ts: now()-6*86400000, note:'Riverside · 90 min' },
-  { id:'tx3', userId:'me', kind:'chat-unlock', amount: -1.99, ts: now()-3*86400000, note:'Unlock chat with Jaylen' },
-  { id:'tx4', userId:'me', kind:'tournament-entry', amount: -5, ts: now()-2*86400000, note:'Riverside 3v3 Open' },
+  { id:'tx3', userId:'me', kind:'chat-unlock', amount: -1.99, ts: now()-3*86400000, note:'Unlock chat with Maya' },
+  { id:'tx4', userId:'me', kind:'tournament-entry', amount: -5, ts: now()-2*86400000, note:'Riverside Doubles Open' },
   { id:'tx5', userId:'me', kind:'topup', amount: 20, ts: now()-2*86400000, note:'Wallet top-up' }
 ];
 PLATFORM.revenue = 120.45;
 PLATFORM.history = [
-  { ts: now()-6*86400000, kind:'court', gross:18, fee:1.8, net:16.2, sourceId:'h1' },
+  { ts: now()-6*86400000, kind:'court', gross:18, fee:1.8, net:16.2, sourceId:'c1' },
   { ts: now()-3*86400000, kind:'chat', gross:1.99, fee:1.99, net:0, sourceId:'ch1' },
   { ts: now()-2*86400000, kind:'tournament', gross:5, fee:0.75, net:4.25, sourceId:'t1' }
 ];
 
-/* -------- Pending approvals -------- */
+/* ---- Pending approvals ---- */
 DB.pending.vendors = [
-  { id:'pv1', userId:'b7', itemName:'Nike Zoom Freak 5', category:'Sneakers',
-    price:88, submitted:'2h ago', note:'Worn twice, basically new. Comes with box.',
-    photos:2, weight:'1.1 kg', shipping:'Local pickup only', listingFeePaid:true },
-  { id:'pv2', userId:'b10', itemName:'Wilson Evolution Indoor', category:'Balls',
-    price:55, submitted:'5h ago', note:'Barely used — I play outdoor mostly.',
-    photos:4, weight:'0.6 kg', shipping:'Pickup or meet-up', listingFeePaid:true }
+  { id:'pv1', userId:'p7', itemName:'Yonex Poly Tour String Reel', category:'Strings',
+    price:42, submitted:'2h ago', note:'Selling a full reel, barely used. Only 2 sets pulled.',
+    photos:2, weight:'0.6 kg', shipping:'Local pickup only', listingFeePaid:true },
+  { id:'pv2', userId:'p10', itemName:'Prince Tour 100 (grip 3)', category:'Racket',
+    price:70, submitted:'5h ago', note:'Great beginner frame, freshly restrung.',
+    photos:4, weight:'305 g', shipping:'Pickup or meet-up', listingFeePaid:true }
 ];
-DB.pending.crews = [
-  { id:'pc1', creatorId:'b4', name:'Sunrise Run Club',
-    desc:'Early morning runs. 6–8am, 5v5 focus.', members:'42', submitted:'6h ago',
+DB.pending.communities = [
+  { id:'pc1', creatorId:'p4', name:'Sunrise Smash Club',
+    desc:'Early morning hitting group. 6–8am, doubles focus.', members:'42', submitted:'6h ago',
     region:'Central', meetingPlace:'Cape Coast Sports Complex', schedule:'Mon, Wed, Fri · 6:00am' },
-  { id:'pc2', creatorId:'b9', name:'Ladies Hoops Ghana',
-    desc:'Women-only pickups and skills clinics.', members:'88', submitted:'1d ago',
+  { id:'pc2', creatorId:'p9', name:'Ladies Ladder Ghana',
+    desc:'Women-only competitive ladder, monthly promotions.', members:'88', submitted:'1d ago',
     region:'Northern', meetingPlace:'Tamale Central Courts', schedule:'Saturdays · 4:00pm' }
 ];
-DB.pending.trainers = [
-  { id:'ptr1', userId:'b6', courtId:'h2', rate:32, spec:'Baseline consistency · Post play',
-    exp:'7 yrs', submitted:'3h ago', cert:'USA Basketball Level 2', availability:'Weekdays 5–8pm' },
-  { id:'ptr2', userId:'b12', courtId:'h4', rate:38, spec:'Defensive footwork · Rebounding',
-    exp:'5 yrs', submitted:'1d ago', cert:'NESTA Certified', availability:'Weekends all day' }
+DB.pending.coaches = [
+  { id:'pco1', userId:'p6', courtId:'c2', rate:32, spec:'Baseline consistency · Return of serve',
+    exp:'7 yrs', submitted:'3h ago', cert:'ITF Level 2', availability:'Weekdays 5–8pm' },
+  { id:'pco2', userId:'p12', courtId:'c4', rate:38, spec:'Doubles positioning · Net play',
+    exp:'5 yrs', submitted:'1d ago', cert:'PTR Certified', availability:'Weekends all day' }
 ];
 DB.pending.courts = [
-  { id:'pct1', name:'Eastside Hoops Hub', address:'24 Spintex Rd, Accra', price:20, surface:'Indoor',
-    courtCount:4, amenities:['Indoor AC','Scoreboard','Pro shop'], submittedBy:'b3', submitted:'4h ago',
+  { id:'pct1', name:'Eastside Tennis Hub', address:'24 Spintex Rd, Accra', price:20, surface:'Hard',
+    courtCount:4, amenities:['Floodlights','Parking','Pro shop'], submittedBy:'p3', submitted:'4h ago',
     contact:'+233 55 123 4567', hours:'6:00am – 10:00pm', notes:'Brand new facility, 4 courts all lit.' },
-  { id:'pct2', name:'Achimota Street Courts', address:'Achimota, Accra', price:8, surface:'Outdoor',
-    courtCount:2, amenities:['Public access','Lighting'], submittedBy:'b2', submitted:'1d ago',
+  { id:'pct2', name:'Achimota Community Courts', address:'Achimota, Accra', price:8, surface:'Hard',
+    courtCount:2, amenities:['Public access'], submittedBy:'p2', submitted:'1d ago',
     contact:'+233 24 998 1122', hours:'7:00am – 7:00pm', notes:'Public courts, first-come basis mostly.' }
 ];
 
-/* -------- Match history generator -------- */
-const SCORES_W = ['21-18','18-14','21-9','24-22','19-15'];
-const SCORES_L = ['18-21','14-18','9-21','22-24','15-19'];
+/* ---- Match history generator ---- */
+const SCORES_W = ['6-4 6-3','7-5 6-2','6-3 3-6 7-5','6-1 6-4','7-6 6-4'];
+const SCORES_L = ['4-6 6-7','3-6 6-4 4-6','5-7 4-6','6-7 3-6','2-6 4-6'];
 function genMatches(u, n){
   const pool = DB.users.filter(x => x.id !== u.id && x.role !== 'admin');
   const out = [];
@@ -498,23 +482,18 @@ function genMatches(u, n){
       vs: opp.name, id: opp.id, res: w ? 'W' : 'L',
       score: w ? SCORES_W[i % SCORES_W.length] : SCORES_L[i % SCORES_L.length],
       date: (2 + i*5) + ' Jun',
-      surface: i % 2 ? 'Outdoor' : u.preferredCourt,
+      surface: i % 2 ? 'Clay' : u.surface,
       verified: i < 3
     });
   }
   return out;
 }
 DB.users.forEach(u => {
-  if (u.role === 'admin') return;
-  const played = 20 + (u.points % 22);
-  const wins = Math.round(played * (0.38 + (parseFloat(u.skill)-3)/6));
-  u.stats = {
-    games: played, wins: Math.min(wins, played-4), losses: 0,
-    ppg: +(12 + Math.random() * 10).toFixed(1),
-    apg: +(3 + Math.random() * 6).toFixed(1),
-    rpg: +(4 + Math.random() * 6).toFixed(1)
-  };
-  u.stats.losses = u.stats.games - u.stats.wins;
+  if (u.role === 'admin' || u.id === 'me') return;
+  const played = 30 + (u.points % 27);
+  const wins = Math.round(played * (0.38 + (parseFloat(u.level)-3)/6));
+  u.stats = { played, wins: Math.min(wins, played-4), losses: 0 };
+  u.stats.losses = u.stats.played - u.stats.wins;
   u.matches = genMatches(u, 5);
 });
 
@@ -593,19 +572,19 @@ const PRICES = {
   chatUnlock: PLATFORM.flatFees.unlockChat,
   vendorListing: PLATFORM.flatFees.vendorListing,
   tournamentHost: PLATFORM.flatFees.tournamentHost,
-  crewCreate: PLATFORM.flatFees.crewCreate,
+  communityCreate: PLATFORM.flatFees.communityCreate,
   priorityBooking: PLATFORM.flatFees.priorityBooking,
   courtPct: PLATFORM.feePct.court,
-  trainerPct: PLATFORM.feePct.trainer,
+  coachPct: PLATFORM.feePct.coach,
   tournamentPct: PLATFORM.feePct.tournament,
   shopPct: PLATFORM.feePct.shopSale,
-  crewPct: PLATFORM.feePct.crewJoin
+  communityPct: PLATFORM.feePct.communityJoin
 };
 function courtFee(price){ return +(price * PRICES.courtPct / 100).toFixed(2); }
-function trainerFee(rate){ return +(rate * PRICES.trainerPct / 100).toFixed(2); }
+function coachFee(rate){ return +(rate * PRICES.coachPct / 100).toFixed(2); }
 function tourneyFee(entry){ return +(entry * PRICES.tournamentPct / 100).toFixed(2); }
 function shopFee(price){ return +(price * PRICES.shopPct / 100).toFixed(2); }
-function crewFee(mo){ return +(mo * PRICES.crewPct / 100).toFixed(2); }
+function communityFee(mo){ return +(mo * PRICES.communityPct / 100).toFixed(2); }
 
 /* ============================================================
    SECTION 5 — TOURNAMENT ENGINE
@@ -639,7 +618,6 @@ const Tournaments = {
     t.bracket = { rounds: [rounds[0]], currentRound: 0, phase:'active' };
     return t.bracket;
   },
-
   recordResult(t, roundIdx, matchId, scoreA, scoreB, agreedByUser){
     if (!t.bracket) return false;
     const round = t.bracket.rounds[roundIdx];
@@ -652,23 +630,18 @@ const Tournaments = {
     advanceRound(t);
     return true;
   },
-
   isRegistered(t, userId){
     return t.teams.some(x => x.members.includes(userId));
   }
 };
-
 function advanceRound(t){
   const cur = t.bracket.rounds[t.bracket.currentRound];
   if (!cur.every(m => m.status === 'completed' || m.status === 'bye')) return;
-
   const winners = cur.map(m => {
     if (m.status === 'bye') return m.teamA;
     return m.scoreA > m.scoreB ? m.teamA : m.teamB;
   }).filter(Boolean);
-
   if (winners.length <= 1){ t.completed = true; t.bracket.phase = 'done'; t.winner = winners[0]; return; }
-
   const next = [];
   for (let i = 0; i < winners.length; i += 2){
     next.push({
@@ -688,9 +661,7 @@ function advanceRound(t){
    SECTION 6 — CHAT ENGINE
    ============================================================ */
 const Chat = {
-  threadWith(userId){
-    return DB.chats.find(c => c.withId === userId);
-  },
+  threadWith(userId){ return DB.chats.find(c => c.withId === userId); },
   ensureThread(userId){
     let c = this.threadWith(userId);
     if (!c){
@@ -713,14 +684,11 @@ const Chat = {
       if (last.from === 'me') return n;
       return n + (last.ts > c.lastRead ? 1 : 0);
     }, 0);
-  },
-  totalUnlockedUnread(){
-    return this.unreadCount();
   }
 };
 
 /* ============================================================
-   SECTION 7 — GAME VERIFICATION ENGINE
+   SECTION 7 — MATCH VERIFICATION ENGINE
    ============================================================ */
 const Verify = {
   all(){ return (getMe().verifications ||= []); },
@@ -744,9 +712,7 @@ const Verify = {
     v.theirConfirm = true;
     if (v.myConfirm && v.theirConfirm) v.status = 'locked';
   },
-  dispute(v){
-    v.status = 'disputed';
-  }
+  dispute(v){ v.status = 'disputed'; }
 };
 
 /* ============================================================
@@ -755,10 +721,10 @@ const Verify = {
 const AI = {
   matchScore(me, other){
     let s = 0;
-    const skillDiff = Math.abs(parseFloat(me.skill) - parseFloat(other.skill));
-    s += Math.max(0, 40 - skillDiff * 12);
-    if (other.preferredCourt === me.preferredCourt) s += 15;
-    if (other.position !== me.position) s += 10;
+    const lvlDiff = Math.abs(parseFloat(me.level) - parseFloat(other.level));
+    s += Math.max(0, 40 - lvlDiff * 12);
+    if (other.surface === me.surface) s += 15;
+    if (other.hand !== me.hand) s += 10;
     if (other.region === me.region) s += 15;
     if (other.status === 'Available now') s += 10;
     if (other.dist <= 500) s += 10;
@@ -782,7 +748,7 @@ const AI = {
 const Weather = {
   _hash(day){
     let h = 0;
-    const str = 'hoops-' + day;
+    const str = 'rubix-' + day;
     for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
     return h;
   },
@@ -811,14 +777,13 @@ const Weather = {
     return out;
   },
   courtAdvice(court){
-    /* Indoor courts are always playable — no weather dependency */
-    if (court.surface === 'Indoor' || court.surface === 'Street'){
-      return { ok:true, msg: court.surface === 'Indoor' ? 'Climate controlled — always playable.' : 'Street courts — playable unless heavy rain.' };
+    if (court.surface === 'Indoor Hard' || court.surface === 'Indoor'){
+      return { ok:true, msg:'Climate controlled — always playable.' };
     }
     const f = this.forecast(3);
     const bad = f.find(x => !x.playable);
     if (!bad) return { ok:true, msg:'Great conditions for the next 3 days.' };
-    return { ok:false, msg: bad.label + ' looks rough — ' + bad.cond + '. Consider Indoor instead.' };
+    return { ok:false, msg: bad.label + ' looks rough — ' + bad.cond + '. Consider an indoor court.' };
   }
 };
 
@@ -834,14 +799,13 @@ const state = {
   /* discover */
   discoverFilter:'all',
   /* rankings */
-  rankList:'national', rankQuery:'', rankRegion:'All', rankSkill:'All',
+  rankList:'national', rankQuery:'', rankRegion:'All', rankLevel:'All',
   /* lost & found */
   lfFilter:'all',
   /* booking */
   booking:{ date:'Today', time:null },
   /* application drafts */
-  vendorDraft:null, trainerCourt:null, courtSurface:null,
-  hostFormat:null,
+  vendorDraft:null, coachCourt:null, courtSurface:null, hostFormat:null,
   /* admin */
   adminTab:'overview', adminAppTab:'vendors', adminUserQuery:'',
   adminReportFilter:'open',
@@ -851,11 +815,12 @@ const state = {
   shopFilter:'all',
   /* tournaments */
   tourneyFilter:'open',
-  /* chat */
+  /* chats */
   activeChat:null,
   /* onboarding */
   onboardStep: 1,
   onboardDraft: null,
+  onboardRole: null,     // 'player' | 'admin'
   /* post composer */
   postDraft: null,
   commentDraft: '',
@@ -894,25 +859,25 @@ function setTab(t){ nav.tab = t; nav.stack = []; render(); mainEl.scrollTop = 0;
 function getMe(){ return DB.users.find(u => u.id === 'me'); }
 function userById(id){ return DB.users.find(u => u.id === id); }
 function courtById(id){ return DB.courts.find(c => c.id === id); }
-function crewById(id){ return DB.crews.find(c => c.id === id); }
+function commById(id){ return DB.communities.find(c => c.id === id); }
 function shopById(id){ return DB.shop.find(s => s.id === id); }
 function tourneyById(id){ return DB.tournaments.find(t => t.id === id); }
 function adminById(id){ return ADMINS.find(a => a.id === id); }
 
-function winPct(s){ return s.games ? Math.round(s.wins/s.games*100) : 0; }
+function winPct(s){ return s.played ? Math.round(s.wins/s.played*100) : 0; }
 function stars(r){ return '<span class="star">★</span> ' + r.toFixed(1); }
 function statusDot(a){ return a === 'on' ? 'dot--on' : a === 'soon' ? 'dot--soon' : 'dot--off'; }
 
 /* -------- Avatar rendering (respects uploaded photo) -------- */
 function avatarHTML(u, cls){
   if (!u) return '<div class="av '+(cls||'')+'"></div>';
-  const h = u.hue != null ? u.hue : 22;
+  const h = u.hue != null ? u.hue : 158;
   const c1 = 'hsl(' + h + ' 78% 58%)';
   const c2 = 'hsl(' + ((h+50)%360) + ' 72% 42%)';
-  /* Priority: uploaded dataUrl > user's picsum seed */
   const src = u.avatarDataUrl ? u.avatarDataUrl : img(u.id + '-' + u.photo, 200, 200);
+  const initials = u.initials || '?';
   return '<div class="av ' + (cls||'') + '" style="--c1:' + c1 + ';--c2:' + c2 + '">' +
-    '<span class="av__ini">' + u.initials + '</span>' +
+    '<span class="av__ini">' + initials + '</span>' +
     '<img src="' + src + '" alt="" loading="lazy" onerror="this.remove()">' +
   '</div>';
 }
@@ -949,13 +914,13 @@ function paywallPopup(opts){
             '<div style="text-align:right">' +
               '<div style="font-size:10.5px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5)">WALLET</div>' +
               '<div style="font-size:20px;font-weight:900;letter-spacing:-.04em;margin-top:6px;color:' +
-                (enough ? 'var(--orange)' : '#FF9B8B') + '">' + money(me.wallet) + '</div>' +
+                (enough ? 'var(--green)' : '#FF9B8B') + '">' + money(me.wallet) + '</div>' +
             '</div>' +
           '</div>' +
           (opts.platformFee
             ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;font-size:11px;font-weight:700">' +
                 '<span style="color:rgba(255,255,255,.5)">Platform fee</span>' +
-                '<span style="color:var(--orange)">' + money(opts.platformFee) + '</span>' +
+                '<span style="color:var(--green)">' + money(opts.platformFee) + '</span>' +
               '</div>'
             : '') +
         '</div>' +
@@ -977,7 +942,7 @@ function topupPopup(){
     '<div class="popup">' +
       '<div class="popup__pill" style="background:linear-gradient(140deg,#FFD770,#FFB020);color:#3A2500">ADD FUNDS</div>' +
       '<h3>Top up your wallet</h3>' +
-      '<p>Funds are used for chat unlocks, tournament entries, court bookings and trainer sessions.</p>' +
+      '<p>Funds are used for chat unlocks, tournament entries, court bookings and coach sessions.</p>' +
       '<div class="chips chips--pad" style="padding:14px 0 0">' +
         amounts.map(a =>
           '<button class="chip ' + (a===25?'is-on':'') + '" data-act="topup-pick" data-v="' + a + '">' + money(a) + '</button>'
@@ -992,7 +957,6 @@ function topupPopup(){
 
 /* ============================================================
    IMAGE PICKER HELPER
-   Reusable across onboarding, edit profile, post composer.
    ============================================================ */
 function attachImagePicker(inputId, cb){
   const input = document.getElementById(inputId);
@@ -1003,14 +967,10 @@ function attachImagePicker(inputId, cb){
     if (!file) return;
     if (file.size > 5 * 1024 * 1024){ toast('Image must be under 5 MB'); input.value = ''; return; }
     const reader = new FileReader();
-    reader.onload = () => {
-      /* Optional downscale to max 1200px wide */
-      const raw = reader.result;
-      downscaleImage(raw, 1200, 0.85, cb);
-    };
+    reader.onload = () => downscaleImage(reader.result, 1200, 0.85, cb);
     reader.onerror = () => toast('Could not read image');
     reader.readAsDataURL(file);
-    input.value = ''; // allow re-selecting the same file
+    input.value = '';
   });
 }
 
@@ -1039,8 +999,8 @@ function downscaleImage(dataUrl, maxW, quality, cb){
 function mapSVG(){
   return `
   <svg class="map__bg" viewBox="0 0 400 720" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-    <rect width="400" height="720" fill="#EFEBE2"/>
-    <g fill="#E0DAD0">
+    <rect width="400" height="720" fill="#E9EEE7"/>
+    <g fill="#DDE5D9">
       <rect x="18" y="36" width="106" height="86" rx="12"/>
       <rect x="152" y="28" width="112" height="72" rx="12"/>
       <rect x="292" y="46" width="94" height="106" rx="12"/>
@@ -1055,7 +1015,7 @@ function mapSVG(){
       <rect x="56" y="582" width="118" height="92" rx="12"/>
       <rect x="212" y="568" width="120" height="88" rx="12"/>
     </g>
-    <rect x="18" y="292" width="152" height="132" rx="16" fill="#D4E0CC"/>
+    <rect x="18" y="292" width="152" height="132" rx="16" fill="#CFE6C4"/>
     <path d="M44 372 q30 -26 62 -6 q28 18 58 -4" stroke="#B9D9AB" stroke-width="5" fill="none" stroke-linecap="round"/>
     <g stroke="#FFFFFF" stroke-width="13" stroke-linecap="round">
       <path d="M-10 146 H410"/><path d="M-10 272 H410"/><path d="M-10 424 H410"/><path d="M-10 556 H410"/>
@@ -1066,7 +1026,7 @@ function mapSVG(){
     <g stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity=".85">
       <path d="M-10 660 L410 470"/><path d="M60 -10 V730"/><path d="M340 -10 V730"/>
     </g>
-    <g stroke="#D6CFC4" stroke-width="2">
+    <g stroke="#D6E0D2" stroke-width="2">
       <path d="M-10 210 H410" opacity=".7"/><path d="M-10 350 H410" opacity=".7"/>
       <path d="M-10 490 H410" opacity=".7"/><path d="M-10 620 H410" opacity=".7"/>
       <path d="M204 -10 V730" opacity=".7"/>
@@ -1075,36 +1035,28 @@ function mapSVG(){
 }
 
 /* ============================================================
-   SECTION 11 — ENTRY GATE + ADMIN LOGIN
+   SECTION 11 — ENTRY GATE
    ============================================================ */
 function screenEntry(){
   return '<div class="gate">'+
     '<div class="gate__inner">'+
-      '<div class="gate__logo">🏀</div>'+
-      '<div class="gate__title">RUBIX HOOPS</div>'+
-      '<div class="gate__sub">Find runs. Book courts. Join crews.<br>Confirm how you want to continue.</div>'+
+      '<div class="gate__logo">◆</div>'+
+      '<div class="gate__title">RUBIX TENNIS</div>'+
+      '<div class="gate__sub">Find players. Book courts. Join communities.<br>Confirm how you want to continue.</div>'+
       '<div class="gate__cards">'+
         '<button class="entry-card" data-act="enterplayer">'+
           '<div class="entry-card__ico" style="background:rgba(255,255,255,.1)">'+ico('user')+'</div>'+
           '<div class="entry-card__main">'+
             '<div class="entry-card__t">Continue as Player</div>'+
-            '<div class="entry-card__s">Sign in as Marcus Bell and access the player experience</div>'+
-          '</div>'+
-          ico('chev')+
-        '</button>'+
-        '<button class="entry-card" data-act="startfresh" style="border-color:rgba(255,255,255,.2)">'+
-          '<div class="entry-card__ico" style="background:rgba(255,255,255,.1)">'+ico('camera')+'</div>'+
-          '<div class="entry-card__main">'+
-            '<div class="entry-card__t">Create my own profile</div>'+
-            '<div class="entry-card__s">Pick your photo, position, skill — start from scratch</div>'+
+            '<div class="entry-card__s">Create your player profile — takes 30 seconds</div>'+
           '</div>'+
           ico('chev')+
         '</button>'+
         '<button class="entry-card entry-card--admin" data-act="enteradmin">'+
           '<div class="entry-card__ico">'+ico('shield2')+'</div>'+
           '<div class="entry-card__main">'+
-            '<div class="entry-card__t">Enter Admin Console <span class="badge" style="background:rgba(255,107,53,.25);color:var(--orange);font-size:9px;padding:2px 7px">RESTRICTED</span></div>'+
-            '<div class="entry-card__s">Manage approvals, accounts, rankings & platform settings</div>'+
+            '<div class="entry-card__t">Enter Admin Console <span class="badge" style="background:rgba(216,255,61,.25);color:var(--green);font-size:9px;padding:2px 7px">RESTRICTED</span></div>'+
+            '<div class="entry-card__s">Admins also build a profile on first sign-in</div>'+
           '</div>'+
           ico('chev')+
         '</button>'+
@@ -1114,10 +1066,13 @@ function screenEntry(){
   '</div>';
 }
 
+/* ============================================================
+   SECTION 12 — ADMIN LOGIN
+   ============================================================ */
 function screenAdminLogin(){
-  return '<div style="min-height:100%;background:linear-gradient(160deg,#1A1F2E 0%,#0A0A0A 60%);padding:36px 24px;color:#fff;display:flex;flex-direction:column">'+
+  return '<div style="min-height:100%;background:linear-gradient(160deg,#16233A 0%,#0A1220 60%);padding:36px 24px;color:#fff;display:flex;flex-direction:column">'+
     '<div style="text-align:center;margin-bottom:32px">'+
-      '<div style="width:72px;height:72px;border-radius:26px;background:linear-gradient(140deg,var(--orange),var(--orange-dk));color:#fff;display:grid;place-items:center;margin:0 auto 20px">'+ico('lock')+'</div>'+
+      '<div style="width:72px;height:72px;border-radius:26px;background:var(--green);color:var(--navy);display:grid;place-items:center;margin:0 auto 20px">'+ico('lock')+'</div>'+
       '<div style="font-size:24px;font-weight:900;letter-spacing:-.045em">Admin Sign-in</div>'+
       '<div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:8px">Authorised personnel only</div>'+
     '</div>'+
@@ -1130,32 +1085,35 @@ function screenAdminLogin(){
         ' style="width:100%;padding:15px;border-radius:14px;background:rgba(0,0,0,.3);border:1.5px solid rgba(255,255,255,.12);color:#fff;font-size:22px;font-weight:900;text-align:center;letter-spacing:.35em">'+
       '<button class="abtn abtn--ok" style="width:100%;padding:16px;margin-top:18px;font-size:14px" data-act="adminauth">Unlock Console</button>'+
       '<div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.4);text-align:center;margin-top:14px;line-height:1.6">'+
-        'Demo: <b style="color:var(--orange)">admin@rubix.app</b> · <b style="color:var(--orange)">1234</b></div>'+
+        'Demo: <b style="color:var(--green)">admin@rubix.app</b> · <b style="color:var(--green)">1234</b></div>'+
     '</div>'+
     '<button class="abtn abtn--ghost" style="margin-top:auto" data-act="exitgate">← Back to gate</button>'+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 12 — ONBOARDING WIZARD
+   SECTION 13 — ONBOARDING WIZARD
+   Used by BOTH players and admins on first entry.
    ============================================================ */
 function blankDraft(){
   return {
     avatarDataUrl: null,
     name: '',
-    skill: '3.5',
-    position: 'SG',
-    preferredCourt: 'Indoor',
+    level: '3.5',
+    hand: 'Right',
+    surface: 'Hard',
     city: '',
     region: 'Greater Accra',
     bio: '',
-    playstyle: ['Playmaker'],
-    interests: ['Pickup runs'],
+    playstyle: ['Baseliner'],
+    interests: ['Singles'],
     status: 'Available now',
-    avail: 'on'
+    avail: 'on',
+    adminEmail: '',
+    adminPin: ''
   };
 }
-function skillLabel(v){
+function levelLabel(v){
   const n = parseFloat(v);
   if (n <= 1.5) return 'Beginner';
   if (n <= 2.5) return 'Casual';
@@ -1168,21 +1126,29 @@ function screenOnboarding(){
   if (!state.onboardDraft) state.onboardDraft = blankDraft();
   const d = state.onboardDraft;
   const step = state.onboardStep;
+  const isAdmin = state.onboardRole === 'admin';
+  const maxSteps = isAdmin ? 2 : 4;
 
-  const progress = [1,2,3,4].map(n => {
+  /* Progress bar segments */
+  const progress = [];
+  for (let n = 1; n <= maxSteps; n++){
     const cls = n < step ? 'is-done' : (n === step ? 'is-on' : '');
-    return '<div class="onboard-progress__seg '+cls+'"></div>';
-  }).join('');
+    progress.push('<div class="onboard-progress__seg '+cls+'"></div>');
+  }
 
   let body = '';
   let footer = '';
 
-  /* ---------- STEP 1: PHOTO + NAME ---------- */
+  /* ========== STEP 1 — PHOTO + NAME (both roles) ========== */
   if (step === 1){
     const hasPhoto = !!d.avatarDataUrl;
     body =
+      '<div class="onboard-eyebrow">'+(isAdmin ? 'ADMIN SETUP' : 'PLAYER SETUP')+' · STEP 1 OF '+maxSteps+'</div>'+
       '<div class="onboard-title">Your photo &amp; name</div>'+
-      '<div class="onboard-sub">A clear photo helps other players recognise you at the court. You can change it anytime.</div>'+
+      '<div class="onboard-sub">'+ (isAdmin
+        ? 'Admins get a real profile too — this is what other admins and moderators will see when you take actions.'
+        : 'A clear photo helps other players recognise you at the court. You can change it anytime.'
+      ) +'</div>'+
       '<div class="onboard-avatar-drop '+(hasPhoto?'has-photo':'')+'" data-act="pick-avatar">'+
         (hasPhoto
           ? '<img src="'+d.avatarDataUrl+'" alt="">'
@@ -1191,7 +1157,7 @@ function screenOnboarding(){
       '</div>'+
       '<div class="form-field" style="margin-top:22px">'+
         '<label class="form-label">Full name</label>'+
-        '<input class="form-input" data-input="onboard-name" value="'+escapeHTML(d.name)+'" placeholder="e.g. Marcus Bell" autocomplete="name">'+
+        '<input class="form-input" data-input="onboard-name" value="'+escapeHTML(d.name)+'" placeholder="'+(isAdmin?'e.g. Nana Adjei':'e.g. Alex Rivera')+'" autocomplete="name">'+
       '</div>'+
       '<button class="btn btn--ghost btn--block btn--sm" data-act="onboard-skip-photo">Skip photo for now</button>';
     footer =
@@ -1199,37 +1165,61 @@ function screenOnboarding(){
       '<button class="btn btn--primary" data-act="onboard-next"'+(d.name.trim()?'':' disabled')+'>Continue</button>';
   }
 
-  /* ---------- STEP 2: YOUR GAME ---------- */
-  if (step === 2){
-    const val = parseFloat(d.skill);
+  /* ========== STEP 2 (ADMIN ONLY) — credentials ========== */
+  if (isAdmin && step === 2){
+    body =
+      '<div class="onboard-eyebrow">ADMIN SETUP · STEP 2 OF 2</div>'+
+      '<div class="onboard-title">Your admin credentials</div>'+
+      '<div class="onboard-sub">Set the email and passcode you\'ll use to sign into this console. Keep them safe.</div>'+
+      '<div class="form-field">'+
+        '<label class="form-label">Admin email</label>'+
+        '<input class="form-input" type="email" data-input="onboard-admin-email" value="'+escapeHTML(d.adminEmail)+'" placeholder="you@rubix.app">'+
+      '</div>'+
+      '<div class="form-field">'+
+        '<label class="form-label">Passcode (4–6 digits)</label>'+
+        '<input class="form-input" type="password" inputmode="numeric" maxlength="6" data-input="onboard-admin-pin" value="'+escapeHTML(d.adminPin)+'" placeholder="••••">'+
+      '</div>'+
+      '<div style="background:#F5F7F2;border-radius:14px;padding:14px;font-size:12px;font-weight:600;color:#3A4756;line-height:1.6;margin-top:14px">'+
+        '<b>Demo note:</b> the default admin (<b>admin@rubix.app / 1234</b>) still works. This new account is added to the admin roster.'+
+      '</div>';
+    const valid = d.adminEmail.trim().length > 3 && d.adminEmail.includes('@') && d.adminPin.length >= 4;
+    footer =
+      '<button class="btn btn--ghost" data-act="onboard-back">Back</button>'+
+      '<button class="btn btn--primary" data-act="onboard-finish"'+(valid?'':' disabled')+'>Create admin account</button>';
+  }
+
+  /* ========== STEP 2 (PLAYER ONLY) — your game ========== */
+  if (!isAdmin && step === 2){
+    const val = parseFloat(d.level);
     const pct = ((val - 1) / 4) * 100;
     body =
+      '<div class="onboard-eyebrow">PLAYER SETUP · STEP 2 OF 4</div>'+
       '<div class="onboard-title">Your game</div>'+
-      '<div class="onboard-sub">Help us match you with players at the right level and pick-up runs that fit.</div>'+
+      '<div class="onboard-sub">Help us match you with players at the right level and runs that fit your style.</div>'+
       '<div class="form-field">'+
-        '<label class="form-label">Skill rating</label>'+
+        '<label class="form-label">NTRP rating</label>'+
         '<div class="skill-slider">'+
           '<div class="skill-slider__track">'+
             '<div class="skill-slider__fill" style="width:'+pct+'%"></div>'+
             '<div class="skill-slider__thumb" style="left:'+pct+'%"></div>'+
-            '<input type="range" min="1" max="5" step="0.5" value="'+d.skill+'" data-input="onboard-skill">'+
+            '<input type="range" min="1" max="5" step="0.5" value="'+d.level+'" data-input="onboard-level">'+
           '</div>'+
-          '<div class="skill-slider__label">'+val.toFixed(1)+' · '+skillLabel(d.skill)+'</div>'+
+          '<div class="skill-slider__label">'+val.toFixed(1)+' · '+levelLabel(d.level)+'</div>'+
         '</div>'+
       '</div>'+
       '<div class="form-field" style="margin-top:22px">'+
-        '<label class="form-label">Position</label>'+
+        '<label class="form-label">Dominant hand</label>'+
         '<div class="form-chips">'+
-          ['PG','SG','SF','PF','C'].map(p =>
-            '<button class="form-chip '+(d.position===p?'is-on':'')+'" data-act="onboard-field" data-f="position" data-v="'+p+'">'+p+'</button>'
+          ['Right','Left'].map(p =>
+            '<button class="form-chip '+(d.hand===p?'is-on':'')+'" data-act="onboard-field" data-f="hand" data-v="'+p+'">'+p+'-handed</button>'
           ).join('')+
         '</div>'+
       '</div>'+
       '<div class="form-field">'+
-        '<label class="form-label">Preferred court</label>'+
+        '<label class="form-label">Favourite surface</label>'+
         '<div class="form-chips">'+
-          ['Indoor','Outdoor','Street'].map(p =>
-            '<button class="form-chip '+(d.preferredCourt===p?'is-on':'')+'" data-act="onboard-field" data-f="preferredCourt" data-v="'+p+'">'+p+'</button>'
+          ['Hard','Clay','Grass','Indoor'].map(p =>
+            '<button class="form-chip '+(d.surface===p?'is-on':'')+'" data-act="onboard-field" data-f="surface" data-v="'+p+'">'+p+'</button>'
           ).join('')+
         '</div>'+
       '</div>';
@@ -1238,11 +1228,12 @@ function screenOnboarding(){
       '<button class="btn btn--primary" data-act="onboard-next">Continue</button>';
   }
 
-  /* ---------- STEP 3: LOCATION + BIO ---------- */
-  if (step === 3){
+  /* ========== STEP 3 (PLAYER ONLY) — location + bio ========== */
+  if (!isAdmin && step === 3){
     body =
+      '<div class="onboard-eyebrow">PLAYER SETUP · STEP 3 OF 4</div>'+
       '<div class="onboard-title">Where do you play?</div>'+
-      '<div class="onboard-sub">We use this to find courts, crews and players near you.</div>'+
+      '<div class="onboard-sub">We use this to find courts, communities and players near you.</div>'+
       '<div class="form-field">'+
         '<label class="form-label">City</label>'+
         '<input class="form-input" data-input="onboard-city" value="'+escapeHTML(d.city)+'" placeholder="e.g. Accra">'+
@@ -1259,7 +1250,7 @@ function screenOnboarding(){
       '<div class="form-field">'+
         '<label class="form-label">Playstyle (pick any)</label>'+
         '<div class="form-chips">'+
-          ['Sharpshooter','Playmaker','Defender','Post-Up','Slasher','Rebounder'].map(p =>
+          ['Baseliner','Serve & Volley','All-Court','Counterpuncher','Big Server','Doubles Specialist'].map(p =>
             '<button class="form-chip '+(d.playstyle.includes(p)?'is-on':'')+'" data-act="onboard-toggle" data-f="playstyle" data-v="'+p+'">'+p+'</button>'
           ).join('')+
         '</div>'+
@@ -1267,7 +1258,7 @@ function screenOnboarding(){
       '<div class="form-field">'+
         '<label class="form-label">Interests (pick any)</label>'+
         '<div class="form-chips">'+
-          ['Pickup runs','1v1','3v3','League play','Training','Social'].map(p =>
+          ['Singles','Doubles','Social','Coaching','Competitive','Training'].map(p =>
             '<button class="form-chip '+(d.interests.includes(p)?'is-on':'')+'" data-act="onboard-toggle" data-f="interests" data-v="'+p+'">'+p+'</button>'
           ).join('')+
         '</div>'+
@@ -1277,16 +1268,18 @@ function screenOnboarding(){
       '<button class="btn btn--primary" data-act="onboard-next"'+(d.city.trim()?'':' disabled')+'>Continue</button>';
   }
 
-  /* ---------- STEP 4: PREVIEW ---------- */
-  if (step === 4){
+  /* ========== STEP 4 (PLAYER ONLY) — preview + publish ========== */
+  if (!isAdmin && step === 4){
     const tempUser = {
-      id:'preview', name: d.name || 'Your name',
+      id:'preview',
+      name: d.name || 'Your name',
       initials: (d.name || 'Y N').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase(),
-      hue: 22, avatarDataUrl: d.avatarDataUrl, photo: 0,
-      skill: d.skill, position: d.position, preferredCourt: d.preferredCourt,
+      hue: 158, avatarDataUrl: d.avatarDataUrl, photo: 0,
+      level: d.level, hand: d.hand, surface: d.surface,
       city: d.city || '—', region: d.region
     };
     body =
+      '<div class="onboard-eyebrow">PLAYER SETUP · STEP 4 OF 4</div>'+
       '<div class="onboard-title">All set, '+(d.name.split(' ')[0] || 'friend')+'</div>'+
       '<div class="onboard-sub">Here\'s how your profile will look. You can edit everything later.</div>'+
       '<div style="background:#fff;border-radius:22px;padding:20px;box-shadow:var(--shadow)">'+
@@ -1296,13 +1289,13 @@ function screenOnboarding(){
             '<div style="font-size:20px;font-weight:900;letter-spacing:-.04em">'+escapeHTML(d.name || 'Your name')+'</div>'+
             '<div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:5px">📍 '+escapeHTML(d.city||'—')+' · '+escapeHTML(d.region)+'</div>'+
             '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+
-              '<span class="badge badge--orange">'+d.position+'</span>'+
-              '<span class="badge badge--soft">Skill '+d.skill+'</span>'+
-              '<span class="badge badge--soft">'+d.preferredCourt+'</span>'+
+              '<span class="badge badge--green">NTRP '+d.level+'</span>'+
+              '<span class="badge badge--soft">'+d.hand+'-handed</span>'+
+              '<span class="badge badge--soft">'+d.surface+'</span>'+
             '</div>'+
           '</div>'+
         '</div>'+
-        (d.bio ? '<div style="font-size:13px;font-weight:500;color:#3A3A3A;margin-top:16px;line-height:1.5">'+escapeHTML(d.bio)+'</div>' : '')+
+        (d.bio ? '<div style="font-size:13px;font-weight:500;color:#3A4756;margin-top:16px;line-height:1.5">'+escapeHTML(d.bio)+'</div>' : '')+
         (d.playstyle.length ? '<div style="margin-top:14px"><div style="font-size:10.5px;font-weight:900;letter-spacing:.1em;color:var(--muted);margin-bottom:8px">PLAYSTYLE</div>'+
           '<div style="display:flex;gap:6px;flex-wrap:wrap">'+d.playstyle.map(p=>'<span class="badge badge--soft">'+p+'</span>').join('')+'</div></div>' : '')+
         (d.interests.length ? '<div style="margin-top:14px"><div style="font-size:10.5px;font-weight:900;letter-spacing:.1em;color:var(--muted);margin-bottom:8px">LOOKING FOR</div>'+
@@ -1314,27 +1307,27 @@ function screenOnboarding(){
   }
 
   return '<div class="onboard-wrap">'+
-    '<div class="onboard-progress">'+progress+'</div>'+
+    '<div class="onboard-progress">'+progress.join('')+'</div>'+
     '<div class="onboard-body">'+body+'</div>'+
     '<div class="onboard-footer">'+footer+'</div>'+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 13 — DISCOVER (MAP + SHEET)
+   SECTION 14 — DISCOVER (MAP + SHEET)
    ============================================================ */
 const PINS = [
-  {type:'player',id:'b1',x:44,y:36},{type:'player',id:'b2',x:63,y:29},
-  {type:'player',id:'b3',x:29,y:50},{type:'player',id:'b4',x:56,y:57},
-  {type:'player',id:'b5',x:73,y:44},{type:'player',id:'b6',x:37,y:21},
-  {type:'player',id:'b7',x:23,y:64},{type:'player',id:'b8',x:81,y:60},
-  {type:'player',id:'b9',x:50,y:70},{type:'player',id:'b10',x:66,y:77},
-  {type:'player',id:'b11',x:35,y:76},{type:'player',id:'b12',x:58,y:48},
-  {type:'court',id:'h1',x:33,y:41},{type:'court',id:'h2',x:69,y:52},
-  {type:'court',id:'h3',x:20,y:32},{type:'court',id:'h4',x:57,y:18},
-  {type:'court',id:'h5',x:79,y:71},
-  {type:'crew',id:'c1',x:46,y:46},{type:'crew',id:'c2',x:27,y:57},
-  {type:'crew',id:'c3',x:64,y:38}
+  {type:'player',id:'p1',x:44,y:36},{type:'player',id:'p2',x:63,y:29},
+  {type:'player',id:'p3',x:29,y:50},{type:'player',id:'p4',x:56,y:57},
+  {type:'player',id:'p5',x:73,y:44},{type:'player',id:'p6',x:37,y:21},
+  {type:'player',id:'p7',x:23,y:64},{type:'player',id:'p8',x:81,y:60},
+  {type:'player',id:'p9',x:50,y:70},{type:'player',id:'p10',x:66,y:77},
+  {type:'player',id:'p11',x:35,y:76},{type:'player',id:'p12',x:58,y:48},
+  {type:'court',id:'c1',x:33,y:41},{type:'court',id:'c2',x:69,y:52},
+  {type:'court',id:'c3',x:20,y:32},{type:'court',id:'c4',x:57,y:18},
+  {type:'court',id:'c5',x:79,y:71},
+  {type:'club',id:'k1',x:46,y:46},{type:'club',id:'k2',x:27,y:57},
+  {type:'club',id:'k3',x:64,y:38}
 ];
 
 function pinHTML(pin){
@@ -1349,8 +1342,8 @@ function pinHTML(pin){
       '<img src="' + src + '" alt="" onerror="this.remove()">' +
     '</button>';
   }
-  if (pin.type === 'court') return '<button class="pin pin--court" style="left:'+pin.x+'%;top:'+pin.y+'%" data-act="court" data-id="'+pin.id+'">🏀</button>';
-  return '<button class="pin pin--crew" style="left:'+pin.x+'%;top:'+pin.y+'%" data-act="crew" data-id="'+pin.id+'">👥</button>';
+  if (pin.type === 'court') return '<button class="pin pin--court" style="left:'+pin.x+'%;top:'+pin.y+'%" data-act="court" data-id="'+pin.id+'">🎾</button>';
+  return '<button class="pin pin--club" style="left:'+pin.x+'%;top:'+pin.y+'%" data-act="club" data-id="'+pin.id+'">👥</button>';
 }
 
 function discoverItems(){
@@ -1360,8 +1353,8 @@ function discoverItems(){
     DB.users.filter(u => u.id !== 'me' && u.role !== 'admin').forEach(u => items.push({kind:'player', dist:u.dist, ref:u}));
   if (f === 'all' || f === 'courts')
     DB.courts.filter(c => c.status === 'approved').forEach(c => items.push({kind:'court', dist:c.dist, ref:c}));
-  if (f === 'all' || f === 'crews')
-    DB.crews.filter(k => k.verified === 'approved').forEach(k => items.push({kind:'crew', dist:k.dist, ref:k}));
+  if (f === 'all' || f === 'clubs')
+    DB.communities.filter(k => k.verified === 'approved').forEach(k => items.push({kind:'club', dist:k.dist, ref:k}));
   return items.sort((a,b) => a.dist - b.dist);
 }
 
@@ -1372,16 +1365,16 @@ function discoverRow(item){
     return '<div class="row" data-act="player" data-id="'+u.id+'">'+
       avatarHTML(u, 'av--sm')+
       '<div class="row__main">'+
-        '<div class="row__title">'+u.name+'<span class="lvl">'+u.position+'</span>'+(u.role==='trainer'?'<span class="badge badge--soft" style="font-size:8px;padding:2px 6px">TRAINER</span>':'')+'</div>'+
-        '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+' · '+u.dist+' m · Skill '+u.skill+'</div>'+
+        '<div class="row__title">'+u.name+'<span class="lvl">'+u.level+'</span>'+(u.role==='coach'?'<span class="badge badge--soft" style="font-size:8px;padding:2px 6px">COACH</span>':'')+'</div>'+
+        '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+' · '+u.dist+' m</div>'+
       '</div>'+
-      '<button class="btn btn--sm '+(sent?'is-sent':'btn--primary')+'" data-act="request" data-id="'+u.id+'">'+(sent?'Sent · $'+PRICES.requestPlayer:'Invite')+'</button>'+
+      '<button class="btn btn--sm '+(sent?'is-sent':'btn--primary')+'" data-act="request" data-id="'+u.id+'">'+(sent?'Sent · $'+PRICES.requestPlayer:'Wave')+'</button>'+
     '</div>';
   }
   if (item.kind === 'court'){
     const c = item.ref;
     return '<div class="row" data-act="court" data-id="'+c.id+'">'+
-      '<div class="av av--sm" style="--c1:hsl('+c.hue+' 62% 58%);--c2:hsl('+((c.hue+40)%360)+' 58% 38%)">'+
+      '<div class="av av--sm" style="--c1:hsl('+c.hue+' 60% 60%);--c2:hsl('+((c.hue+40)%360)+' 55% 42%)">'+
         '<img src="'+img('court-'+c.id,120,120)+'" alt="" onerror="this.remove()">'+
       '</div>'+
       '<div class="row__main">'+
@@ -1392,21 +1385,21 @@ function discoverRow(item){
     '</div>';
   }
   const k = item.ref;
-  return '<div class="row" data-act="crew" data-id="'+k.id+'">'+
+  return '<div class="row" data-act="club" data-id="'+k.id+'">'+
     '<div class="av av--sm" style="--c1:hsl('+k.hue+' 80% 60%);--c2:hsl('+((k.hue+40)%360)+' 70% 45%)">'+
-      '<img src="'+img('crew-'+k.id,120,120)+'" alt="" onerror="this.remove()">'+
+      '<img src="'+img('club-'+k.id,120,120)+'" alt="" onerror="this.remove()">'+
     '</div>'+
     '<div class="row__main">'+
       '<div class="row__title">'+k.name+'</div>'+
       '<div class="row__sub">'+k.members.toLocaleString()+' members · '+k.dist+' m</div>'+
     '</div>'+
-    '<button class="btn btn--sm btn--ghost" data-act="joincrew" data-id="'+k.id+'">Join</button>'+
+    '<button class="btn btn--sm btn--ghost" data-act="joinclub" data-id="'+k.id+'">Join</button>'+
   '</div>';
 }
 
 function screenDiscover(){
   const f = state.discoverFilter;
-  const pins = PINS.filter(p => f === 'all' || p.type === (f === 'players' ? 'player' : f === 'courts' ? 'court' : 'crew'));
+  const pins = PINS.filter(p => f === 'all' || p.type === (f === 'players' ? 'player' : f === 'courts' ? 'court' : 'club'));
   const items = discoverItems();
   const ai = AI.topMatches(1)[0];
   return ''+
@@ -1427,7 +1420,7 @@ function screenDiscover(){
       '</button>'+
     '</div>' : '') +
     '<div class="chips">'+
-      [['all','All'],['players','Ballers'],['courts','Courts'],['crews','Crews']].map(([v,l]) =>
+      [['all','All'],['players','Players'],['courts','Courts'],['clubs','Clubs']].map(([v,l]) =>
         '<button class="chip '+(f===v?'is-on':'')+'" data-act="dfilter" data-v="'+v+'">'+l+'</button>'
       ).join('')+
     '</div>'+
@@ -1449,30 +1442,30 @@ function showProximity(u){
   '<div class="scrim" data-act="close-layer"></div>'+
   '<div class="popup">'+
     '<div class="popup__pill"><span class="pulse"></span>PROXIMITY ALERT</div>'+
-    '<h3>A baller is close to you!</h3>'+
-    '<p>'+u.name.split(' ')[0]+' is only <b>'+u.dist+' m</b> away right now and is open for a run.</p>'+
-    '<div style="display:flex;align-items:center;gap:13px;background:#F5F2EA;border-radius:20px;padding:13px;margin-top:16px">'+
+    '<h3>A player is close to you!</h3>'+
+    '<p>'+u.name.split(' ')[0]+' is only <b>'+u.dist+' m</b> away right now and is open to a hit.</p>'+
+    '<div style="display:flex;align-items:center;gap:13px;background:#F5F7F2;border-radius:20px;padding:13px;margin-top:16px">'+
       avatarHTML(u, 'av--sm')+
       '<div class="row__main">'+
-        '<div class="row__title">'+u.name+'<span class="lvl">'+u.position+'</span></div>'+
+        '<div class="row__title">'+u.name+'<span class="lvl">'+u.level+'</span></div>'+
         '<div class="row__sub"><span class="dot dot--on"></span>'+u.status+' · '+u.city+'</div>'+
       '</div>'+
     '</div>'+
     '<div class="popup__btns">'+
       '<button class="btn btn--ghost" data-act="close-layer">Later</button>'+
-      '<button class="btn btn--primary" data-act="request" data-id="'+u.id+'">Invite · $'+PRICES.requestPlayer+'</button>'+
+      '<button class="btn btn--primary" data-act="request" data-id="'+u.id+'">Send · $'+PRICES.requestPlayer+'</button>'+
     '</div>'+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 14 — TOURNAMENTS
+   SECTION 15 — TOURNAMENTS
    ============================================================ */
 function tourneyStatusPill(t){
   if (t.completed) return '<span class="badge badge--gold">Completed</span>';
   if (t.status === 'draft') return '<span class="badge badge--soft">Draft</span>';
   if (t.teams.length >= t.maxTeams) return '<span class="badge badge--amber">Full · Starting</span>';
-  return '<span class="badge badge--orange">Open</span>';
+  return '<span class="badge badge--green">Open</span>';
 }
 
 function screenTournaments(){
@@ -1494,8 +1487,8 @@ function screenTournaments(){
 
     '<div class="ai-card">'+
       '<div class="ai-card__inner">'+
-        '<div class="ai-card__eyebrow">'+ico('crown')+' NEARBY TOURNAMENT HOSTING</div>'+
-        '<h3>Host a 3v3 at your nearest court</h3>'+
+        '<div class="ai-card__eyebrow">'+ico('crown')+' NEARBY DOUBLES HOSTING</div>'+
+        '<h3>Host a doubles tournament at your nearest court</h3>'+
         '<p>Entry fee from $3. Players have 7 days to agree on match times. You earn the platform split automatically.</p>'+
         '<button class="btn btn--primary btn--block" style="margin-top:14px" data-act="hosttourney">Host Tournament · $'+PRICES.tournamentHost+'</button>'+
       '</div>'+
@@ -1513,12 +1506,13 @@ function screenTournaments(){
           const daysLeft = Math.ceil((t.agreeBy - now()) / 86400000);
           const joined = Tournaments.isRegistered(t, 'me');
           const fillPct = Math.min(100, Math.round(t.teams.length / t.maxTeams * 100));
+          const fmtLabel = t.format.startsWith('doubles') ? 'DOUBLES' : 'SINGLES';
           return '<div class="tourney-card" data-act="tourney" data-id="'+t.id+'">'+
             '<div class="tourney-card__banner" style="--c1:'+c1+';--c2:'+c2+'">'+
               '<img src="'+img('tourney-'+t.id,600,300)+'" alt="" onerror="this.remove()">'+
               '<div class="tourney-card__badges">'+
-                '<span class="badge badge--dark">'+t.format.toUpperCase()+'</span>'+
-                (joined ? '<span class="badge badge--orange">JOINED</span>' : '')+
+                '<span class="badge badge--dark">'+fmtLabel+'</span>'+
+                (joined ? '<span class="badge badge--green">JOINED</span>' : '')+
               '</div>'+
               '<div class="tourney-card__status">'+tourneyStatusPill(t)+'</div>'+
               '<div class="tourney-card__prize">'+
@@ -1595,7 +1589,7 @@ function screenTourney(params){
       ).join('')
     : '<div class="empty" style="padding:22px;background:#fff;border-radius:20px;box-shadow:var(--shadow)">'+
         'Bracket will be generated when all teams have registered.<br>'+
-        '<b style="color:var(--ink)">'+t.teams.length+' / '+t.maxTeams+' teams</b>'+
+        '<b style="color:var(--navy)">'+t.teams.length+' / '+t.maxTeams+' teams</b>'+
       '</div>';
 
   const myMatches = t.bracket
@@ -1608,10 +1602,10 @@ function screenTourney(params){
     '<div style="height:170px;border-radius:24px;overflow:hidden;position:relative">'+
       '<div style="position:absolute;inset:0;background:linear-gradient(140deg,'+c1+','+c2+')"></div>'+
       '<img src="'+img('tourney-'+t.id,800,400)+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">'+
-      '<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(10,10,10,.78) 100%)"></div>'+
+      '<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(10,18,32,.78) 100%)"></div>'+
       '<div style="position:absolute;top:12px;left:12px;z-index:2">'+tourneyStatusPill(t)+'</div>'+
       '<div style="position:absolute;left:18px;right:18px;bottom:16px;color:#fff;z-index:2">'+
-        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">'+t.format.toUpperCase()+' · $'+t.entry+' ENTRY</div>'+
+        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">'+(t.teamSize===1?'SINGLES':'DOUBLES')+' · $'+t.entry+' ENTRY</div>'+
         '<div style="font-size:21px;font-weight:900;letter-spacing:-.04em;margin-top:6px">'+t.name+'</div>'+
         '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.72);margin-top:4px">Hosted by '+(host?host.name:'—')+' · '+(courtById(t.courts)?courtById(t.courts).name:'TBD')+'</div>'+
       '</div>'+
@@ -1624,11 +1618,11 @@ function screenTourney(params){
       '<div class="stat stat--hl"><b>$'+t.entry+'</b><span>Entry</span></div>'+
     '</div>'+
 
-    '<div class="verify-pending" style="background:#FFF3DE;border-radius:14px;padding:12px 14px;display:flex;gap:11px;align-items:center;margin-bottom:14px">'+
-      '<div style="width:34px;height:34px;border-radius:12px;background:var(--amber);color:#fff;display:grid;place-items:center;flex:0 0 auto;font-size:16px">🕒</div>'+
-      '<div style="flex:1;min-width:0">'+
-        '<div style="font-size:12.5px;font-weight:800">Agreement window</div>'+
-        '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:3px">All matches must be agreed by '+fmtDate(t.agreeBy)+'</div>'+
+    '<div class="verify-pending">'+
+      '<div class="verify-pending__ico">🕒</div>'+
+      '<div class="row__main">'+
+        '<div class="row__title" style="font-size:12.5px">Agreement window</div>'+
+        '<div class="row__sub">All matches must be agreed by '+fmtDate(t.agreeBy)+'</div>'+
       '</div>'+
     '</div>'+
 
@@ -1636,7 +1630,7 @@ function screenTourney(params){
       ? '<div class="sec-title">Your active matches <small>'+myMatches.length+'</small></div>'+
         myMatches.map(m => {
           const opp = m.teamA && m.teamA.members.includes('me') ? m.teamB : m.teamA;
-          return '<div style="background:#fff;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)">'+
+          return '<div class="verify-card" style="background:#fff;border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow)">'+
             '<div style="font-size:14px;font-weight:900;letter-spacing:-.025em;margin-bottom:10px">vs '+(opp?opp.name:'TBD')+'</div>'+
             '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:12px">Agree a time with the opposing team in chat, then log the score here.</div>'+
             '<div style="display:flex;gap:9px">'+
@@ -1654,7 +1648,7 @@ function screenTourney(params){
     (t.teams.length ? teamsHTML : '<div class="empty" style="padding:22px">Be the first to register.</div>')+
 
     '<div class="sec-title">Entry & split</div>'+
-    '<div class="tile" style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A)">'+
+    '<div class="tile" style="background:linear-gradient(140deg,#16233A,#0A1220)">'+
       '<h3>Prize pool breakdown</h3>'+
       '<p>Entry fee $'+t.entry+' · Platform fee '+PRICES.tournamentPct+'% · Winner takes '+money(t.prize)+'</p>'+
       '<div class="tile__emoji">💰</div>'+
@@ -1675,7 +1669,7 @@ function screenTourney(params){
 }
 
 /* ============================================================
-   SECTION 15 — RANKINGS
+   SECTION 16 — RANKINGS
    ============================================================ */
 function rankListHTML(){
   const q = state.rankQuery.trim().toLowerCase();
@@ -1686,9 +1680,9 @@ function rankListHTML(){
     list = DB.users.filter(u => !u.isNational && u.role !== 'admin' && u.id !== 'me').sort((a,b) => b.points - a.points);
   }
   if (state.rankRegion !== 'All') list = list.filter(u => u.region === state.rankRegion);
-  if (state.rankSkill !== 'All'){
-    if (state.rankSkill === '4.5+') list = list.filter(u => parseFloat(u.skill) >= 4.5);
-    else list = list.filter(u => u.skill === state.rankSkill);
+  if (state.rankLevel !== 'All'){
+    if (state.rankLevel === '5.0+') list = list.filter(u => parseFloat(u.level) >= 5);
+    else list = list.filter(u => u.level === state.rankLevel);
   }
   if (q) list = list.filter(u => u.name.toLowerCase().indexOf(q) > -1);
   if (!list.length) return '<div class="empty">No players match those filters.</div>';
@@ -1700,7 +1694,7 @@ function rankListHTML(){
       avatarHTML(u, 'av--sm')+
       '<div class="rankrow__info">'+
         '<div class="rankrow__name">'+u.name+'</div>'+
-        '<div class="rankrow__meta">'+u.position+' · '+u.region+' · Skill '+u.skill+'</div>'+
+        '<div class="rankrow__meta">'+u.region+' · NTRP '+u.level+'</div>'+
       '</div>'+
       '<div class="rankrow__pts">'+
         '<b>'+u.points.toLocaleString()+'</b>'+
@@ -1712,21 +1706,21 @@ function rankListHTML(){
 
 function screenRankings(){
   const regions = ['All','Greater Accra','Ashanti','Central','Northern'];
-  const skills = ['All','3.0','3.5','4.0','4.5','4.5+'];
+  const levels = ['All','3.0','3.5','4.0','4.5','5.0+'];
   const isNat = state.rankList === 'national';
   return '<div class="pad">'+
     '<div class="seg">'+
-      '<button class="seg__b '+(isNat?'is-on':'')+'" data-act="ranklist" data-v="national">National Squad</button>'+
-      '<button class="seg__b '+(!isNat?'is-on':'')+'" data-act="ranklist" data-v="general">General Pool</button>'+
+      '<button class="seg__b '+(isNat?'is-on':'')+'" data-act="ranklist" data-v="national">National Rank</button>'+
+      '<button class="seg__b '+(!isNat?'is-on':'')+'" data-act="ranklist" data-v="general">General Players</button>'+
     '</div>'+
     (isNat
-      ? '<div style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:16px;padding:14px 16px;margin-bottom:12px;color:#fff">'+
-          '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">OFFICIAL NATIONAL SQUAD</div>'+
-          '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.6);margin-top:6px;line-height:1.4">Verified by RUBIX admin. Rankings update only after a confirmed game.</div>'+
+      ? '<div style="background:linear-gradient(140deg,#0F1B2E,#16263F);border-radius:16px;padding:14px 16px;margin-bottom:12px;color:#fff">'+
+          '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">OFFICIAL NATIONAL TEAM</div>'+
+          '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.6);margin-top:6px;line-height:1.4">Verified by RUBIX admin. Rankings are updated only after a confirmed match.</div>'+
         '</div>'
       : '<div style="background:#fff;border-radius:16px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow)">'+
           '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--muted)">GENERAL PLAYER POOL</div>'+
-          '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:6px;line-height:1.4">Community ladder — updated after every verified game.</div>'+
+          '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:6px;line-height:1.4">Community ladder — updated after every verified match.</div>'+
         '</div>')+
     '<div class="search">'+ico('search')+
       '<input data-input="rankQuery" value="'+state.rankQuery.replace(/"/g,'&quot;')+'" placeholder="Search players…">'+
@@ -1735,14 +1729,14 @@ function screenRankings(){
       regions.map(r => '<button class="chip '+(state.rankRegion===r?'is-on':'')+'" data-act="region" data-v="'+r+'">'+r+'</button>').join('')+
     '</div>'+
     '<div class="chips chips--pad">'+
-      skills.map(l => '<button class="chip '+(state.rankSkill===l?'is-on':'')+'" data-act="skill" data-v="'+l+'">'+(l==='All'?'Any skill':l)+'</button>').join('')+
+      levels.map(l => '<button class="chip '+(state.rankLevel===l?'is-on':'')+'" data-act="level" data-v="'+l+'">'+(l==='All'?'Any level':l)+'</button>').join('')+
     '</div>'+
     '<div id="rankList">'+rankListHTML()+'</div>'+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 16 — COURTS LIST
+   SECTION 17 — COURTS LIST
    ============================================================ */
 function screenCourts(){
   const approved = DB.courts.filter(c => c.status === 'approved');
@@ -1754,11 +1748,11 @@ function screenCourts(){
       '<button class="chip is-on">Nearest</button>'+
       '<button class="chip">Cheapest</button>'+
       '<button class="chip">Top rated</button>'+
-      '<button class="chip">Indoor only</button>'+
+      '<button class="chip">Indoor</button>'+
     '</div>'+
     approved.map(c => {
-      const c1 = 'hsl('+c.hue+' 62% 58%)';
-      const c2 = 'hsl('+((c.hue+45)%360)+' 58% 38%)';
+      const c1 = 'hsl('+c.hue+' 62% 56%)';
+      const c2 = 'hsl('+((c.hue+45)%360)+' 58% 34%)';
       return '<div class="court-card" data-act="court" data-id="'+c.id+'">'+
         '<div class="court-card__img" style="--c1:'+c1+';--c2:'+c2+'">'+
           '<img src="'+img('court-'+c.id,600,300)+'" alt="" loading="lazy" onerror="this.remove()">'+
@@ -1769,7 +1763,7 @@ function screenCourts(){
           '<div class="court-card__meta">'+
             '<span>'+stars(c.rating)+'</span>'+
             '<span>📍 '+(c.dist>=1000?(c.dist/1000).toFixed(1)+' km':c.dist+' m')+'</span>'+
-            '<span>🏀 '+c.surface+'</span>'+
+            '<span>🎾 '+c.surface+'</span>'+
             '<span>🏟️ '+c.courtCount+' courts</span>'+
           '</div>'+
         '</div>'+
@@ -1788,8 +1782,8 @@ const TIMES = ['07:00','08:30','10:00','11:30','14:00','15:30','17:00','18:30','
 function screenCourt(params){
   const c = courtById(params.id);
   if (!c) return '<div class="empty">Court not found.</div>';
-  const c1 = 'hsl('+c.hue+' 62% 58%)';
-  const c2 = 'hsl('+((c.hue+45)%360)+' 58% 38%)';
+  const c1 = 'hsl('+c.hue+' 62% 56%)';
+  const c2 = 'hsl('+((c.hue+45)%360)+' 58% 34%)';
   const b = state.booking;
   const fee = courtFee(c.price);
   const total = c.price + fee;
@@ -1807,25 +1801,25 @@ function screenCourt(params){
     return '<div class="row" data-act="player" data-id="'+u.id+'">'+
       avatarHTML(u, 'av--sm')+
       '<div class="row__main">'+
-        '<div class="row__title">'+u.name+'<span class="lvl">'+u.position+'</span></div>'+
+        '<div class="row__title">'+u.name+'<span class="lvl">'+u.level+'</span></div>'+
         '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+'</div>'+
       '</div>'+
       '<button class="btn btn--sm '+(sent?'is-sent':'btn--primary')+'" data-act="request" data-id="'+u.id+'">'+(sent?'Sent':'Invite')+'</button>'+
     '</div>';
   }).join('');
 
-  const trainers = c.trainers.map(tr => {
-    const owner = userById(tr.userId);
-    const verBadge = tr.verified
+  const coaches = c.coaches.map(co => {
+    const owner = userById(co.userId);
+    const verBadge = co.verified
       ? '<span class="badge badge--ok" style="font-size:9px;padding:3px 7px">✓ Verified</span>'
       : '<span class="badge badge--amber" style="font-size:9px;padding:3px 7px">Pending</span>';
-    return '<div class="trainer" data-act="trainer" data-id="'+tr.id+'" data-court="'+c.id+'">'+
+    return '<div class="coach" data-act="coach" data-id="'+co.id+'" data-court="'+c.id+'">'+
       (owner ? avatarHTML(owner, 'av--sm') : '')+
-      '<div class="trainer__info">'+
-        '<div class="trainer__name">'+tr.name+' '+verBadge+'</div>'+
-        '<div class="trainer__spec">'+tr.spec+' · '+tr.exp+'</div>'+
+      '<div class="coach__info">'+
+        '<div class="coach__name">'+co.name+' '+verBadge+'</div>'+
+        '<div class="coach__spec">'+co.spec+' · '+co.exp+'</div>'+
       '</div>'+
-      '<div class="trainer__rate">$'+tr.rate+'<small>per hour</small></div>'+
+      '<div class="coach__rate">$'+co.rate+'<small>per hour</small></div>'+
     '</div>';
   }).join('');
 
@@ -1841,8 +1835,8 @@ function screenCourt(params){
     '</div>'+
     '<div class="pad" style="padding-top:18px">'+
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-        '<span class="badge badge--orange">'+stars(c.rating)+'</span>'+
-        '<span class="badge badge--soft">🏀 '+c.surface+'</span>'+
+        '<span class="badge badge--green">'+stars(c.rating)+'</span>'+
+        '<span class="badge badge--soft">🎾 '+c.surface+'</span>'+
         '<span class="badge badge--soft">🏟️ '+c.courtCount+' courts</span>'+
         '<span class="badge badge--soft">$'+c.price+'/hr</span>'+
         '<span class="fee-tag">+'+money(fee)+' fee</span>'+
@@ -1867,10 +1861,10 @@ function screenCourt(params){
             '</div>'+
           '</div>')+
 
-      '<div class="sec-title">Trainers at this court <small>'+c.trainers.length+' listed</small></div>'+
-      trainers+
+      '<div class="sec-title">Coaches at this court <small>'+c.coaches.length+' listed</small></div>'+
+      coaches+
 
-      '<div class="sec-title">Players here now <small>'+c.playersHere.length+'</small></div>'+
+      '<div class="sec-title">Players looking for a game <small>'+c.playersHere.length+' here now</small></div>'+
       playersHere+
 
       '<div class="sec-title">Book a court</div>'+
@@ -1893,9 +1887,9 @@ function screenCourt(params){
    END OF SESSION 3 — continue with Session 4 below
    ════════════════════════════════════════════════════════════ */
 /* ============================================================
-   SECTION 17 — PLAYER PROFILE (with posts section)
+   SECTION 18 — PLAYER PROFILE (with posts section)
    ============================================================ */
-function gameRow(m){
+function matchRow(m){
   return '<div class="game" data-act="player" data-id="'+(m.id||'')+'">'+
     '<div class="game__res game__res--'+m.res.toLowerCase()+'">'+m.res+'</div>'+
     '<div class="game__main">'+
@@ -1922,7 +1916,7 @@ function postCardHTML(post, opts){
       '<div class="post-card__main">'+
         '<div class="post-card__name">'+escapeHTML(u.name)+
           (u.verified ? '<span class="badge badge--ok" style="font-size:8px;padding:2px 6px">✓</span>' : '')+
-          (u.isNational ? '<span class="badge badge--orange" style="font-size:8px;padding:2px 6px">NAT</span>' : '')+
+          (u.isNational ? '<span class="badge badge--green" style="font-size:8px;padding:2px 6px">NAT</span>' : '')+
         '</div>'+
         '<div class="post-card__time">'+timeAgo(post.createdAt)+(post.isEdited?' <span class="post-card__edited">· Edited</span>':'')+'</div>'+
       '</div>'+
@@ -1959,17 +1953,14 @@ function screenProfile(params){
   const chatUnlocked = thread && thread.unlocked;
 
   const roleBadge =
-    u.role === 'admin' ? '<span class="badge badge--orange">ADMIN</span>' :
-    u.role === 'trainer' ? '<span class="badge" style="background:rgba(255,107,53,.2);color:var(--orange);border:1px solid rgba(255,107,53,.4)">TRAINER</span>' : '';
+    u.role === 'admin' ? '<span class="badge badge--green">ADMIN</span>' :
+    u.role === 'coach' ? '<span class="badge" style="background:rgba(216,255,61,.2);color:var(--green-dk);border:1px solid rgba(216,255,61,.4)">COACH</span>' : '';
   const vendorBadge = u.vendorStatus === 'approved'
     ? '<span class="badge" style="background:rgba(37,194,110,.2);color:#9BE8C2;border:1px solid rgba(37,194,110,.35)">✓ Vendor</span>' : '';
-  const crewBadge = u.crewId
-    ? '<span class="badge" style="background:rgba(255,138,61,.2);color:#FFB27A;border:1px solid rgba(255,138,61,.35)">CREW LEAD</span>' : '';
+  const commBadge = u.communityId
+    ? '<span class="badge" style="background:rgba(255,138,61,.2);color:#FFB27A;border:1px solid rgba(255,138,61,.35)">COMMUNITY LEAD</span>' : '';
 
-  /* Posts for this user */
   const userPosts = (DB.posts || []).filter(p => p.authorId === u.id).sort((a,b) => b.createdAt - a.createdAt);
-
-  /* Cover: dataURL first, else picsum */
   const coverSrc = u.coverDataUrl || img('cover-'+u.id, 800, 400);
 
   return '<div class="hero">'+
@@ -1980,19 +1971,18 @@ function screenProfile(params){
       '<div class="hero__avatar-wrap">'+
         '<div class="hero__avatar">'+avatarHTML(u, 'av--xl')+'</div>'+
         (isMe
-          ? '<button class="btn btn--sm" style="background:#fff;color:var(--ink);box-shadow:var(--shadow)" data-act="editprofile">'+ico('edit')+' Edit</button>'
+          ? '<button class="btn btn--sm" style="background:#fff;color:var(--navy);box-shadow:var(--shadow)" data-act="editprofile">'+ico('edit')+' Edit</button>'
           : '')+
       '</div>'+
-      '<div class="hero__name">'+u.name+'</div>'+
+      '<div class="hero__name">'+escapeHTML(u.name)+'</div>'+
       '<div class="hero__loc">📍 '+u.city+(u.region ? ' · '+u.region : '')+'</div>'+
-      '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+roleBadge+vendorBadge+crewBadge+
+      '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'+roleBadge+vendorBadge+commBadge+
         (u.verified ? '<span class="badge" style="background:rgba(37,194,110,.2);color:#9BE8C2;border:1px solid rgba(37,194,110,.35)">✓ Verified</span>' : '')+
       '</div>'+
       (u.bio ? '<div style="font-size:12.5px;font-weight:500;color:rgba(255,255,255,.72);margin-top:14px;line-height:1.5">'+escapeHTML(u.bio)+'</div>' : '')+
       '<div class="hero__chips">'+
-        '<span class="pill">'+u.position+'</span>'+
-        '<span class="pill">Skill '+u.skill+'</span>'+
-        '<span class="pill">'+u.preferredCourt+'</span>'+
+        '<span class="pill">'+u.hand+'-handed</span>'+
+        '<span class="pill">Favourite: '+u.surface+'</span>'+
         (u.points ? '<span class="pill">'+u.points.toLocaleString()+' pts</span>' : '')+
       '</div>'+
       '<div class="hero__actions">'+
@@ -2008,32 +1998,14 @@ function screenProfile(params){
   '</div>'+
   '<div class="pad" style="padding-top:0">'+
 
-    /* Stats */
     '<div class="stats">'+
-      '<div class="stat"><b>'+s.games+'</b><span>Games</span></div>'+
+      '<div class="stat"><b>'+s.played+'</b><span>Matches</span></div>'+
       '<div class="stat"><b>'+s.wins+'</b><span>Wins</span></div>'+
       '<div class="stat"><b>'+s.losses+'</b><span>Losses</span></div>'+
       '<div class="stat stat--hl"><b>'+pct+'%</b><span>Win rate</span></div>'+
     '</div>'+
     '<div class="winbar"><div style="width:'+pct+'%"></div></div>'+
 
-    /* Stat line row */
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px">'+
-      '<div style="background:#fff;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)">'+
-        '<b style="font-size:16px;font-weight:900;letter-spacing:-.04em;display:block;line-height:1">'+s.ppg.toFixed(1)+'</b>'+
-        '<span style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-top:5px;display:block">PPG</span>'+
-      '</div>'+
-      '<div style="background:#fff;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)">'+
-        '<b style="font-size:16px;font-weight:900;letter-spacing:-.04em;display:block;line-height:1">'+s.apg.toFixed(1)+'</b>'+
-        '<span style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-top:5px;display:block">APG</span>'+
-      '</div>'+
-      '<div style="background:#fff;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)">'+
-        '<b style="font-size:16px;font-weight:900;letter-spacing:-.04em;display:block;line-height:1">'+s.rpg.toFixed(1)+'</b>'+
-        '<span style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-top:5px;display:block">RPG</span>'+
-      '</div>'+
-    '</div>'+
-
-    /* Composer bar (only on own profile) */
     (isMe
       ? '<div class="composer-bar" data-act="compose-post">'+
           avatarHTML(u, 'av--sm')+
@@ -2042,34 +2014,33 @@ function screenProfile(params){
         '</div>'
       : '')+
 
-    /* Posts section */
     (userPosts.length
       ? '<div class="sec-title">'+(isMe?'Your posts':'Posts by '+u.name.split(' ')[0])+' <small>'+userPosts.length+'</small></div>'+
         userPosts.map(p => postCardHTML(p)).join('')
       : (isMe
           ? '<div style="text-align:center;padding:36px 20px;background:#fff;border-radius:20px;box-shadow:var(--shadow);margin-bottom:14px">'+
-              '<div style="font-size:52px;line-height:1">🏀</div>'+
+              '<div style="font-size:52px;line-height:1">🎾</div>'+
               '<div style="font-size:15px;font-weight:900;letter-spacing:-.025em;margin-top:12px">Share your first post</div>'+
               '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:8px;line-height:1.5">Talk about your game, gear, or runs. Find players who match your vibe.</div>'+
               '<button class="btn btn--primary" style="margin-top:16px" data-act="compose-post">Create your first post</button>'+
             '</div>'
           : ''))+
 
-    /* Game history */
-    '<div class="sec-title">Game log <small>'+u.matches.length+' recent</small></div>'+
-    u.matches.map(gameRow).join('')+
+    '<div class="sec-title">Match history <small>'+u.matches.length+' recent</small></div>'+
+    u.matches.map(matchRow).join('')+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 18 — EDIT PROFILE (with upload)
+   SECTION 19 — EDIT PROFILE (with upload)
    ============================================================ */
 function screenProfileForm(){
   const u = getMe();
   const draft = state.profileDraft || {
     name: u.name, bio: u.bio, city: u.city, region: u.region,
-    skill: u.skill, position: u.position, preferredCourt: u.preferredCourt,
-    dominant: u.dominant, playstyle: u.playstyle.slice(), interests: u.interests.slice(),
+    level: u.level, hand: u.hand, surface: u.surface,
+    playstyle: (u.playstyle || ['Baseliner']).slice(),
+    interests: (u.interests || ['Singles']).slice(),
     status: u.status, avail: u.avail
   };
   state.profileDraft = draft;
@@ -2078,29 +2049,25 @@ function screenProfileForm(){
   const coverSrc = u.coverDataUrl || img('cover-'+u.id, 800, 400);
 
   return '<div class="pad" style="padding-top:8px">'+
-
-    /* Cover + avatar block */
     '<div style="position:relative;border-radius:22px;overflow:hidden;margin-bottom:60px;box-shadow:var(--shadow)">'+
-      '<div style="position:relative;height:160px;background:linear-gradient(140deg,#1A1F2E,#0A0A0A)">'+
+      '<div style="position:relative;height:160px;background:linear-gradient(140deg,#16233A,#0A1220)">'+
         '<img src="'+coverSrc+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">'+
-        '<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(10,10,10,.6) 100%)"></div>'+
+        '<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(10,18,32,.6) 100%)"></div>'+
         '<button class="btn btn--sm" style="position:absolute;right:12px;bottom:12px;background:rgba(0,0,0,.65);color:#fff;backdrop-filter:blur(6px)" data-act="pick-cover">'+ico('camera')+' Change cover</button>'+
       '</div>'+
       '<div style="position:absolute;left:20px;bottom:-46px">'+
         '<div style="position:relative;display:inline-block">'+
           avatarHTML(u, 'av--xl')+
-          '<button style="position:absolute;right:-6px;bottom:-6px;width:36px;height:36px;border-radius:50%;background:linear-gradient(140deg,var(--orange),var(--orange-dk));color:#fff;display:grid;place-items:center;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer" data-act="pick-avatar">'+ico('camera')+'</button>'+
+          '<button style="position:absolute;right:-6px;bottom:-6px;width:36px;height:36px;border-radius:50%;background:var(--green);color:var(--navy);display:grid;place-items:center;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer" data-act="pick-avatar">'+ico('camera')+'</button>'+
         '</div>'+
       '</div>'+
     '</div>'+
 
-    /* Photo actions */
     '<div style="display:flex;gap:8px;margin-bottom:20px">'+
       '<button class="btn btn--ghost btn--sm" style="flex:1" data-act="shuffle-avatar">'+ico('image')+' Shuffle photo</button>'+
       '<button class="btn btn--ghost btn--sm" style="flex:1;color:var(--red)" data-act="remove-avatar">'+ico('trash')+' Remove photo</button>'+
     '</div>'+
 
-    /* Identity */
     '<div class="sec-title" style="margin-top:6px">Identity</div>'+
     '<div class="form-field"><label class="form-label">Full name</label>'+
       '<input class="form-input" data-input="profile-name" value="'+escapeHTML(draft.name)+'"></div>'+
@@ -2114,47 +2081,38 @@ function screenProfileForm(){
         '<input class="form-input" data-input="profile-region" value="'+escapeHTML(draft.region)+'"></div>'+
     '</div>'+
 
-    /* Game */
     '<div class="sec-title" style="margin-top:6px">Your game</div>'+
-    '<div class="form-field"><label class="form-label">Skill rating</label>'+
+    '<div class="form-field"><label class="form-label">NTRP rating</label>'+
       '<div class="form-chips">'+
-        ['1.0','1.5','2.0','2.5','3.0','3.5','4.0','4.5','5.0'].map(l =>
-          '<button class="form-chip '+(draft.skill===l?'is-on':'')+'" data-act="profile-field" data-f="skill" data-v="'+l+'">'+l+'</button>').join('')+
-      '</div></div>'+
-    '<div class="form-field"><label class="form-label">Position</label>'+
-      '<div class="form-chips">'+
-        ['PG','SG','SF','PF','C'].map(p =>
-          '<button class="form-chip '+(draft.position===p?'is-on':'')+'" data-act="profile-field" data-f="position" data-v="'+p+'">'+p+'</button>').join('')+
-      '</div></div>'+
-    '<div class="form-field"><label class="form-label">Preferred court</label>'+
-      '<div class="form-chips">'+
-        ['Indoor','Outdoor','Street'].map(p =>
-          '<button class="form-chip '+(draft.preferredCourt===p?'is-on':'')+'" data-act="profile-field" data-f="preferredCourt" data-v="'+p+'">'+p+'</button>').join('')+
+        ['1.0','1.5','2.0','2.5','3.0','3.5','4.0','4.5','5.0','5.5'].map(l =>
+          '<button class="form-chip '+(draft.level===l?'is-on':'')+'" data-act="profile-field" data-f="level" data-v="'+l+'">'+l+'</button>').join('')+
       '</div></div>'+
     '<div class="form-field"><label class="form-label">Dominant hand</label>'+
       '<div class="form-chips">'+
         ['Right','Left'].map(h =>
-          '<button class="form-chip '+(draft.dominant===h?'is-on':'')+'" data-act="profile-field" data-f="dominant" data-v="'+h+'">'+h+'</button>').join('')+
+          '<button class="form-chip '+(draft.hand===h?'is-on':'')+'" data-act="profile-field" data-f="hand" data-v="'+h+'">'+h+'-handed</button>').join('')+
+      '</div></div>'+
+    '<div class="form-field"><label class="form-label">Favourite surface</label>'+
+      '<div class="form-chips">'+
+        ['Hard','Clay','Grass','Indoor'].map(p =>
+          '<button class="form-chip '+(draft.surface===p?'is-on':'')+'" data-act="profile-field" data-f="surface" data-v="'+p+'">'+p+'</button>').join('')+
       '</div></div>'+
 
-    /* Playstyle */
     '<div class="sec-title" style="margin-top:6px">Playstyle</div>'+
     '<div class="form-field"><div class="form-chips">'+
-      ['Sharpshooter','Playmaker','Defender','Post-Up','Slasher','Rebounder'].map(p =>
+      ['Baseliner','Serve & Volley','All-Court','Counterpuncher','Big Server','Doubles Specialist'].map(p =>
         '<button class="form-chip '+(draft.playstyle.includes(p)?'is-on':'')+'" data-act="profile-toggle" data-f="playstyle" data-v="'+p+'">'+p+'</button>').join('')+
     '</div></div>'+
 
-    /* Availability */
     '<div class="sec-title" style="margin-top:6px">Availability</div>'+
     '<div class="form-field"><div class="form-chips">'+
       [['Available now','on'],['In 1 hour','soon'],['Tomorrow','soon'],['Weekends only','soon'],['Busy','off']].map(([l,a]) =>
-        '<button class="form-chip '+(draft.status===l?'is-on':'')+'" data-act="profile-field" data-field="status" data-f="status" data-v="'+l+'" data-avail="'+a+'">'+l+'</button>').join('')+
+        '<button class="form-chip '+(draft.status===l?'is-on':'')+'" data-act="profile-field" data-f="status" data-v="'+l+'" data-avail="'+a+'">'+l+'</button>').join('')+
     '</div></div>'+
 
-    /* Interests */
     '<div class="sec-title" style="margin-top:6px">Looking for</div>'+
     '<div class="form-field"><div class="form-chips">'+
-      ['Pickup runs','1v1','3v3','League play','Training','Coaching','Social'].map(i =>
+      ['Singles','Doubles','Social','Coaching','Competitive','Training'].map(i =>
         '<button class="form-chip '+(draft.interests.includes(i)?'is-on':'')+'" data-act="profile-toggle" data-f="interests" data-v="'+i+'">'+i+'</button>').join('')+
     '</div></div>'+
 
@@ -2165,7 +2123,7 @@ function screenProfileForm(){
 }
 
 /* ============================================================
-   SECTION 19 — ID CARD
+   SECTION 20 — ID CARD
    ============================================================ */
 function qrHTML(seed){
   let h = 0;
@@ -2188,7 +2146,7 @@ function screenIdCard(){
     '<div class="idcard">'+
       '<div class="idcard__inner">'+
         '<div class="idcard__top">'+
-          '<div class="idcard__brand"><span class="dot"></span>RUBIX HOOPS</div>'+
+          '<div class="idcard__brand"><span class="dot"></span>RUBIX TENNIS</div>'+
           '<div style="font-size:10px;font-weight:800;letter-spacing:.12em;color:rgba(255,255,255,.55)">PLAYER ID</div>'+
         '</div>'+
         '<div class="idcard__body">'+
@@ -2197,15 +2155,15 @@ function screenIdCard(){
             '<img src="'+avatarSrc+'" alt="" onerror="this.remove()">'+
           '</div>'+
           '<div>'+
-            '<div class="idcard__name">'+u.name+'</div>'+
-            '<div class="idcard__role">'+ (u.isNational ? 'National Squad' : u.role === 'trainer' ? 'Trainer' : 'Member') +'</div>'+
+            '<div class="idcard__name">'+escapeHTML(u.name)+'</div>'+
+            '<div class="idcard__role">'+ (u.isNational ? 'National Team' : u.role === 'coach' ? 'Coach' : 'Member') +'</div>'+
             '<div class="idcard__no">'+u.idNumber+'</div>'+
           '</div>'+
         '</div>'+
         '<div class="idcard__grid">'+
-          '<div class="idcard__cell"><span>Position</span><b>'+u.position+'</b></div>'+
-          '<div class="idcard__cell"><span>Skill</span><b>'+u.skill+'</b></div>'+
-          '<div class="idcard__cell"><span>Home court</span><b>'+ (u.preferredCourt) +'</b></div>'+
+          '<div class="idcard__cell"><span>NTRP</span><b>'+u.level+'</b></div>'+
+          '<div class="idcard__cell"><span>Hand</span><b>'+u.hand+'</b></div>'+
+          '<div class="idcard__cell"><span>Surface</span><b>'+u.surface+'</b></div>'+
           '<div class="idcard__cell"><span>Region</span><b>'+u.region+'</b></div>'+
         '</div>'+
         '<div class="idcard__bottom">'+
@@ -2215,13 +2173,13 @@ function screenIdCard(){
       '</div>'+
     '</div>'+
     '<div style="text-align:center;margin-top:22px;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.6">'+
-      'This is your digital RUBIX ID.<br>Show it at verified courts and crews.'+
+      'This is your digital RUBIX ID.<br>Show it at verified courts and clubs.'+
     '</div>'+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 20 — POST COMPOSER
+   SECTION 21 — POST COMPOSER
    ============================================================ */
 function screenPostComposer(params){
   const editing = params && params.postId;
@@ -2274,7 +2232,7 @@ function screenPostComposer(params){
 }
 
 /* ============================================================
-   SECTION 21 — POST DETAIL (with comments)
+   SECTION 22 — POST DETAIL (with comments)
    ============================================================ */
 function screenPostDetail(params){
   const post = DB.posts.find(p => p.id === params.postId);
@@ -2301,14 +2259,13 @@ function screenPostDetail(params){
   }).join('');
 
   return '<div class="pad" style="padding-top:12px">'+
-    /* Author */
     '<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">'+
       avatarHTML(u, 'av--lg')+
       '<div style="flex:1;min-width:0">'+
         '<div style="font-size:16px;font-weight:900;letter-spacing:-.03em">'+escapeHTML(u.name)+
           (u.verified ? ' <span class="badge badge--ok" style="font-size:9px;padding:2px 6px">✓</span>' : '')+
         '</div>'+
-        '<div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-top:4px">'+u.position+' · '+u.city+'</div>'+
+        '<div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-top:4px">NTRP '+u.level+' · '+u.city+'</div>'+
         '<div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px">'+timeAgo(post.createdAt)+(post.isEdited?' · Edited':'')+'</div>'+
       '</div>'+
       (isMine
@@ -2316,16 +2273,14 @@ function screenPostDetail(params){
         : '')+
     '</div>'+
 
-    /* Body */
-    (post.text ? '<div style="font-size:15px;font-weight:500;line-height:1.6;color:#2B2B2B;white-space:pre-wrap;word-break:break-word;margin-bottom:14px">'+escapeHTML(post.text)+'</div>' : '')+
+    (post.text ? '<div style="font-size:15px;font-weight:500;line-height:1.6;color:#2B3846;white-space:pre-wrap;word-break:break-word;margin-bottom:14px">'+escapeHTML(post.text)+'</div>' : '')+
 
     (imageSrc
-      ? '<div style="border-radius:16px;overflow:hidden;margin-bottom:14px;background:#EFEBE2" data-act="post-image-view" data-id="'+post.id+'">'+
+      ? '<div style="border-radius:16px;overflow:hidden;margin-bottom:14px;background:#EFF2EC" data-act="post-image-view" data-id="'+post.id+'">'+
           '<img src="'+imageSrc+'" alt="" style="width:100%;height:auto;display:block" onerror="this.remove()">'+
         '</div>'
       : '')+
 
-    /* Action row */
     '<div style="display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:20px">'+
       '<button class="post-card__action '+(liked?'is-on':'')+'" data-act="post-like" data-id="'+post.id+'">'+
         ico('heart')+'<span>'+post.likes.length+'</span>'+
@@ -2334,11 +2289,9 @@ function screenPostDetail(params){
       '<button class="post-card__action" data-act="post-share" data-id="'+post.id+'">'+ico('share')+'<span>Share</span></button>'+
     '</div>'+
 
-    /* Comments */
     '<div style="font-size:15px;font-weight:900;letter-spacing:-.025em;margin-bottom:14px">Comments</div>'+
     (commentsHTML || '<div class="empty" style="padding:24px 0">No comments yet. Start the conversation.</div>')+
 
-    /* Comment input */
     '<div style="position:sticky;bottom:0;background:var(--bg);padding:12px 0 0;display:flex;gap:9px;align-items:center;margin-top:14px">'+
       avatarHTML(me, 'av--xs')+
       '<input class="form-input" style="flex:1;border-radius:16px;padding:11px 14px;font-size:13.5px" data-input="post-comment" value="'+escapeHTML(state.commentDraft)+'" placeholder="Add a comment…">'+
@@ -2348,7 +2301,7 @@ function screenPostDetail(params){
 }
 
 /* ============================================================
-   SECTION 22 — CHATS LIST + VIEW
+   SECTION 23 — CHATS LIST + VIEW
    ============================================================ */
 function screenChats(){
   const unlocked = DB.chats.filter(c => c.unlocked);
@@ -2373,12 +2326,12 @@ function screenChats(){
   };
 
   return '<div class="pad">'+
-    '<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:18px;padding:14px 16px;color:#fff;margin-bottom:16px">'+
+    '<div style="display:flex;align-items:center;gap:10px;background:linear-gradient(140deg,#16233A,#0A1220);border-radius:18px;padding:14px 16px;color:#fff;margin-bottom:16px">'+
       '<div style="flex:1">'+
-        '<div style="font-size:10.5px;font-weight:900;letter-spacing:.14em;color:var(--orange)">UNLOCKED CHATS</div>'+
+        '<div style="font-size:10.5px;font-weight:900;letter-spacing:.14em;color:var(--green)">UNLOCKED CHATS</div>'+
         '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:5px">Unlock any thread for $'+PRICES.chatUnlock+' — one-time per person.</div>'+
       '</div>'+
-      '<div style="font-size:24px;font-weight:900;letter-spacing:-.05em;color:var(--orange)">'+unlocked.length+'</div>'+
+      '<div style="font-size:24px;font-weight:900;letter-spacing:-.05em;color:var(--green)">'+unlocked.length+'</div>'+
     '</div>'+
 
     (unlocked.length
@@ -2445,7 +2398,7 @@ function screenChatView(params){
 }
 
 /* ============================================================
-   SECTION 23 — FEED (with composer + posts)
+   SECTION 24 — FEED (with composer + posts)
    ============================================================ */
 function screenFeed(){
   const me = getMe();
@@ -2455,8 +2408,6 @@ function screenFeed(){
     ['nearby','Nearby']
   ];
   const activeTab = state.feedTab || 'foryou';
-
-  /* Merge DB.posts with user-authored posts, all sorted by newest */
   const allPosts = (DB.posts || []).slice().sort((a,b) => b.createdAt - a.createdAt);
 
   return '<div class="pad">'+
@@ -2465,42 +2416,34 @@ function screenFeed(){
         '<button class="feed-tab '+(activeTab===v?'is-on':'')+'" data-act="feed-tab" data-v="'+v+'">'+l+'</button>'
       ).join('')+
     '</div>'+
-
-    /* Composer bar */
     '<div class="composer-bar" data-act="compose-post">'+
       avatarHTML(me, 'av--sm')+
       '<div class="composer-bar__placeholder">What\'s on your mind, '+me.name.split(' ')[0]+'?</div>'+
       '<button class="btn btn--primary btn--sm">Post</button>'+
     '</div>'+
-
     (allPosts.length
       ? allPosts.map(p => postCardHTML(p)).join('')
-      : '<div class="empty" style="padding:40px 20px">'+
-          '<div class="empty__ico">🏀</div>'+
-          'No posts yet. Be the first.'+
-        '</div>')+
-
-    /* Floating action button */
+      : '<div class="empty" style="padding:40px 20px"><div class="empty__ico">🎾</div>No posts yet. Be the first.</div>')+
     '<button class="fab" data-act="compose-post" style="bottom:88px">+</button>'+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 24 — BADGES
+   SECTION 25 — BADGES
    ============================================================ */
 const ALL_BADGES = [
-  { id:'first-game', name:'First Bucket', icon:'🏀', desc:'Play your first game' },
-  { id:'10-games', name:'10 Games', icon:'🏅', desc:'Play 10 games' },
-  { id:'50-games', name:'50 Games', icon:'🥈', desc:'Play 50 games' },
-  { id:'100-games', name:'100 Games', icon:'🥇', desc:'Play 100 games' },
-  { id:'sharp-shooter', name:'Sharp Shooter', icon:'🎯', desc:'50+ threes in a season' },
-  { id:'playmaker', name:'Playmaker', icon:'🎩', desc:'10+ assists in a game' },
-  { id:'rim-protector', name:'Rim Protector', icon:'🛡️', desc:'5+ blocks in a game' },
-  { id:'triple-double', name:'Triple-Double', icon:'📊', desc:'Triple-double in a game' },
+  { id:'first-match', name:'First Match', icon:'🎾', desc:'Play your first match' },
+  { id:'5-matches', name:'5 Matches', icon:'🏅', desc:'Play 5 matches' },
+  { id:'10-matches', name:'10 Matches', icon:'🥈', desc:'Play 10 matches' },
+  { id:'25-matches', name:'25 Matches', icon:'🥇', desc:'Play 25 matches' },
+  { id:'social-butterfly', name:'Social Butterfly', icon:'🦋', desc:'5 doubles games' },
+  { id:'surface-hopper', name:'Surface Hopper', icon:'🌍', desc:'Play on 3 surfaces' },
   { id:'streak-5', name:'5-Win Streak', icon:'🔥', desc:'Win 5 in a row' },
   { id:'streak-10', name:'10-Win Streak', icon:'⚡', desc:'Win 10 in a row' },
-  { id:'crew-champ', name:'Crew Champion', icon:'👑', desc:'Win with your crew' },
-  { id:'tourney-mvp', name:'Tournament MVP', icon:'🏆', desc:'Win a tournament' }
+  { id:'ace-master', name:'Ace Master', icon:'💥', desc:'10 aces in a match' },
+  { id:'tourney-champ', name:'Tournament Champion', icon:'🏆', desc:'Win a tournament' },
+  { id:'club-leader', name:'Club Leader', icon:'👑', desc:'Lead a community' },
+  { id:'verified-player', name:'Verified Player', icon:'✅', desc:'Complete ID verification' }
 ];
 function screenBadges(){
   const me = getMe();
@@ -2530,7 +2473,7 @@ function screenBadges(){
 }
 
 /* ============================================================
-   SECTION 25 — AI RECOMMENDATIONS
+   SECTION 26 — AI RECOMMENDATIONS
    ============================================================ */
 function screenAI(){
   const matches = AI.topMatches(8);
@@ -2538,8 +2481,8 @@ function screenAI(){
     '<div class="ai-card">'+
       '<div class="ai-card__inner">'+
         '<div class="ai-card__eyebrow">'+ico('bolt')+' AI MATCH ENGINE</div>'+
-        '<h3>Your best runs today</h3>'+
-        '<p>Scored using skill fit, position, court preference, region and shared interests.</p>'+
+        '<h3>Your best matches today</h3>'+
+        '<p>Scored using level, surface preference, hand, availability, region and shared interests.</p>'+
       '</div>'+
     '</div>'+
     '<div class="sec-title">Top picks <small>'+matches.length+'</small></div>'+
@@ -2547,8 +2490,8 @@ function screenAI(){
       return '<div class="row" style="background:#fff;border-radius:18px;box-shadow:var(--shadow);margin-bottom:9px" data-act="player" data-id="'+u.id+'">'+
         avatarHTML(u, 'av--sm')+
         '<div class="row__main">'+
-          '<div class="row__title">'+u.name+'<span class="lvl">'+u.position+'</span></div>'+
-          '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+' · '+u.dist+' m · Skill '+u.skill+'</div>'+
+          '<div class="row__title">'+u.name+'<span class="lvl">'+u.level+'</span></div>'+
+          '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+' · '+u.dist+' m · '+u.surface+'</div>'+
         '</div>'+
         '<div style="text-align:right;margin-right:6px">'+
           '<div class="match-score">'+s+'%</div>'+
@@ -2559,7 +2502,7 @@ function screenAI(){
 }
 
 /* ============================================================
-   SECTION 26 — WALLET
+   SECTION 27 — WALLET
    ============================================================ */
 function screenWallet(){
   const me = getMe();
@@ -2579,9 +2522,9 @@ function screenWallet(){
     '</div>'+
 
     '<div class="sec-title">What you can pay for</div>'+
-    '<div class="menu-row" data-act="toast" data-msg="Send an invite: '+money(PRICES.requestPlayer)+' per player">'+
+    '<div class="menu-row" data-act="toast" data-msg="Send a request: '+money(PRICES.requestPlayer)+' per player">'+
       '<div class="menu-row__ico">'+ico('send')+'</div>'+
-      '<div class="menu-row__main"><div class="menu-row__t">Send run invite</div><div class="menu-row__s">'+money(PRICES.requestPlayer)+' · reaches a player directly</div></div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Send play request</div><div class="menu-row__s">'+money(PRICES.requestPlayer)+' · reaches a player directly</div></div>'+
       ico('chev')+
     '</div>'+
     '<div class="menu-row" data-act="toast" data-msg="Chat unlock: '+money(PRICES.chatUnlock)+' one-time">'+
@@ -2594,9 +2537,9 @@ function screenWallet(){
       '<div class="menu-row__main"><div class="menu-row__t">Court booking</div><div class="menu-row__s">'+PRICES.courtPct+'% platform fee · paid at booking</div></div>'+
       ico('chev')+
     '</div>'+
-    '<div class="menu-row" data-act="toast" data-msg="Trainer sessions: '+PRICES.trainerPct+'% platform fee">'+
+    '<div class="menu-row" data-act="toast" data-msg="Coach sessions: '+PRICES.coachPct+'% platform fee">'+
       '<div class="menu-row__ico">'+ico('briefcase')+'</div>'+
-      '<div class="menu-row__main"><div class="menu-row__t">Trainer sessions</div><div class="menu-row__s">'+PRICES.trainerPct+'% platform fee · paid at session</div></div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Coach lessons</div><div class="menu-row__s">'+PRICES.coachPct+'% platform fee · paid at session</div></div>'+
       ico('chev')+
     '</div>'+
     '<div class="menu-row" data-act="toast" data-msg="Tournament host: '+money(PRICES.tournamentHost)+' · entry fees split automatically">'+
@@ -2616,10 +2559,10 @@ function screenWallet(){
       : txs.map(t => {
           const inOut = t.amount > 0 ? 'in' : 'out';
           const emoji = t.kind === 'topup' ? '💳' :
-            t.kind === 'court-booking' ? '🏀' :
+            t.kind === 'court-booking' ? '🎾' :
             t.kind === 'chat-unlock' ? '💬' :
             t.kind === 'tournament-entry' ? '🏆' :
-            t.kind === 'trainer-session' ? '🧑‍🏫' :
+            t.kind === 'coach-session' ? '🧑‍🏫' :
             t.kind === 'vendor-listing' ? '🛒' :
             t.kind === 'earnings' ? '💰' : '💵';
           return '<div class="tx">'+
@@ -2638,7 +2581,7 @@ function screenWallet(){
 }
 
 /* ============================================================
-   SECTION 27 — TRUST & SAFETY
+   SECTION 28 — TRUST & SAFETY
    ============================================================ */
 function screenSafety(){
   const me = getMe();
@@ -2647,7 +2590,7 @@ function screenSafety(){
       '<div class="safety-banner__ico">🛡️</div>'+
       '<div>'+
         '<div class="safety-banner__t">Your safety on RUBIX</div>'+
-        '<div class="safety-banner__s">Always meet in public courts. Share your run details with a friend. Report anything suspicious.</div>'+
+        '<div class="safety-banner__s">Always meet in public courts. Share your match details with a friend. Report anything suspicious.</div>'+
       '</div>'+
     '</div>'+
     '<div class="sec-title">Verification</div>'+
@@ -2665,7 +2608,7 @@ function screenSafety(){
         '<div class="safety-action__s">'+(me.photoVerified ? 'Verified' : 'Selfie must match your profile photo')+'</div>'+
       '</div>'+ico('chev')+
     '</div>'+
-    '<div class="sec-title">Before every run</div>'+
+    '<div class="sec-title">Before every match</div>'+
     '<div class="notif-row">'+
       '<div class="notif-row__main">'+
         '<div class="notif-row__t">Share location with a friend</div>'+
@@ -2699,23 +2642,23 @@ function screenSafety(){
 }
 
 /* ============================================================
-   SECTION 28 — NOTIFICATION PREFS
+   SECTION 29 — NOTIFICATION PREFS
    ============================================================ */
 function screenNotifPrefs(){
   const me = getMe();
   const rows = [
     { k:'push',     t:'Push notifications', s:'Enable all push alerts' },
     { k:'email',    t:'Email notifications', s:'Weekly digest + booking reminders' },
-    { k:'nearby',   t:'Nearby player alerts', s:'When a baller is within 500 m' },
-    { k:'invites',  t:'Run invites', s:'When someone sends you an invite' },
+    { k:'nearby',   t:'Nearby player alerts', s:'When a player is within 500 m' },
+    { k:'requests', t:'Play requests', s:'When someone sends you a request' },
     { k:'chat',     t:'Chat messages', s:'New message alerts' },
     { k:'bookings', t:'Court bookings', s:'Booking confirmations & reminders' },
-    { k:'crew',     t:'Crew activity', s:'Posts and events from your crews' },
+    { k:'community',t:'Community activity', s:'Posts and events from your clubs' },
     { k:'quietHours', t:'Quiet hours (10pm – 7am)', s:'Silence push during quiet hours' }
   ];
   return '<div class="pad">'+
-    '<div style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:18px;padding:16px;color:#fff;margin-bottom:14px">'+
-      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">NOTIFICATION CENTRE</div>'+
+    '<div style="background:linear-gradient(140deg,#16233A,#0A1220);border-radius:18px;padding:16px;color:#fff;margin-bottom:14px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">NOTIFICATION CENTRE</div>'+
       '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Control exactly what reaches you — and when.</div>'+
     '</div>'+
     rows.map(r =>
@@ -2731,7 +2674,7 @@ function screenNotifPrefs(){
 }
 
 /* ============================================================
-   SECTION 29 — VENDOR APPLICATION
+   SECTION 30 — VENDOR APPLICATION
    ============================================================ */
 function screenVendorApply(){
   const me = getMe();
@@ -2751,16 +2694,16 @@ function screenVendorApply(){
     '</div>';
   }
   return '<div class="pad" style="padding-top:8px">'+
-    '<div style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
-      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">VENDOR APPLICATION</div>'+
+    '<div style="background:linear-gradient(140deg,#16233A,#0A1220);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">VENDOR APPLICATION</div>'+
       '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Sell gear in the RUBIX shop</div>'+
       '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Listing fee: '+money(PRICES.vendorListing)+' flat + '+PRICES.shopPct+'% of sale.</div>'+
     '</div>'+
     '<div class="form-field"><label class="form-label">Item name</label>'+
-      '<input class="form-input" id="v-item" placeholder="e.g. Nike LeBron 21"></div>'+
+      '<input class="form-input" id="v-item" placeholder="e.g. Wilson Pro Staff 97"></div>'+
     '<div class="form-field"><label class="form-label">Category</label>'+
       '<div class="form-chips">'+
-        ['Sneakers','Balls','Jerseys','Gear','Other'].map(c =>
+        ['Racket','Shoes','Bag','Strings','Apparel','Other'].map(c =>
           '<button class="form-chip '+(state.vendorDraft?.category===c?'is-on':'')+'" data-act="vendorfield" data-v="'+c+'">'+c+'</button>').join('')+
       '</div></div>'+
     '<div class="form-field"><label class="form-label">Asking price (USD)</label>'+
@@ -2772,50 +2715,50 @@ function screenVendorApply(){
 }
 
 /* ============================================================
-   SECTION 30 — TRAINER APPLICATION
+   SECTION 31 — COACH APPLICATION
    ============================================================ */
-function screenTrainerApply(){
+function screenCoachApply(){
   const c = DB.courts.filter(x => x.status === 'approved');
   return '<div class="pad" style="padding-top:8px">'+
-    '<div style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
-      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">TRAINER APPLICATION</div>'+
+    '<div style="background:linear-gradient(140deg,#16233A,#0A1220);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">COACH APPLICATION</div>'+
       '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Get stationed at a court</div>'+
-      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Trainers earn '+ (100 - PRICES.trainerPct) +'% of each booking. '+PRICES.trainerPct+'% platform fee.</div>'+
+      '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Coaches earn '+ (100 - PRICES.coachPct) +'% of each booking. '+PRICES.coachPct+'% platform fee.</div>'+
     '</div>'+
     '<div class="form-field"><label class="form-label">Select court</label>'+
       c.map(ct =>
-        '<div class="toggle-row" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#fff;border-radius:16px;margin-bottom:9px;border:1.5px solid var(--line);gap:14px" data-act="trainercourt" data-id="'+ct.id+'">'+
+        '<div class="toggle-row" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#fff;border-radius:16px;margin-bottom:9px;border:1.5px solid var(--line);gap:14px" data-act="coachcourt" data-id="'+ct.id+'">'+
           '<div style="flex:1;min-width:0">'+
             '<div style="font-size:13.5px;font-weight:800">'+ct.name+'</div>'+
             '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:3px">📍 '+ct.address+'</div>'+
           '</div>'+
-          '<div class="toggle '+(state.trainerCourt===ct.id?'is-on':'')+'"></div>'+
+          '<div class="toggle '+(state.coachCourt===ct.id?'is-on':'')+'"></div>'+
         '</div>').join('')+
     '</div>'+
     '<div class="form-field"><label class="form-label">Specialty</label>'+
-      '<input class="form-input" id="tr-spec" placeholder="e.g. Shooting mechanics"></div>'+
+      '<input class="form-input" id="co-spec" placeholder="e.g. Serve mechanics"></div>'+
     '<div class="form-row">'+
       '<div class="form-field"><label class="form-label">Hourly rate</label>'+
-        '<input class="form-input" id="tr-rate" type="number" placeholder="30"></div>'+
+        '<input class="form-input" id="co-rate" type="number" placeholder="30"></div>'+
       '<div class="form-field"><label class="form-label">Experience</label>'+
-        '<input class="form-input" id="tr-exp" placeholder="e.g. 5 yrs"></div>'+
+        '<input class="form-input" id="co-exp" placeholder="e.g. 5 yrs"></div>'+
     '</div>'+
-    '<button class="btn btn--primary btn--block" data-act="trainersubmit">Submit Application</button>'+
+    '<button class="btn btn--primary btn--block" data-act="coachsubmit">Submit Application</button>'+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 31 — COURT SUBMISSION
+   SECTION 32 — COURT SUBMISSION
    ============================================================ */
 function screenSubmitCourt(){
   return '<div class="pad" style="padding-top:8px">'+
-    '<div style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
-      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">COURT SUBMISSION</div>'+
+    '<div style="background:linear-gradient(140deg,#16233A,#0A1220);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">COURT SUBMISSION</div>'+
       '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Add a venue to RUBIX</div>'+
       '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Reviewed by admin before going live.</div>'+
     '</div>'+
     '<div class="form-field"><label class="form-label">Court name</label>'+
-      '<input class="form-input" id="nc-name" placeholder="e.g. Eastside Hoops Hub"></div>'+
+      '<input class="form-input" id="nc-name" placeholder="e.g. Eastside Tennis Hub"></div>'+
     '<div class="form-field"><label class="form-label">Address</label>'+
       '<input class="form-input" id="nc-addr" placeholder="Street, city"></div>'+
     '<div class="form-row">'+
@@ -2826,7 +2769,7 @@ function screenSubmitCourt(){
     '</div>'+
     '<div class="form-field"><label class="form-label">Surface</label>'+
       '<div class="form-chips">'+
-        ['Indoor','Outdoor','Street'].map(s =>
+        ['Hard','Clay','Grass','Indoor'].map(s =>
           '<button class="form-chip '+(state.courtSurface===s?'is-on':'')+'" data-act="courtsurface" data-v="'+s+'">'+s+'</button>').join('')+
       '</div></div>'+
     '<button class="btn btn--primary btn--block" data-act="courtsubmit">Submit for Review</button>'+
@@ -2834,21 +2777,22 @@ function screenSubmitCourt(){
 }
 
 /* ============================================================
-   SECTION 32 — HOST TOURNAMENT
+   SECTION 33 — HOST TOURNAMENT
    ============================================================ */
 function screenHostTourney(){
   const courts = DB.courts.filter(c => c.status === 'approved');
   return '<div class="pad" style="padding-top:8px">'+
     '<div style="background:linear-gradient(140deg,#3D1F5C,#1F0F30);border-radius:22px;padding:20px;color:#fff;margin-bottom:20px">'+
-      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--orange)">HOST TOURNAMENT</div>'+
-      '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Bring nearby ballers together</div>'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--green)">HOST TOURNAMENT</div>'+
+      '<div style="font-size:19px;font-weight:900;letter-spacing:-.035em;margin-top:10px;line-height:1.2">Bring nearby players together</div>'+
       '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.5">Players have 7 days to agree on match times. Host fee: '+money(PRICES.tournamentHost)+'.</div>'+
     '</div>'+
     '<div class="form-field"><label class="form-label">Tournament name</label>'+
-      '<input class="form-input" id="ht-name" placeholder="e.g. Riverside 3v3 Open"></div>'+
+      '<input class="form-input" id="ht-name" placeholder="e.g. Riverside Doubles Open"></div>'+
     '<div class="form-field"><label class="form-label">Format</label>'+
       '<div class="form-chips">'+
-        [['1v1','1v1'],['2v2','2v2'],['3v3','3v3'],['4v4','4v4'],['5v5','5v5']].map(([v,l]) =>
+        [['singles-elim','Singles · Knockout'],['singles-roundrobin','Singles · Round Robin'],
+         ['doubles-elim','Doubles · Knockout'],['doubles-roundrobin','Doubles · Round Robin']].map(([v,l]) =>
           '<button class="form-chip '+(state.hostFormat===v?'is-on':'')+'" data-act="hostfield" data-v="'+v+'">'+l+'</button>').join('')+
       '</div></div>'+
     '<div class="form-field"><label class="form-label">Court</label>'+
@@ -2863,7 +2807,7 @@ function screenHostTourney(){
     '</div>'+
     '<div class="form-field"><label class="form-label">Prize pool ($)</label>'+
       '<input class="form-input" id="ht-prize" type="number" value="60"></div>'+
-    '<div style="background:#F5F2EA;border-radius:14px;padding:14px;font-size:12px;font-weight:600;color:#3A4756;line-height:1.6;margin-bottom:16px">'+
+    '<div style="background:#F5F7F2;border-radius:14px;padding:14px;font-size:12px;font-weight:600;color:#3A4756;line-height:1.6;margin-bottom:16px">'+
       '<b>How it works:</b> Players join for the entry fee. '+PRICES.tournamentPct+'% platform fee is deducted automatically. Winners are paid instantly from the prize pool once the bracket completes.'+
     '</div>'+
     '<button class="btn btn--primary btn--block" data-act="hosttourneysubmit">Pay '+money(PRICES.tournamentHost)+' & Create</button>'+
@@ -2871,7 +2815,7 @@ function screenHostTourney(){
 }
 
 /* ============================================================
-   SECTION 33 — MORE
+   SECTION 34 — MORE
    ============================================================ */
 function screenMore(){
   const me = getMe();
@@ -2879,7 +2823,7 @@ function screenMore(){
 
   const vendorRow = me.vendorStatus === 'approved'
     ? '<div class="menu-row" data-act="toast" data-msg="You are a verified vendor ✓">'+
-        '<div class="menu-row__ico" style="background:var(--orange);color:#fff">'+ico('check')+'</div>'+
+        '<div class="menu-row__ico" style="background:var(--green)">'+ico('check')+'</div>'+
         '<div class="menu-row__main"><div class="menu-row__t">Verified Vendor</div><div class="menu-row__s">Your shop listings are live</div></div>'+
         ico('chev')+
       '</div>'
@@ -2895,15 +2839,15 @@ function screenMore(){
         ico('chev')+
       '</div>';
 
-  const trainerDashRow = me.role === 'trainer' && me.trainerCourt
-    ? '<div class="menu-row" style="background:linear-gradient(140deg,#3A1F0F,#1F1408);color:#fff" data-act="trainerdash">'+
-        '<div class="menu-row__ico" style="background:var(--orange);color:#fff">'+ico('clipboard')+'</div>'+
-        '<div class="menu-row__main"><div class="menu-row__t" style="color:#fff">Trainer Dashboard</div><div class="menu-row__s" style="color:rgba(255,255,255,.6)">Manage sessions & court status</div></div>'+
+  const coachDashRow = me.role === 'coach' && me.coachCourt
+    ? '<div class="menu-row" style="background:linear-gradient(140deg,#1E3A1F,#0F2E12);color:#fff" data-act="coachdash">'+
+        '<div class="menu-row__ico" style="background:var(--green);color:var(--navy)">'+ico('clipboard')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t" style="color:#fff">Coach Dashboard</div><div class="menu-row__s" style="color:rgba(255,255,255,.6)">Manage bookings & court status</div></div>'+
         ico('chev', 'style="color:#fff"')+
       '</div>'
-    : '<div class="menu-row" data-act="trainerapply">'+
+    : '<div class="menu-row" data-act="coachapply">'+
         '<div class="menu-row__ico">'+ico('users')+'</div>'+
-        '<div class="menu-row__main"><div class="menu-row__t">Apply as Trainer</div><div class="menu-row__s">Earn '+ (100 - PRICES.trainerPct) +'% of each session</div></div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Apply as Coach</div><div class="menu-row__s">Earn '+ (100 - PRICES.coachPct) +'% of each lesson</div></div>'+
         ico('chev')+
       '</div>';
 
@@ -2915,7 +2859,7 @@ function screenMore(){
             '<div class="wallet-hero__label">RUBIX WALLET</div>'+
             '<div class="wallet-hero__balance" style="font-size:32px">'+money(me.wallet)+'</div>'+
           '</div>'+
-          '<div style="width:44px;height:44px;border-radius:16px;background:linear-gradient(140deg,var(--orange),var(--orange-dk));color:#fff;display:grid;place-items:center">'+ico('wallet')+'</div>'+
+          '<div style="width:44px;height:44px;border-radius:16px;background:var(--green);color:var(--navy);display:grid;place-items:center">'+ico('wallet')+'</div>'+
         '</div>'+
         '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:14px">Tap to top up, view activity and see platform fees</div>'+
       '</div>'+
@@ -2923,23 +2867,23 @@ function screenMore(){
 
     '<div class="tile" style="background:linear-gradient(140deg,#3D1F5C,#1F0F30)" data-act="ai">'+
       '<h3>AI Match Recommendations</h3>'+
-      '<p>Top picks based on skill, position, court preference, region, availability.</p>'+
+      '<p>Top picks based on level, surface, hand, region, and availability.</p>'+
       '<div class="tile__emoji">✨</div>'+
     '</div>'+
 
-    '<div class="tile" style="background:linear-gradient(140deg,#1A1F2E,#0A0A0A)" data-act="feed">'+
+    '<div class="tile" style="background:linear-gradient(140deg,#16233A,#0A1220)" data-act="feed">'+
       '<h3>RUBIX Feed</h3>'+
-      '<p>Wins, runs, gear — your hoop circle in one place.</p>'+
+      '<p>Wins, meetups, streaks — your tennis circle in one place.</p>'+
       '<div class="tile__emoji">📰</div>'+
     '</div>'+
 
-    '<div class="tile" style="background:linear-gradient(140deg,#FF6B35,#E85D04)" data-act="badges">'+
+    '<div class="tile" style="background:linear-gradient(140deg,#FF8A3D,#C25A1E)" data-act="badges">'+
       '<h3>Badges & Streaks</h3>'+
       '<p>Unlock achievements as you play. Track your current and longest streaks.</p>'+
       '<div class="tile__emoji">🔥</div>'+
     '</div>'+
 
-    '<div class="tile" style="background:linear-gradient(140deg,#0A0A0A,#1A1F2E)" data-act="lostfound">'+
+    '<div class="tile" style="background:linear-gradient(140deg,#0A1220,#16233A)" data-act="lostfound">'+
       '<h3>Lost &amp; Found</h3>'+
       '<p>Reunite gear with its owner. Post a lost or found item in seconds.</p>'+
       '<div class="tile__emoji">🎒</div>'+
@@ -2947,7 +2891,7 @@ function screenMore(){
 
     '<div class="tile" style="background:linear-gradient(140deg,#3E6B1F,#1F3A0E)" data-act="shop">'+
       '<h3>RUBIX Shop</h3>'+
-      '<p>Buy and sell sneakers, balls, jerseys and gear near you.</p>'+
+      '<p>Buy and sell rackets, shoes, bags and strings near you.</p>'+
       '<div class="tile__emoji">🛒</div>'+
     '</div>'+
 
@@ -2966,7 +2910,7 @@ function screenMore(){
     '</div>'+
     '<div class="menu-row" data-act="editprofile">'+
       '<div class="menu-row__ico">'+ico('edit')+'</div>'+
-      '<div class="menu-row__main"><div class="menu-row__t">Edit Profile</div><div class="menu-row__s">Update your photo, position, bio</div></div>'+
+      '<div class="menu-row__main"><div class="menu-row__t">Edit Profile</div><div class="menu-row__s">Update your photo, level, bio</div></div>'+
       ico('chev')+
     '</div>'+
     '<div class="menu-row" data-act="safety">'+
@@ -2980,7 +2924,7 @@ function screenMore(){
       ico('chev')+
     '</div>'+
     vendorRow+
-    trainerDashRow+
+    coachDashRow+
     '<div class="menu-row" data-act="submitcourt">'+
       '<div class="menu-row__ico">'+ico('pin')+'</div>'+
       '<div class="menu-row__main"><div class="menu-row__t">Submit a Court</div><div class="menu-row__s">Add a new venue to RUBIX</div></div>'+
@@ -2989,24 +2933,24 @@ function screenMore(){
 
     (SESSION.adminId
       ? '<div class="sec-title">Admin</div>'+
-        '<div class="menu-row" style="background:linear-gradient(140deg,#0A0A0A,#1A1F2E);color:#fff" data-act="returnadmin">'+
-          '<div class="menu-row__ico" style="background:var(--orange);color:#fff">'+ico('shield2')+'</div>'+
+        '<div class="menu-row" style="background:linear-gradient(140deg,#0F1B2E,#16233A);color:#fff" data-act="returnadmin">'+
+          '<div class="menu-row__ico" style="background:var(--green);color:var(--navy)">'+ico('shield2')+'</div>'+
           '<div class="menu-row__main"><div class="menu-row__t" style="color:#fff">Return to Admin Console</div><div class="menu-row__s" style="color:rgba(255,255,255,.55)">You are still signed in as admin</div></div>'+
           ico('chev', 'style="color:#fff"')+
         '</div>'
       : '<div class="sec-title">Admin</div>'+
-        '<div class="menu-row" style="background:linear-gradient(140deg,#0A0A0A,#1A1F2E);color:#fff" data-act="exitgate">'+
-          '<div class="menu-row__ico" style="background:var(--orange);color:#fff">'+ico('lock')+'</div>'+
+        '<div class="menu-row" style="background:linear-gradient(140deg,#0F1B2E,#16233A);color:#fff" data-act="exitgate">'+
+          '<div class="menu-row__ico" style="background:var(--green);color:var(--navy)">'+ico('lock')+'</div>'+
           '<div class="menu-row__main"><div class="menu-row__t" style="color:#fff">Admin Sign-in</div><div class="menu-row__s" style="color:rgba(255,255,255,.55)">Approvals · Users · Rankings</div></div>'+
           ico('chev', 'style="color:#fff"')+
         '</div>')+
 
-    '<div style="text-align:center;padding:22px 0 6px;font-size:11px;font-weight:700;color:#B3BDC6;letter-spacing:.14em">RUBIX HOOPS · NO ADS · v1.0</div>'+
+    '<div style="text-align:center;padding:22px 0 6px;font-size:11px;font-weight:700;color:#B3BDC6;letter-spacing:.14em">RUBIX TENNIS · NO ADS · v1.0</div>'+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 34 — LOST & FOUND
+   SECTION 35 — LOST & FOUND
    ============================================================ */
 function screenLostFound(){
   const list = DB.lostFound.filter(i => state.lfFilter === 'all' || i.type === state.lfFilter);
@@ -3035,19 +2979,19 @@ function screenLostFound(){
 }
 
 /* ============================================================
-   SECTION 35 — SHOP
+   SECTION 36 — SHOP
    ============================================================ */
 function screenShop(){
   return '<div class="pad">'+
     '<div class="search">'+ico('search')+
-      '<input placeholder="Search sneakers, balls, jerseys…" data-input="shopQuery">'+
+      '<input placeholder="Search rackets, shoes, bags…" data-input="shopQuery">'+
     '</div>'+
     '<div class="chips chips--pad" style="padding-left:0">'+
       '<button class="chip is-on">All</button>'+
-      '<button class="chip">Sneakers</button>'+
-      '<button class="chip">Balls</button>'+
-      '<button class="chip">Jerseys</button>'+
-      '<button class="chip">Gear</button>'+
+      '<button class="chip">Rackets</button>'+
+      '<button class="chip">Shoes</button>'+
+      '<button class="chip">Bags</button>'+
+      '<button class="chip">Strings</button>'+
     '</div>'+
     '<div class="grid2">'+
       DB.shop.filter(i => i.status === 'approved').map(it => {
@@ -3092,12 +3036,12 @@ function screenShopItem(params){
       '<div class="row" style="background:#fff;border-radius:18px;box-shadow:var(--shadow)" data-act="player" data-id="'+it.sellerId+'">'+
         (seller ? avatarHTML(seller, 'av--sm') : '')+
         '<div class="row__main">'+
-          '<div class="row__title">'+(seller ? seller.name : 'Unknown')+'<span class="lvl">'+(seller ? seller.position : '—')+'</span></div>'+
+          '<div class="row__title">'+(seller ? seller.name : 'Unknown')+'<span class="lvl">'+(seller ? seller.level : '—')+'</span></div>'+
           '<div class="row__sub">📍 '+it.place+' · ⭐ 4.9 seller rating</div>'+
         '</div>'+ ico('chev')+
       '</div>'+
       '<div class="sec-title">Buyer protection</div>'+
-      '<div style="background:#F5F2EA;border-radius:14px;padding:14px;font-size:12px;font-weight:600;color:#3A4756;line-height:1.6">'+
+      '<div style="background:#F5F7F2;border-radius:14px;padding:14px;font-size:12px;font-weight:600;color:#3A4756;line-height:1.6">'+
         '<b>How it works:</b> Pay through RUBIX to protect your purchase. The seller receives '+ (100 - PRICES.shopPct) +'% of the sale price; '+PRICES.shopPct+'% platform fee applies.'+
       '</div>'+
       '<div class="sticky-bar">'+
@@ -3111,23 +3055,23 @@ function screenShopItem(params){
 }
 
 /* ============================================================
-   SECTION 36 — TRAINER DETAIL
+   SECTION 37 — COACH DETAIL
    ============================================================ */
-function screenTrainer(params){
+function screenCoach(params){
   const c = courtById(params.court);
-  const tr = c && c.trainers.find(x => x.id === params.id);
-  if (!tr) return '<div class="empty">Trainer not found.</div>';
-  const owner = userById(tr.userId);
-  const fee = trainerFee(tr.rate);
+  const co = c && c.coaches.find(x => x.id === params.id);
+  if (!co) return '<div class="empty">Coach not found.</div>';
+  const owner = userById(co.userId);
+  const fee = coachFee(co.rate);
   return '<div class="pad" style="padding-top:8px">'+
     '<div style="display:flex;gap:16px;align-items:center">'+
       (owner ? avatarHTML(owner, 'av--lg') : '')+
       '<div>'+
-        '<div style="font-size:21px;font-weight:900;letter-spacing:-.04em">'+tr.name+'</div>'+
-        '<div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:5px">'+tr.spec+'</div>'+
+        '<div style="font-size:21px;font-weight:900;letter-spacing:-.04em">'+co.name+'</div>'+
+        '<div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:5px">'+co.spec+'</div>'+
         '<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap">'+
-          '<span class="badge badge--soft">'+tr.exp+'</span>'+
-          (tr.verified
+          '<span class="badge badge--soft">'+co.exp+'</span>'+
+          (co.verified
             ? '<span class="badge badge--ok">✓ Verified by Admin</span>'
             : '<span class="badge badge--amber">⏳ Pending</span>')+
         '</div>'+
@@ -3135,7 +3079,7 @@ function screenTrainer(params){
     '</div>'+
     '<div class="sec-title">Stationed at</div>'+
     '<div class="row" style="background:#fff;border-radius:18px;box-shadow:var(--shadow)" data-act="court" data-id="'+c.id+'">'+
-      '<div class="av av--sm" style="--c1:hsl('+c.hue+' 62% 58%);--c2:hsl('+((c.hue+45)%360)+' 58% 38%)">'+
+      '<div class="av av--sm" style="--c1:hsl('+c.hue+' 62% 56%);--c2:hsl('+((c.hue+45)%360)+' 58% 34%)">'+
         '<img src="'+img('court-'+c.id,120,120)+'" alt="" onerror="this.remove()">'+
       '</div>'+
       '<div class="row__main">'+
@@ -3146,26 +3090,26 @@ function screenTrainer(params){
     '<div class="sec-title">Availability this week</div>'+
     '<div class="slots">'+
       TIMES.slice(0, 6).map((t, i) => {
-        const off = (i*2 + tr.name.length) % 5 === 0;
-        return '<button class="slot '+(off?'is-off':'')+'" data-act="trainerbook" data-court="'+c.id+'" data-trainer="'+tr.id+'" data-time="'+t+'">'+t+'</button>';
+        const off = (i*2 + co.name.length) % 5 === 0;
+        return '<button class="slot '+(off?'is-off':'')+'" data-act="coachbook" data-court="'+c.id+'" data-coach="'+co.id+'" data-time="'+t+'">'+t+'</button>';
       }).join('')+
     '</div>'+
     '<div class="sticky-bar">'+
       '<div class="sticky-bar__price" style="flex:1">'+
-        '<b>$'+tr.rate+'</b>'+
-        '<span>+ '+money(fee)+' platform fee ('+PRICES.trainerPct+'%)</span>'+
+        '<b>$'+co.rate+'</b>'+
+        '<span>+ '+money(fee)+' platform fee ('+PRICES.coachPct+'%)</span>'+
       '</div>'+
-      '<button class="btn btn--primary" data-act="trainerbook" data-court="'+c.id+'" data-trainer="'+tr.id+'">Book Session</button>'+
+      '<button class="btn btn--primary" data-act="coachbook" data-court="'+c.id+'" data-coach="'+co.id+'">Book Lesson</button>'+
     '</div>'+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 37 — CREW DETAIL
+   SECTION 38 — COMMUNITY DETAIL
    ============================================================ */
-function screenCrew(params){
-  const k = crewById(params.id);
-  if (!k) return '<div class="empty">Crew not found.</div>';
+function screenClub(params){
+  const k = commById(params.id);
+  if (!k) return '<div class="empty">Community not found.</div>';
   const c1 = 'hsl('+k.hue+' 80% 60%)';
   const c2 = 'hsl('+((k.hue+45)%360)+' 70% 42%)';
   const members = DB.users.filter(u => u.id !== 'me' && u.role !== 'admin').slice(0, 6);
@@ -3173,18 +3117,18 @@ function screenCrew(params){
   return '<div class="pad" style="padding-top:8px">'+
     '<div style="height:160px;border-radius:26px;overflow:hidden;position:relative">'+
       '<div style="position:absolute;inset:0;background:linear-gradient(140deg,'+c1+','+c2+')"></div>'+
-      '<img src="'+img('crew-'+k.id,800,400)+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">'+
-      '<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(10,10,10,.72) 100%)"></div>'+
+      '<img src="'+img('club-'+k.id,800,400)+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">'+
+      '<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(10,18,32,.72) 100%)"></div>'+
       '<div style="position:absolute;left:18px;right:18px;bottom:16px;color:#fff">'+
-        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">'+
-          (k.verified === 'approved' ? '✓ VERIFIED CREW' : '⏳ PENDING VERIFICATION')+
+        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">'+
+          (k.verified === 'approved' ? '✓ VERIFIED COMMUNITY' : '⏳ PENDING VERIFICATION')+
         '</div>'+
         '<div style="font-size:20px;font-weight:900;letter-spacing:-.04em;margin-top:6px">'+k.name+'</div>'+
       '</div>'+
     '</div>'+
     '<div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-top:14px;line-height:1.5">'+k.desc+'</div>'+
     '<div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap">'+
-      '<span class="badge badge--orange">'+k.members.toLocaleString()+' members</span>'+
+      '<span class="badge badge--green">'+k.members.toLocaleString()+' members</span>'+
       '<span class="badge badge--soft">'+k.dist+' m away</span>'+
       (creator ? '<span class="badge badge--soft">Led by '+creator.name.split(' ')[0]+'</span>' : '')+
       (k.monthlyFee ? '<span class="fee-tag">'+money(k.monthlyFee)+'/mo</span>' : '')+
@@ -3194,38 +3138,38 @@ function screenCrew(params){
       '<div class="row" data-act="player" data-id="'+u.id+'">'+
         avatarHTML(u, 'av--sm')+
         '<div class="row__main">'+
-          '<div class="row__title">'+u.name+'<span class="lvl">'+u.position+'</span></div>'+
+          '<div class="row__title">'+u.name+'<span class="lvl">'+u.level+'</span></div>'+
           '<div class="row__sub"><span class="dot '+statusDot(u.avail)+'"></span>'+u.status+' · '+u.dist+' m</div>'+
         '</div>'+
-        '<button class="btn btn--sm btn--primary" data-act="request" data-id="'+u.id+'">Invite · $'+PRICES.requestPlayer+'</button>'+
+        '<button class="btn btn--sm btn--primary" data-act="request" data-id="'+u.id+'">Wave · $'+PRICES.requestPlayer+'</button>'+
       '</div>').join('')+
     '<div class="sticky-bar">'+
       '<div class="sticky-bar__price" style="flex:1">'+
-        (k.monthlyFee ? '<b>'+money(k.monthlyFee)+'</b><span>monthly + '+money(crewFee(k.monthlyFee))+' fee</span>' : '<b>Free</b><span>to join the crew</span>')+
+        (k.monthlyFee ? '<b>'+money(k.monthlyFee)+'</b><span>monthly + '+money(communityFee(k.monthlyFee))+' fee</span>' : '<b>Free</b><span>to join the community</span>')+
       '</div>'+
-      '<button class="btn btn--primary" data-act="joincrew" data-id="'+k.id+'">Join Crew</button>'+
+      '<button class="btn btn--primary" data-act="joinclub" data-id="'+k.id+'">Join Community</button>'+
     '</div>'+
   '</div>';
 }
 
 /* ============================================================
-   SECTION 38 — TRAINER DASHBOARD
+   SECTION 39 — COACH DASHBOARD
    ============================================================ */
-function screenTrainerDashboard(){
+function screenCoachDashboard(){
   const me = getMe();
-  const c = courtById(me.trainerCourt);
-  if (!c) return '<div class="empty">No court assigned. Apply as a trainer first.</div>';
+  const c = courtById(me.coachCourt);
+  if (!c) return '<div class="empty">No court assigned. Apply as a coach first.</div>';
   const bookings = c.bookings || [];
-  return '<div class="admin-shell" style="background:#F4F1EA;color:var(--ink)">'+
-    '<div class="dash-hero dash-hero--trainer">'+
+  return '<div class="admin-shell" style="background:#F3F5F0;color:var(--navy)">'+
+    '<div class="dash-hero dash-hero--coach">'+
       '<div class="dash-hero__inner">'+
-        '<div class="dash-hero__eyebrow"><span style="width:6px;height:6px;background:var(--orange);border-radius:50%"></span>TRAINER DASHBOARD</div>'+
+        '<div class="dash-hero__eyebrow"><span style="width:6px;height:6px;background:var(--green);border-radius:50%"></span>COACH DASHBOARD</div>'+
         '<h2>'+c.name+'</h2>'+
         '<p>'+me.name+' · '+c.address+'</p>'+
       '</div>'+
     '</div>'+
     '<div class="dash-stat-grid">'+
-      '<div class="dstat"><b>'+bookings.length+'</b><span>Sessions today</span></div>'+
+      '<div class="dstat"><b>'+bookings.length+'</b><span>Bookings today</span></div>'+
       '<div class="dstat"><b>'+bookings.filter(b => b.status === 'active').length+'</b><span>On court now</span></div>'+
       '<div class="dstat"><b>'+bookings.filter(b => b.status === 'upcoming').length+'</b><span>Upcoming</span></div>'+
     '</div>'+
@@ -3238,9 +3182,9 @@ function screenTrainerDashboard(){
           '<div class="court-status-opt '+(c.courtStatus==='maintenance'?'is-on is-maint':'')+'" data-act="setcourtstatus" data-v="maintenance">Maintenance</div>'+
         '</div>'+
       '</div>'+
-      '<div class="sec-title">Today\'s sessions <small>'+bookings.length+' total</small></div>'+
+      '<div class="sec-title">Today\'s bookings <small>'+bookings.length+' total</small></div>'+
       (bookings.length === 0
-        ? '<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:12.5px;font-weight:600">No sessions for today.</div>'
+        ? '<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:12.5px;font-weight:600">No bookings for today.</div>'
         : bookings.map(b => {
             const u = userById(b.userId);
             const pillClass = 'status-pill status-pill--'+(b.status === 'completed' ? 'done' : b.status);
@@ -3266,9 +3210,9 @@ function screenTrainerDashboard(){
       '<div class="sec-title">Earnings</div>'+
       '<div class="wallet-hero">'+
         '<div class="wallet-hero__inner">'+
-          '<div class="wallet-hero__label">TRAINER EARNINGS</div>'+
+          '<div class="wallet-hero__label">COACHING EARNINGS</div>'+
           '<div class="wallet-hero__balance" style="font-size:32px">'+money(me.earnings || 0)+'</div>'+
-          '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:14px">After '+PRICES.trainerPct+'% platform fee · paid out weekly</div>'+
+          '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.55);margin-top:14px">After '+PRICES.coachPct+'% platform fee · paid out weekly</div>'+
         '</div>'+
       '</div>'+
       '<button class="btn btn--ghost btn--block" style="margin-top:14px" data-act="back">← Back</button>'+
@@ -3277,18 +3221,18 @@ function screenTrainerDashboard(){
 }
 
 /* ============================================================
-   SECTION 39 — CREW DASHBOARD
+   SECTION 40 — COMMUNITY DASHBOARD
    ============================================================ */
-function screenCrewDashboard(){
+function screenCommunityDashboard(){
   const me = getMe();
-  const k = me.crewId ? crewById(me.crewId) : null;
-  if (!k) return '<div class="empty">You don\'t lead a crew yet.</div>';
-  const members = DB.users.filter(u => u.crewId === k.id || (u.id !== 'me' && u.id !== k.createdBy)).slice(0, 8);
+  const k = me.communityId ? commById(me.communityId) : null;
+  if (!k) return '<div class="empty">You don\'t lead a community yet.</div>';
+  const members = DB.users.filter(u => u.communityId === k.id || (u.id !== 'me' && u.id !== k.createdBy)).slice(0, 8);
   const pending = DB.users.filter(u => u.id !== 'me').slice(0, 3);
-  return '<div class="admin-shell" style="background:#F4F1EA;color:var(--ink)">'+
-    '<div class="dash-hero dash-hero--crew">'+
+  return '<div class="admin-shell" style="background:#F3F5F0;color:var(--navy)">'+
+    '<div class="dash-hero dash-hero--comm">'+
       '<div class="dash-hero__inner">'+
-        '<div class="dash-hero__eyebrow"><span style="width:6px;height:6px;background:var(--orange);border-radius:50%"></span>CREW DASHBOARD</div>'+
+        '<div class="dash-hero__eyebrow"><span style="width:6px;height:6px;background:#FF8A3D;border-radius:50%"></span>COMMUNITY DASHBOARD</div>'+
         '<h2>'+k.name+'</h2>'+
         '<p>Managed by '+me.name+' · '+k.members.toLocaleString()+' members</p>'+
       '</div>'+
@@ -3305,7 +3249,7 @@ function screenCrewDashboard(){
           avatarHTML(u, 'av--sm')+
           '<div class="member-row__main">'+
             '<div class="member-row__t">'+u.name+'</div>'+
-            '<div class="member-row__s">'+u.position+' · '+u.city+'</div>'+
+            '<div class="member-row__s">NTRP '+u.level+' · '+u.city+'</div>'+
           '</div>'+
           '<button class="btn btn--sm btn--danger" data-act="toast" data-msg="Rejected '+u.name.split(' ')[0]+'">Reject</button>'+
           '<button class="btn btn--sm btn--primary" data-act="toast" data-msg="Approved '+u.name.split(' ')[0]+'">Approve</button>'+
@@ -3316,19 +3260,24 @@ function screenCrewDashboard(){
           avatarHTML(u, 'av--sm')+
           '<div class="member-row__main">'+
             '<div class="member-row__t">'+u.name+'</div>'+
-            '<div class="member-row__s">'+u.city+' · '+u.position+'</div>'+
+            '<div class="member-row__s">'+u.city+' · NTRP '+u.level+'</div>'+
           '</div>'+
           '<span class="badge badge--soft" style="font-size:9px">Member</span>'+
         '</div>').join('')+
-      '<div class="sec-title">Crew management</div>'+
-      '<div class="menu-row" data-act="toast" data-msg="Post an announcement">'+
+      '<div class="sec-title">Community management</div>'+
+      '<div class="menu-row" data-act="toast" data-msg="Post an announcement to members">'+
         '<div class="menu-row__ico">'+ico('megaphone')+'</div>'+
         '<div class="menu-row__main"><div class="menu-row__t">Post announcement</div><div class="menu-row__s">Notify all members</div></div>'+
         ico('chev')+
       '</div>'+
-      '<div class="menu-row" data-act="toast" data-msg="Create a new run">'+
+      '<div class="menu-row" data-act="toast" data-msg="Create a new community event">'+
         '<div class="menu-row__ico">'+ico('calendar')+'</div>'+
-        '<div class="menu-row__main"><div class="menu-row__t">Create run</div><div class="menu-row__s">Schedule a meetup or tournament</div></div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Create event</div><div class="menu-row__s">Schedule a meet or tournament</div></div>'+
+        ico('chev')+
+      '</div>'+
+      '<div class="menu-row" data-act="toast" data-msg="Edit community settings">'+
+        '<div class="menu-row__ico">'+ico('settings')+'</div>'+
+        '<div class="menu-row__main"><div class="menu-row__t">Community settings</div><div class="menu-row__s">Name, description, visibility</div></div>'+
         ico('chev')+
       '</div>'+
       '<button class="btn btn--ghost btn--block" style="margin-top:14px" data-act="back">← Back</button>'+
@@ -3340,7 +3289,7 @@ function screenCrewDashboard(){
    END OF SESSION 4 — continue with Session 5 below
    ════════════════════════════════════════════════════════════ */
 /* ============================================================
-   SECTION 40 — ADMIN TABS
+   SECTION 41 — ADMIN TABS
    ============================================================ */
 const ADMIN_TABS = [
   {id:'overview',   label:'Overview'},
@@ -3348,7 +3297,7 @@ const ADMIN_TABS = [
   {id:'approvals',  label:'Approvals'},
   {id:'users',      label:'Users'},
   {id:'admins',     label:'Admins'},
-  {id:'national',   label:'National Squad'},
+  {id:'national',   label:'National Team'},
   {id:'rankings',   label:'Rankings'},
   {id:'moderation', label:'Moderation'},
   {id:'wallet',     label:'Revenue'},
@@ -3360,10 +3309,10 @@ const ADMIN_TABS = [
    ============================================================ */
 function adminOverview(){
   const vendors = DB.pending.vendors.length;
-  const crews = DB.pending.crews.length;
-  const trainers = DB.pending.trainers.length;
+  const comms = DB.pending.communities.length;
+  const coaches = DB.pending.coaches.length;
   const courts = DB.pending.courts.length;
-  const total = vendors + crews + trainers + courts;
+  const total = vendors + comms + coaches + courts;
   const national = DB.users.filter(u => u.isNational).length;
   const members = DB.users.filter(u => u.role !== 'admin' && u.id !== 'me').length;
   const undone = ADMIN.log.filter(x => x.state === 'undone').length;
@@ -3373,7 +3322,7 @@ function adminOverview(){
     '<div class="astat"><b>'+money(PLATFORM.revenue)+'</b><span>Platform revenue</span></div>'+
     '<div class="astat"><b>'+total+'</b><span>Pending approvals</span></div>'+
     '<div class="astat"><b>'+members+'</b><span>Members</span></div>'+
-    '<div class="astat"><b>'+national+'</b><span>National squad</span></div>'+
+    '<div class="astat"><b>'+national+'</b><span>National team</span></div>'+
     '<div class="astat"><b>'+openReports+'</b><span>Open reports</span></div>'+
     '<div class="astat"><b>'+ADMIN.log.length+'</b><span>Actions logged</span></div>'+
   '</div>'+
@@ -3394,7 +3343,7 @@ function adminOverview(){
       '</div>'
     ).join('')+
     (undone ? '<div style="margin-top:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;font-size:12px;font-weight:600;color:rgba(255,255,255,.55);line-height:1.5">'+
-      '<b style="color:var(--orange)">'+undone+'</b> reversed action'+(undone>1?'s':'')+' in the log — tap the Log tab to inspect and reapply.'+
+      '<b style="color:var(--green)">'+undone+'</b> reversed action'+(undone>1?'s':'')+' in the log — tap the Log tab to inspect and reapply.'+
     '</div>' : '')+
   '</div>';
 }
@@ -3404,9 +3353,7 @@ function adminOverview(){
    ============================================================ */
 function adminAnalytics(){
   const DAU = [42,58,61,73,89,102,88];
-  const max = Math.max(...DAU);
-  const retention = 62;
-  const matchRate = 78;
+  const max = Math.max.apply(null, DAU);
   return '<div style="padding:0 18px 22px">'+
     '<div class="chart-card">'+
       '<div class="chart-card__t">Daily active users · Last 7 days</div>'+
@@ -3422,14 +3369,14 @@ function adminAnalytics(){
         '<div class="analytics-kpi__t">7-day retention</div>'+
         '<div class="analytics-kpi__s">Users who returned within a week</div>'+
       '</div>'+
-      '<div class="analytics-kpi__v">'+retention+'%</div>'+
+      '<div class="analytics-kpi__v">62%</div>'+
     '</div>'+
     '<div class="analytics-kpi">'+
       '<div class="analytics-kpi__main">'+
-        '<div class="analytics-kpi__t">Game completion rate</div>'+
-        '<div class="analytics-kpi__s">Confirmed games / invites sent</div>'+
+        '<div class="analytics-kpi__t">Match completion rate</div>'+
+        '<div class="analytics-kpi__s">Confirmed matches / requests sent</div>'+
       '</div>'+
-      '<div class="analytics-kpi__v">'+matchRate+'%</div>'+
+      '<div class="analytics-kpi__v">78%</div>'+
     '</div>'+
     '<div class="analytics-kpi">'+
       '<div class="analytics-kpi__main">'+
@@ -3449,7 +3396,7 @@ function adminAnalytics(){
       '<div class="chart-card__t">Top performing courts</div>'+
       DB.courts.slice(0, 4).map(c =>
         '<div class="admin-row" style="margin-bottom:8px">'+
-          '<div style="width:34px;height:34px;border-radius:12px;background:rgba(255,107,53,.15);color:var(--orange);display:grid;place-items:center;font-size:15px;flex:0 0 auto">🏀</div>'+
+          '<div style="width:34px;height:34px;border-radius:12px;background:rgba(216,255,61,.15);color:var(--green);display:grid;place-items:center;font-size:15px;flex:0 0 auto">🎾</div>'+
           '<div class="admin-row__main">'+
             '<div class="admin-row__t">'+c.name+'</div>'+
             '<div class="admin-row__s">$'+c.price+'/hr · '+c.courtCount+' courts</div>'+
@@ -3468,8 +3415,8 @@ function adminApprovals(){
   const t = state.adminAppTab;
   const chips = [
     ['vendors','Vendors', DB.pending.vendors.length],
-    ['crews','Crews', DB.pending.crews.length],
-    ['trainers','Trainers', DB.pending.trainers.length],
+    ['communities','Communities', DB.pending.communities.length],
+    ['coaches','Coaches', DB.pending.coaches.length],
     ['courts','Courts', DB.pending.courts.length]
   ];
   let body = '';
@@ -3491,14 +3438,14 @@ function adminApprovals(){
           '</div>';
         }).join('');
   }
-  if (t === 'crews'){
-    body = DB.pending.crews.length === 0
-      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending crew verifications.</div>'
-      : DB.pending.crews.map(k => {
+  if (t === 'communities'){
+    body = DB.pending.communities.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending community verifications.</div>'
+      : DB.pending.communities.map(k => {
           const u = userById(k.creatorId);
-          return '<div class="approval" data-act="adminappdetail" data-type="crew" data-id="'+k.id+'">'+
+          return '<div class="approval" data-act="adminappdetail" data-type="community" data-id="'+k.id+'">'+
             '<div class="approval__head">'+
-              '<div class="av av--sm" style="background:linear-gradient(140deg,#FF6B35,#E85D04)"><span class="av__ini">👥</span></div>'+
+              '<div class="av av--sm" style="background:linear-gradient(140deg,#FF8A3D,#C25A1E)"><span class="av__ini">👥</span></div>'+
               '<div class="approval__main">'+
                 '<div class="approval__t">'+k.name+'</div>'+
                 '<div class="approval__s">'+u.name+' · '+k.members+' members</div>'+
@@ -3509,13 +3456,13 @@ function adminApprovals(){
           '</div>';
         }).join('');
   }
-  if (t === 'trainers'){
-    body = DB.pending.trainers.length === 0
-      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending trainer verifications.</div>'
-      : DB.pending.trainers.map(a => {
+  if (t === 'coaches'){
+    body = DB.pending.coaches.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No pending coach verifications.</div>'
+      : DB.pending.coaches.map(a => {
           const u = userById(a.userId);
           const c = courtById(a.courtId);
-          return '<div class="approval" data-act="adminappdetail" data-type="trainer" data-id="'+a.id+'">'+
+          return '<div class="approval" data-act="adminappdetail" data-type="coach" data-id="'+a.id+'">'+
             '<div class="approval__head">'+ avatarHTML(u, 'av--sm')+
               '<div class="approval__main">'+
                 '<div class="approval__t">'+u.name+'</div>'+
@@ -3534,7 +3481,7 @@ function adminApprovals(){
           const u = userById(ct.submittedBy);
           return '<div class="approval" data-act="adminappdetail" data-type="court" data-id="'+ct.id+'">'+
             '<div class="approval__head">'+
-              '<div class="av av--sm" style="background:linear-gradient(140deg,#4A6B9E,#263F6B)"><span class="av__ini">🏀</span></div>'+
+              '<div class="av av--sm" style="background:linear-gradient(140deg,#4A6B9E,#263F6B)"><span class="av__ini">🎾</span></div>'+
               '<div class="approval__main">'+
                 '<div class="approval__t">'+ct.name+'</div>'+
                 '<div class="approval__s">📍 '+ct.address+'</div>'+
@@ -3548,9 +3495,10 @@ function adminApprovals(){
 
   return '<div style="padding:0 18px 22px">'+
     '<div class="chips chips--pad" style="padding-left:0">'+
-      chips.map(([v,l,n]) =>
-        '<button class="chip '+(t===v?'is-on':'')+'" data-act="admingotoapp" data-v="'+v+'">'+l+(n?' · '+n:'')+'</button>'
-      ).join('')+
+      chips.map(function(x){
+        var v = x[0], l = x[1], n = x[2];
+        return '<button class="chip '+(t===v?'is-on':'')+'" data-act="admingotoapp" data-v="'+v+'">'+l+(n?' · '+n:'')+'</button>';
+      }).join('')+
     '</div>'+
     body+
   '</div>';
@@ -3568,15 +3516,15 @@ function adminUsers(){
       '<input data-input="adminUserQuery" value="'+state.adminUserQuery.replace(/"/g,'&quot;')+'" placeholder="Search users…" style="color:#fff">'+
     '</div>'+
     list.map(u => {
-      const roleChip = u.role === 'trainer' ? '<span class="badge" style="background:rgba(255,107,53,.2);color:var(--orange);font-size:9px;padding:2px 6px">TRAINER</span>' : '';
+      const roleChip = u.role === 'coach' ? '<span class="badge" style="background:rgba(216,255,61,.2);color:var(--green);font-size:9px;padding:2px 6px">COACH</span>' : '';
       const vendChip = u.vendorStatus === 'approved' ? '<span class="badge" style="background:rgba(37,194,110,.2);color:#9BE8C2;font-size:9px;padding:2px 6px">VENDOR</span>' : '';
-      const natChip = u.isNational ? '<span class="badge" style="background:rgba(255,107,53,.2);color:var(--orange);font-size:9px;padding:2px 6px">NATIONAL</span>' : '';
-      const crewChip = u.crewId ? '<span class="badge" style="background:rgba(255,138,61,.2);color:#FFB27A;font-size:9px;padding:2px 6px">CREW</span>' : '';
+      const natChip = u.isNational ? '<span class="badge" style="background:rgba(216,255,61,.2);color:var(--green);font-size:9px;padding:2px 6px">NATIONAL</span>' : '';
+      const commChip = u.communityId ? '<span class="badge" style="background:rgba(255,138,61,.2);color:#FFB27A;font-size:9px;padding:2px 6px">COMMUNITY</span>' : '';
       return '<div class="admin-row" data-act="adminuseredit" data-id="'+u.id+'">'+
         avatarHTML(u, 'av--sm')+
         '<div class="admin-row__main">'+
-          '<div class="admin-row__t">'+u.name+' '+roleChip+' '+vendChip+' '+natChip+' '+crewChip+'</div>'+
-          '<div class="admin-row__s">'+u.city+' · '+u.position+' · Skill '+u.skill+(u.rankN?' · Nat #'+u.rankN:'')+(u.rankG?' · Gen #'+u.rankG:'')+'</div>'+
+          '<div class="admin-row__t">'+(u.name || 'Unnamed')+' '+roleChip+' '+vendChip+' '+natChip+' '+commChip+'</div>'+
+          '<div class="admin-row__s">'+(u.city || '—')+' · NTRP '+u.level+(u.rankN?' · Nat #'+u.rankN:'')+(u.rankG?' · Gen #'+u.rankG:'')+'</div>'+
         '</div>'+ ico('chev')+
       '</div>';
     }).join('')+
@@ -3588,9 +3536,9 @@ function adminUsers(){
    ============================================================ */
 function adminAdmins(){
   return '<div style="padding:0 18px 22px">'+
-    '<div style="background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.22);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
-      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">ADMIN ACCOUNTS</div>'+
-      '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Admins are separate from players, trainers and crew accounts. Each has its own email and passcode.</div>'+
+    '<div style="background:rgba(216,255,61,.08);border:1px solid rgba(216,255,61,.22);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">ADMIN ACCOUNTS</div>'+
+      '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Admins are separate from players, coaches and community accounts. Each has its own email and passcode.</div>'+
     '</div>'+
     ADMINS.map(a =>
       '<div class="adm-card">'+
@@ -3615,24 +3563,24 @@ function adminAdmins(){
 }
 
 /* ============================================================
-   ADMIN · NATIONAL SQUAD
+   ADMIN · NATIONAL TEAM
    ============================================================ */
 function adminNational(){
   const nat = DB.users.filter(u => u.isNational && u.role !== 'admin').sort((a,b) => a.rankN - b.rankN);
   const pool = DB.users.filter(u => !u.isNational && u.role !== 'admin' && u.id !== 'me').sort((a,b) => b.points - a.points);
   return '<div style="padding:0 18px 22px">'+
-    '<div style="background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.22);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
-      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">NATIONAL SQUAD</div>'+
+    '<div style="background:rgba(216,255,61,.08);border:1px solid rgba(216,255,61,.22);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">NATIONAL TEAM ROSTER</div>'+
       '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Only admin can add or remove players. National rankings are completely separate from the general pool.</div>'+
     '</div>'+
     '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:10px">CURRENT ROSTER · '+nat.length+'</div>'+
     nat.map(u =>
       '<div class="admin-row">'+
-        '<div style="width:28px;text-align:center;font-size:15px;font-weight:900;color:var(--orange);flex:0 0 auto">'+u.rankN+'</div>'+
+        '<div style="width:28px;text-align:center;font-size:15px;font-weight:900;color:var(--green);flex:0 0 auto">'+u.rankN+'</div>'+
         avatarHTML(u, 'av--sm')+
         '<div class="admin-row__main">'+
           '<div class="admin-row__t">'+u.name+'</div>'+
-          '<div class="admin-row__s">'+u.points.toLocaleString()+' pts · '+u.position+' · '+u.region+'</div>'+
+          '<div class="admin-row__s">'+u.points.toLocaleString()+' pts · NTRP '+u.level+' · '+u.region+'</div>'+
         '</div>'+
         '<button class="abtn abtn--no" style="padding:8px 12px;font-size:11px" data-act="removenational" data-id="'+u.id+'">Remove</button>'+
       '</div>'
@@ -3642,7 +3590,7 @@ function adminNational(){
       '<div class="admin-row">'+ avatarHTML(u, 'av--sm')+
         '<div class="admin-row__main">'+
           '<div class="admin-row__t">'+u.name+'</div>'+
-          '<div class="admin-row__s">'+u.points.toLocaleString()+' pts · '+u.position+' · Gen #'+u.rankG+'</div>'+
+          '<div class="admin-row__s">'+u.points.toLocaleString()+' pts · NTRP '+u.level+' · Gen #'+u.rankG+'</div>'+
         '</div>'+
         '<button class="abtn abtn--ok" style="padding:8px 12px;font-size:11px" data-act="addnational" data-id="'+u.id+'">+ Add</button>'+
       '</div>'
@@ -3658,7 +3606,7 @@ function adminRankings(){
     .sort((a,b) => b.points - a.points);
   return '<div style="padding:0 18px 22px">'+
     '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;margin-bottom:16px">'+
-      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">GENERAL PLAYER POOL</div>'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">GENERAL PLAYER POOL</div>'+
       '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Adjust points ±50 per tap. Every change is reversible from the Log.</div>'+
     '</div>'+
     general.map((u, i) =>
@@ -3667,7 +3615,7 @@ function adminRankings(){
         avatarHTML(u, 'av--sm')+
         '<div class="admin-row__main">'+
           '<div class="admin-row__t">'+u.name+'</div>'+
-          '<div class="admin-row__s">'+u.position+' · '+u.region+'</div>'+
+          '<div class="admin-row__s">NTRP '+u.level+' · '+u.region+'</div>'+
         '</div>'+
         '<div style="text-align:right;margin-right:8px">'+
           '<div style="font-size:13px;font-weight:900;color:#fff">'+u.points.toLocaleString()+'</div>'+
@@ -3693,12 +3641,14 @@ function adminModeration(){
   };
   return '<div style="padding:0 18px 22px">'+
     '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;margin-bottom:14px">'+
-      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">MODERATION QUEUE</div>'+
+      '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">MODERATION QUEUE</div>'+
       '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Review user reports and take action. All decisions are reversible.</div>'+
     '</div>'+
     '<div class="chips chips--pad" style="padding-left:0;margin-bottom:6px">'+
-      [['open','Open'],['resolved','Resolved'],['all','All']].map(([v,l]) =>
-        '<button class="chip '+(f===v?'is-on':'')+'" data-act="reportfilter" data-v="'+v+'">'+l+'</button>').join('')+
+      [['open','Open'],['resolved','Resolved'],['all','All']].map(function(x){
+        var v = x[0], l = x[1];
+        return '<button class="chip '+(f===v?'is-on':'')+'" data-act="reportfilter" data-v="'+v+'">'+l+'</button>';
+      }).join('')+
     '</div>'+
     (list.length === 0
       ? '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:13px;font-weight:600">No reports in this view.</div>'
@@ -3713,7 +3663,7 @@ function adminModeration(){
             '</div>'+
             '<div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">'+
               (reporter ? avatarHTML(reporter, 'av--xs') : '')+
-              '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6)">'+reporter.name+' → '+target.name+'</div>'+
+              '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6)">'+(reporter ? reporter.name : '?')+' → '+(target ? target.name : '?')+'</div>'+
               (target ? avatarHTML(target, 'av--xs') : '')+
             '</div>'+
             '<div class="report-card__s">"'+escapeHTML(r.text)+'"</div>'+
@@ -3740,10 +3690,10 @@ function adminWallet(){
   });
   const kpi = [
     { k:'court',      l:'Court bookings',   feePct: PRICES.courtPct },
-    { k:'trainer',    l:'Trainer sessions', feePct: PRICES.trainerPct },
+    { k:'coach',      l:'Coach sessions',   feePct: PRICES.coachPct },
     { k:'tournament', l:'Tournaments',      feePct: PRICES.tournamentPct },
     { k:'chat',       l:'Chat unlocks',     fee: PRICES.chatUnlock },
-    { k:'request',    l:'Run invites',      fee: PRICES.requestPlayer },
+    { k:'request',    l:'Play requests',    fee: PRICES.requestPlayer },
     { k:'vendor',     l:'Vendor listings',  fee: PRICES.vendorListing },
     { k:'shop',       l:'Shop sales',       feePct: PRICES.shopPct }
   ];
@@ -3770,7 +3720,7 @@ function adminWallet(){
       ? '<div style="text-align:center;padding:30px 20px;color:rgba(255,255,255,.4);font-size:12.5px;font-weight:600">No platform revenue yet.</div>'
       : history.map(h =>
           '<div class="admin-row" style="margin-bottom:6px">'+
-            '<div style="width:36px;height:36px;border-radius:13px;background:rgba(255,107,53,.15);color:var(--orange);display:grid;place-items:center;font-size:15px;flex:0 0 auto">💵</div>'+
+            '<div style="width:36px;height:36px;border-radius:13px;background:rgba(216,255,61,.15);color:var(--green);display:grid;place-items:center;font-size:15px;flex:0 0 auto">💵</div>'+
             '<div class="admin-row__main">'+
               '<div class="admin-row__t">'+h.kind+' · '+money(h.gross)+'</div>'+
               '<div class="admin-row__s">'+timeAgo(h.ts)+' · net paid out '+money(h.net)+'</div>'+
@@ -3790,11 +3740,11 @@ function adminLog(){
   return '<div style="padding:0 18px 22px">'+
     '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:center">'+
       '<div style="flex:1">'+
-        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)">ACTION LOG</div>'+
+        '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--green)">ACTION LOG</div>'+
         '<div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5">Every action is reversible. Tap a log entry to reverse or reapply it.</div>'+
       '</div>'+
       '<div style="text-align:right">'+
-        '<div style="font-size:22px;font-weight:900;color:var(--orange);line-height:1">'+log.length+'</div>'+
+        '<div style="font-size:22px;font-weight:900;color:var(--green);line-height:1">'+log.length+'</div>'+
         '<div style="font-size:9.5px;font-weight:800;color:rgba(255,255,255,.4);letter-spacing:.1em">ACTIONS</div>'+
       '</div>'+
     '</div>'+
@@ -3836,8 +3786,8 @@ function screenAdmin(){
   if (t === 'wallet')     body = adminWallet();
   if (t === 'log')        body = adminLog();
 
-  const pendingCount = DB.pending.vendors.length + DB.pending.crews.length +
-    DB.pending.trainers.length + DB.pending.courts.length;
+  const pendingCount = DB.pending.vendors.length + DB.pending.communities.length +
+    DB.pending.coaches.length + DB.pending.courts.length;
   const openReports = DB.reports.filter(r => r.status === 'open').length;
 
   return '<div class="admin-shell">'+
@@ -3887,7 +3837,7 @@ function screenAdminDetail(params){
         '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
           '<div style="flex:1;min-width:0">'+
             '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
-            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · '+user.position+' · Skill '+user.skill+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · NTRP '+user.level+'</div>'+
             '<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap">'+
               '<span class="badge badge--soft" style="font-size:9px">'+user.idNumber+'</span>'+
               (user.vendorStatus === 'approved' ? '<span class="badge badge--ok" style="font-size:9px">Already vendor</span>' : '')+
@@ -3916,14 +3866,14 @@ function screenAdminDetail(params){
     '</div>';
   }
 
-  if (type === 'crew'){
-    item = DB.pending.crews.find(x => x.id === id);
+  if (type === 'community'){
+    item = DB.pending.communities.find(x => x.id === id);
     if (!item) return '<div class="empty">Application not found.</div>';
     user = userById(item.creatorId);
     return '<div class="admin-shell" style="padding-bottom:0">'+
       '<div class="detail-hdr">'+
         '<div class="detail-hdr__inner">'+
-          '<div class="detail-hdr__eyebrow">CREW VERIFICATION</div>'+
+          '<div class="detail-hdr__eyebrow">COMMUNITY VERIFICATION</div>'+
           '<h2>'+item.name+'</h2>'+
           '<p>Submitted '+item.submitted+' · '+item.members+' members · '+item.region+'</p>'+
         '</div>'+
@@ -3933,12 +3883,12 @@ function screenAdminDetail(params){
         '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
           '<div style="flex:1;min-width:0">'+
             '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
-            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · '+user.position+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · NTRP '+user.level+'</div>'+
           '</div>'+
         '</div>'+
       '</div>'+
       '<div class="detail-block">'+
-        '<div class="detail-block__t">Crew details</div>'+
+        '<div class="detail-block__t">Community details</div>'+
         '<div class="detail-field"><span class="detail-field__k">Name</span><span class="detail-field__v">'+item.name+'</span></div>'+
         '<div class="detail-field"><span class="detail-field__k">Members</span><span class="detail-field__v">'+item.members+'</span></div>'+
         '<div class="detail-field"><span class="detail-field__k">Region</span><span class="detail-field__v">'+item.region+'</span></div>'+
@@ -3950,31 +3900,31 @@ function screenAdminDetail(params){
         '<div class="detail-note">"'+escapeHTML(item.desc)+'"</div>'+
       '</div>'+
       '<div class="detail-actions">'+
-        '<button class="btn btn--danger" data-act="rejectcrew" data-id="'+item.id+'">Reject</button>'+
-        '<button class="btn btn--primary" data-act="approvecrew" data-id="'+item.id+'">Verify Crew</button>'+
+        '<button class="btn btn--danger" data-act="rejectcomm" data-id="'+item.id+'">Reject</button>'+
+        '<button class="btn btn--primary" data-act="approvecomm" data-id="'+item.id+'">Verify Community</button>'+
       '</div>'+
     '</div>';
   }
 
-  if (type === 'trainer'){
-    item = DB.pending.trainers.find(x => x.id === id);
+  if (type === 'coach'){
+    item = DB.pending.coaches.find(x => x.id === id);
     if (!item) return '<div class="empty">Application not found.</div>';
     user = userById(item.userId);
     const c = courtById(item.courtId);
     return '<div class="admin-shell" style="padding-bottom:0">'+
       '<div class="detail-hdr">'+
         '<div class="detail-hdr__inner">'+
-          '<div class="detail-hdr__eyebrow">TRAINER VERIFICATION</div>'+
+          '<div class="detail-hdr__eyebrow">COACH VERIFICATION</div>'+
           '<h2>'+user.name+'</h2>'+
           '<p>Submitted '+item.submitted+' · Stationed at '+(c ? c.name : 'unknown')+'</p>'+
         '</div>'+
       '</div>'+
       '<div class="detail-block">'+
-        '<div class="detail-block__t">Trainer profile</div>'+
+        '<div class="detail-block__t">Coach profile</div>'+
         '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
           '<div style="flex:1;min-width:0">'+
             '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
-            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · '+user.position+' · Skill '+user.skill+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · NTRP '+user.level+'</div>'+
           '</div>'+
         '</div>'+
       '</div>'+
@@ -3985,7 +3935,7 @@ function screenAdminDetail(params){
         '<div class="detail-field"><span class="detail-field__k">Certification</span><span class="detail-field__v">'+item.cert+'</span></div>'+
         '<div class="detail-field"><span class="detail-field__k">Hourly rate</span><span class="detail-field__v">$'+item.rate+'</span></div>'+
         '<div class="detail-field"><span class="detail-field__k">Availability</span><span class="detail-field__v">'+item.availability+'</span></div>'+
-        '<div class="detail-field"><span class="detail-field__k">Platform fee</span><span class="detail-field__v">'+PRICES.trainerPct+'% per session</span></div>'+
+        '<div class="detail-field"><span class="detail-field__k">Platform fee</span><span class="detail-field__v">'+PRICES.coachPct+'% per lesson</span></div>'+
       '</div>'+
       (c
         ? '<div class="detail-block">'+
@@ -3996,8 +3946,8 @@ function screenAdminDetail(params){
           '</div>'
         : '')+
       '<div class="detail-actions">'+
-        '<button class="btn btn--danger" data-act="rejecttrainer" data-id="'+item.id+'">Reject</button>'+
-        '<button class="btn btn--primary" data-act="approvetrainer" data-id="'+item.id+'">Verify Trainer</button>'+
+        '<button class="btn btn--danger" data-act="rejectcoach" data-id="'+item.id+'">Reject</button>'+
+        '<button class="btn btn--primary" data-act="approvecoach" data-id="'+item.id+'">Verify Coach</button>'+
       '</div>'+
     '</div>';
   }
@@ -4019,7 +3969,7 @@ function screenAdminDetail(params){
         '<div style="display:flex;gap:13px;align-items:center">'+ avatarHTML(user, 'av--lg')+
           '<div style="flex:1;min-width:0">'+
             '<div style="font-size:17px;font-weight:900;letter-spacing:-.035em">'+user.name+'</div>'+
-            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · '+user.position+'</div>'+
+            '<div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-top:5px">'+user.city+' · NTRP '+user.level+'</div>'+
           '</div>'+
         '</div>'+
       '</div>'+
@@ -4036,7 +3986,7 @@ function screenAdminDetail(params){
       '<div class="detail-block">'+
         '<div class="detail-block__t">Amenities</div>'+
         '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
-          item.amenities.map(a => '<span style="padding:7px 12px;border-radius:11px;background:#EFEBE2;font-size:11px;font-weight:700;color:#5C6B7A">'+a+'</span>').join('')+
+          item.amenities.map(a => '<span style="padding:7px 12px;border-radius:11px;background:#EFF2EC;font-size:11px;font-weight:700;color:#5C6B7A">'+a+'</span>').join('')+
         '</div>'+
       '</div>'+
       (item.notes
@@ -4066,18 +4016,18 @@ function screenAdminUser(params){
     '<div class="admin-top">'+
       '<div class="admin-top__inner" style="display:flex;gap:14px;align-items:center">'+ avatarHTML(u, 'av--lg')+
         '<div style="flex:1;min-width:0">'+
-          '<h2 style="font-size:21px">'+u.name+'</h2>'+
-          '<p>'+u.city+' · '+u.position+' · '+u.idNumber+'</p>'+
+          '<h2 style="font-size:21px">'+(u.name || 'Unnamed')+'</h2>'+
+          '<p>'+(u.city || '—')+' · NTRP '+u.level+' · '+u.idNumber+'</p>'+
         '</div>'+
       '</div>'+
     '</div>'+
     '<div style="padding:22px 18px">'+
       '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:12px">IDENTITY</div>'+
       '<div class="form-field"><label class="form-label" style="color:rgba(255,255,255,.5)">Display name</label>'+
-        '<input class="form-input" id="au-name" value="'+u.name.replace(/"/g,'&quot;')+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
+        '<input class="form-input" id="au-name" value="'+(u.name||'').replace(/"/g,'&quot;')+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
       '<div class="form-row">'+
-        '<div class="form-field"><label class="form-label" style="color:rgba(255,255,255,.5)">Skill</label>'+
-          '<input class="form-input" id="au-skill" value="'+u.skill+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
+        '<div class="form-field"><label class="form-label" style="color:rgba(255,255,255,.5)">Level</label>'+
+          '<input class="form-input" id="au-level" value="'+u.level+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
         '<div class="form-field"><label class="form-label" style="color:rgba(255,255,255,.5)">Region</label>'+
           '<input class="form-input" id="au-region" value="'+u.region+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff"></div>'+
       '</div>'+
@@ -4095,24 +4045,24 @@ function screenAdminUser(params){
       '</div>'+
       '<div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);margin:24px 0 12px">ROLE</div>'+
       '<div class="form-chips">'+
-        ['user','trainer','crew','admin'].map(r =>
+        ['user','coach','community','admin'].map(r =>
           '<button class="form-chip '+(u.role===r?'is-on':'')+'" data-act="adminrole" data-id="'+u.id+'" data-v="'+r+'" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+r.charAt(0).toUpperCase()+r.slice(1)+'</button>').join('')+
       '</div>'+
-      (u.role === 'trainer'
+      (u.role === 'coach'
         ? '<div class="form-field" style="margin-top:20px">'+
             '<label class="form-label" style="color:rgba(255,255,255,.5)">Stationed at court</label>'+
-            '<select class="form-input" id="au-trainercourt" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+
+            '<select class="form-input" id="au-coachcourt" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+
               '<option value="">— None —</option>'+
-              DB.courts.map(c => '<option value="'+c.id+'"'+(u.trainerCourt===c.id?' selected':'')+'>'+c.name+'</option>').join('')+
+              DB.courts.map(c => '<option value="'+c.id+'"'+(u.coachCourt===c.id?' selected':'')+'>'+c.name+'</option>').join('')+
             '</select>'+
           '</div>'
         : '')+
-      (u.role === 'crew'
+      (u.role === 'community'
         ? '<div class="form-field" style="margin-top:20px">'+
-            '<label class="form-label" style="color:rgba(255,255,255,.5)">Leads crew</label>'+
-            '<select class="form-input" id="au-crew" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+
+            '<label class="form-label" style="color:rgba(255,255,255,.5)">Leads community</label>'+
+            '<select class="form-input" id="au-comm" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">'+
               '<option value="">— None —</option>'+
-              DB.crews.map(c => '<option value="'+c.id+'"'+(u.crewId===c.id?' selected':'')+'>'+c.name+'</option>').join('')+
+              DB.communities.map(c => '<option value="'+c.id+'"'+(u.communityId===c.id?' selected':'')+'>'+c.name+'</option>').join('')+
             '</select>'+
           '</div>'
         : '')+
@@ -4126,7 +4076,7 @@ function screenAdminUser(params){
         '<div class="toggle '+(isVendor?'is-on':'')+'" data-act="admintoggle" data-id="'+u.id+'" data-f="vendor"></div>'+
       '</div>'+
       '<div class="toggle-row" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)">'+
-        '<div><div class="toggle-row__t" style="color:#fff">National squad</div><div class="toggle-row__s" style="color:rgba(255,255,255,.5)">Adds to national ranking</div></div>'+
+        '<div><div class="toggle-row__t" style="color:#fff">National team</div><div class="toggle-row__s" style="color:rgba(255,255,255,.5)">Adds to national ranking</div></div>'+
         '<div class="toggle '+(u.isNational?'is-on':'')+'" data-act="admintoggle" data-id="'+u.id+'" data-f="national"></div>'+
       '</div>'+
       '<button class="abtn abtn--ok" style="width:100%;padding:16px;margin-top:24px" data-act="adminusersave" data-id="'+u.id+'">Save Changes</button>'+
@@ -4136,7 +4086,7 @@ function screenAdminUser(params){
 }
 
 /* ============================================================
-   SECTION 41 — SCREEN REGISTRY
+   SECTION 42 — SCREEN REGISTRY
    ============================================================ */
 const SCREENS = {
   entry:         screenEntry,
@@ -4164,41 +4114,39 @@ const SCREENS = {
   lostfound:     screenLostFound,
   shop:          screenShop,
   shopitem:      screenShopItem,
-  trainer:       screenTrainer,
-  crew:          screenCrew,
+  coach:         screenCoach,
+  club:          screenClub,
   vendorapply:   screenVendorApply,
-  trainerapply:  screenTrainerApply,
+  coachapply:    screenCoachApply,
   submitcourt:   screenSubmitCourt,
   hosttourney:   screenHostTourney,
-  trainerdash:   screenTrainerDashboard,
-  crewdash:      screenCrewDashboard,
+  coachdash:     screenCoachDashboard,
+  commdash:      screenCommunityDashboard,
   admin:         screenAdmin,
   admindetail:   screenAdminDetail,
   adminuser:     screenAdminUser
 };
 
 /* ============================================================
-   SECTION 42 — HEADER + TABS RENDERING
+   SECTION 43 — HEADER + TABS
    ============================================================ */
 function headerHTML(scr){
   if (!SESSION.mode) return '';
 
-  /* Overlay header for Discover */
   if (scr.screen === 'discover' && !nav.stack.length){
     return '<div class="hdr hdr--overlay">'+
-      '<div class="brand"><span class="brand__mark">🏀</span>RUBIX HOOPS</div>'+
+      '<div class="brand"><span class="brand__mark">◆</span>RUBIX TENNIS</div>'+
       '<div class="hdr__spacer"></div>'+
       '<button class="icon-btn" data-act="tab" data-tab="profile">'+avatarHTML(getMe(), 'av--xs')+'</button>'+
     '</div>';
   }
 
-  /* Stack header for pushed screens */
   if (nav.stack.length){
     const isAdmin = scr.screen === 'admin' || scr.screen === 'admindetail' || scr.screen === 'adminuser';
     const isChat = scr.screen === 'chatview';
     const isComposer = scr.screen === 'postcomposer';
     if (isComposer) return '';
-    return '<div class="hdr hdr--solid" style="'+(isAdmin?'background:#0A0A0A;color:#fff;border-bottom:1px solid rgba(255,255,255,.06)':'')+'">'+
+    return '<div class="hdr hdr--solid" style="'+(isAdmin?'background:#0B1220;color:#fff;border-bottom:1px solid rgba(255,255,255,.06)':'')+'">'+
       '<button class="icon-btn" style="'+(isAdmin?'background:rgba(255,255,255,.08);color:#fff':'')+'" data-act="back">'+ico('back')+'</button>'+
       '<div class="hdr__title" style="font-size:19px">'+(scr.title || '')+'</div>'+
       '<div class="hdr__spacer"></div>'+
@@ -4206,7 +4154,6 @@ function headerHTML(scr){
     '</div>';
   }
 
-  /* Solid top-level headers */
   const titles = {
     tournaments:'Tournaments',
     rankings:'Rankings',
@@ -4242,14 +4189,14 @@ function tabsHTML(){
 }
 
 /* ============================================================
-   SECTION 43 — RENDER
+   SECTION 44 — RENDER
    ============================================================ */
 function render(){
   /* ---- GATE ---- */
   if (!SESSION.mode){
     hdrEl.innerHTML = '';
     mainEl.className = 'main';
-    mainEl.style.background = '#0A0A0A';
+    mainEl.style.background = '#0A1220';
     const top = nav.stack.length ? nav.stack[nav.stack.length - 1] : null;
     if (top && top.screen === 'adminlogin'){
       mainEl.innerHTML = screenAdminLogin();
@@ -4266,7 +4213,7 @@ function render(){
     if (!SESSION.adminId){
       hdrEl.innerHTML = '';
       mainEl.className = 'main';
-      mainEl.style.background = '#0A0A0A';
+      mainEl.style.background = '#0A1220';
       mainEl.innerHTML = screenAdminLogin();
       tabsEl.innerHTML = '';
       tabsEl.style.display = 'none';
@@ -4275,7 +4222,7 @@ function render(){
     const scr = nav.stack.length ? nav.stack[nav.stack.length - 1] : { screen:'admin' };
     hdrEl.innerHTML = '';
     mainEl.className = 'main';
-    mainEl.style.background = '#0A0A0A';
+    mainEl.style.background = '#0B1220';
     mainEl.innerHTML = (SCREENS[scr.screen] || (() => '<div class="empty">Coming soon.</div>'))(scr.params);
     tabsEl.innerHTML = '';
     tabsEl.style.display = 'none';
@@ -4299,9 +4246,14 @@ function render(){
     if (sc) sc.scrollTop = sc.scrollHeight;
   }
 
-  /* Re-attach file pickers after every render (guarded to avoid double-bind) */
+  /* Re-attach file pickers after every render */
   attachImagePicker('avatar-file', dataUrl => {
-    getMe().avatarDataUrl = dataUrl;
+    /* If we're mid-onboarding, save to draft; otherwise to me */
+    if (nav.stack.length && nav.stack[nav.stack.length-1].screen === 'onboarding'){
+      state.onboardDraft.avatarDataUrl = dataUrl;
+    } else {
+      getMe().avatarDataUrl = dataUrl;
+    }
     render();
     toast('Photo updated ✓');
   });
@@ -4319,7 +4271,7 @@ function render(){
 }
 
 /* ============================================================
-   SECTION 44 — EVENT BUS
+   SECTION 45 — EVENT BUS
    ============================================================ */
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
@@ -4330,21 +4282,17 @@ document.addEventListener('click', e => {
   switch (act){
 
     /* ---------- GATE ---------- */
-    case 'enterplayer':
+    case 'enterplayer': {
       SESSION.mode = 'player';
-      nav.tab = 'discover'; nav.stack = [];
+      state.onboardRole = 'player';
+      state.onboardStep = 1;
+      state.onboardDraft = blankDraft();
+      nav.tab = 'discover';
+      nav.stack = [{ screen:'onboarding', params:{}, title:'' }];
       proximityShown = false;
       render();
       break;
-
-    case 'startfresh':
-      SESSION.mode = 'player';
-      state.onboardStep = 1;
-      state.onboardDraft = blankDraft();
-      /* Force me.profileComplete false during onboarding so the wizard shows */
-      nav.stack = [{ screen:'onboarding', params:{}, title:'' }];
-      render();
-      break;
+    }
 
     case 'enteradmin':
       nav.stack = [{ screen:'adminlogin', params:{}, title:'Admin Sign-in' }];
@@ -4357,6 +4305,7 @@ document.addEventListener('click', e => {
       nav.stack = []; nav.tab = 'discover';
       state.onboardDraft = null;
       state.onboardStep = 1;
+      state.onboardRole = null;
       proximityShown = false;
       render();
       break;
@@ -4368,19 +4317,36 @@ document.addEventListener('click', e => {
       break;
 
     case 'adminauth': {
-      const email = (document.getElementById('adminEmail')?.value || '').trim().toLowerCase();
-      const pin = (document.getElementById('adminPin')?.value || '').trim();
+      const emailEl = document.getElementById('adminEmail');
+      const pinEl = document.getElementById('adminPin');
+      const email = (emailEl && emailEl.value || '').trim().toLowerCase();
+      const pin = (pinEl && pinEl.value || '').trim();
       state.gateAdminEmail = email;
       state.gateAdminPin = pin;
       const a = ADMINS.find(x => x.email.toLowerCase() === email && x.pin === pin);
       if (a){
         a.lastLogin = new Date().toISOString();
-        SESSION.mode = 'admin';
-        SESSION.adminId = a.id;
-        nav.stack = [];
-        state.adminTab = 'overview';
-        render();
-        toast('Welcome, ' + a.name + ' ✓');
+        /* Is this admin already onboarded? */
+        if (!a.profileComplete || a.profileComplete === false){
+          SESSION.adminId = a.id;
+          SESSION.mode = 'admin';
+          state.onboardRole = 'admin';
+          state.onboardStep = 1;
+          state.onboardDraft = blankDraft();
+          state.onboardDraft.name = a.name === 'Administrator' ? '' : a.name;
+          state.onboardDraft.adminEmail = a.email;
+          state.onboardDraft.adminPin = '';
+          nav.stack = [{ screen:'onboarding', params:{}, title:'' }];
+          render();
+          toast('Welcome — set up your admin profile');
+        } else {
+          SESSION.mode = 'admin';
+          SESSION.adminId = a.id;
+          nav.stack = [];
+          state.adminTab = 'overview';
+          render();
+          toast('Welcome back, ' + a.name + ' ✓');
+        }
       } else {
         toast('Invalid email or passcode');
       }
@@ -4389,25 +4355,29 @@ document.addEventListener('click', e => {
 
     /* ---------- NAVIGATION ---------- */
     case 'tab': setTab(el.dataset.tab); break;
-    case 'back':
-      if (nav.stack[nav.stack.length-1] && nav.stack[nav.stack.length-1].screen === 'onboarding'){
+    case 'back': {
+      const top = nav.stack[nav.stack.length-1];
+      if (top && top.screen === 'onboarding'){
         /* Cancelling onboarding returns to gate */
         SESSION.mode = null;
+        SESSION.adminId = null;
         nav.stack = [];
         state.onboardDraft = null;
         state.onboardStep = 1;
+        state.onboardRole = null;
         render();
         break;
       }
       back();
       break;
+    }
     case 'close-layer': closeLayer(); break;
 
     /* ---------- DISCOVER ---------- */
     case 'dfilter': state.discoverFilter = el.dataset.v; render(); break;
     case 'ranklist': state.rankList = el.dataset.v; render(); break;
     case 'region': state.rankRegion = el.dataset.v; render(); break;
-    case 'skill': state.rankSkill = el.dataset.v; render(); break;
+    case 'level': state.rankLevel = el.dataset.v; render(); break;
     case 'lffilter': state.lfFilter = el.dataset.v; render(); break;
     case 'tourneyfilter': state.tourneyFilter = el.dataset.v; render(); break;
     case 'reportfilter': state.adminReportFilter = el.dataset.v; render(); break;
@@ -4423,7 +4393,6 @@ document.addEventListener('click', e => {
       go('profile', { id }, u.name.split(' ')[0] + "'s Profile");
       break;
     }
-
     case 'court': {
       const c = courtById(el.dataset.id);
       if (!c) return;
@@ -4431,36 +4400,32 @@ document.addEventListener('click', e => {
       go('court', { id:c.id }, c.name);
       break;
     }
-
-    case 'crew': {
-      const k = crewById(el.dataset.id);
+    case 'club': {
+      const k = commById(el.dataset.id);
       if (!k) return;
-      go('crew', { id:k.id }, 'Crew');
+      go('club', { id:k.id }, 'Community');
       break;
     }
-
-    case 'trainer':
-      go('trainer', { id:el.dataset.id, court:el.dataset.court }, 'Trainer Profile');
+    case 'coach':
+      go('coach', { id:el.dataset.id, court:el.dataset.court }, 'Coach Profile');
       break;
-
     case 'shopitem':
       go('shopitem', { id:el.dataset.id }, 'Item Details');
       break;
-
     case 'tourney':
       go('tourney', { id:el.dataset.id }, 'Tournament');
       break;
 
-    /* ---------- SCREEN SHORTCUTS ---------- */
+    /* ---------- SHORTCUTS ---------- */
     case 'lostfound':   go('lostfound', {}, 'Lost & Found'); break;
     case 'shop':        go('shop', {}, 'RUBIX Shop'); break;
     case 'idcard':      go('idcard', {}, 'My RUBIX ID'); break;
     case 'editprofile': go('profileform', {}, 'Edit Profile'); break;
     case 'vendorapply': go('vendorapply', {}, 'Become a Vendor'); break;
-    case 'trainerapply':go('trainerapply', {}, 'Apply as Trainer'); break;
+    case 'coachapply':  go('coachapply', {}, 'Apply as Coach'); break;
     case 'submitcourt': go('submitcourt', {}, 'Submit a Court'); break;
-    case 'trainerdash': go('trainerdash', {}, 'Trainer Dashboard'); break;
-    case 'crewdash':    go('crewdash', {}, 'Crew Dashboard'); break;
+    case 'coachdash':   go('coachdash', {}, 'Coach Dashboard'); break;
+    case 'commdash':    go('commdash', {}, 'Community Dashboard'); break;
     case 'hosttourney': go('hosttourney', {}, 'Host Tournament'); break;
     case 'wallet':      go('wallet', {}, 'RUBIX Wallet'); break;
     case 'chats':       go('chats', {}, 'Chats'); break;
@@ -4474,11 +4439,9 @@ document.addEventListener('click', e => {
     case 'pick-avatar':
       document.getElementById('avatar-file').click();
       break;
-
     case 'pick-cover':
       document.getElementById('cover-file').click();
       break;
-
     case 'pick-post-image':
       document.getElementById('post-image-file').click();
       break;
@@ -4486,14 +4449,15 @@ document.addEventListener('click', e => {
     case 'onboard-next': {
       const step = state.onboardStep;
       const d = state.onboardDraft;
+      const isAdmin = state.onboardRole === 'admin';
       if (step === 1 && !d.name.trim()){ toast('Enter your name first'); break; }
-      if (step === 3 && !d.city.trim()){ toast('Enter your city first'); break; }
-      state.onboardStep = Math.min(4, step + 1);
+      if (!isAdmin && step === 3 && !d.city.trim()){ toast('Enter your city first'); break; }
+      const maxSteps = isAdmin ? 2 : 4;
+      state.onboardStep = Math.min(maxSteps, step + 1);
       render();
       mainEl.scrollTop = 0;
       break;
     }
-
     case 'onboard-back':
       state.onboardStep = Math.max(1, state.onboardStep - 1);
       render();
@@ -4513,7 +4477,6 @@ document.addEventListener('click', e => {
       render();
       break;
     }
-
     case 'onboard-toggle': {
       const f = el.dataset.f;
       const v = el.dataset.v;
@@ -4526,11 +4489,42 @@ document.addEventListener('click', e => {
 
     case 'onboard-finish': {
       const d = state.onboardDraft;
+      const isAdmin = state.onboardRole === 'admin';
+
+      if (isAdmin){
+        /* ADMIN FLOW */
+        if (!d.adminEmail || d.adminEmail.indexOf('@') < 0 || d.adminPin.length < 4){
+          toast('Enter a valid admin email and 4-6 digit passcode');
+          break;
+        }
+        const admin = adminById(SESSION.adminId);
+        if (admin){
+          admin.name = d.name.trim() || 'Admin';
+          admin.initials = admin.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+          admin.email = d.adminEmail.trim().toLowerCase();
+          admin.pin = d.adminPin.trim();
+          admin.profileComplete = true;
+          if (d.avatarDataUrl){
+            /* store avatar on the admin object (adds a new property) */
+            admin.avatarDataUrl = d.avatarDataUrl;
+          }
+        }
+        state.onboardDraft = null;
+        state.onboardStep = 1;
+        state.onboardRole = null;
+        nav.stack = [];
+        state.adminTab = 'overview';
+        render();
+        toast('Admin account ready ✓');
+        break;
+      }
+
+      /* PLAYER FLOW */
       me.name = d.name.trim() || 'New Player';
       me.initials = me.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
-      me.skill = d.skill;
-      me.position = d.position;
-      me.preferredCourt = d.preferredCourt;
+      me.level = d.level;
+      me.hand = d.hand;
+      me.surface = d.surface;
       me.city = d.city || 'Accra';
       me.region = d.region || 'Greater Accra';
       me.bio = d.bio || '';
@@ -4542,9 +4536,11 @@ document.addEventListener('click', e => {
       me.profileComplete = true;
       state.onboardDraft = null;
       state.onboardStep = 1;
-      nav.stack = []; nav.tab = 'profile';
+      state.onboardRole = null;
+      nav.stack = [];
+      nav.tab = 'profile';
       render();
-      toast('Welcome to RUBIX, ' + me.name.split(' ')[0] + ' 🏀');
+      toast('Welcome to RUBIX, ' + me.name.split(' ')[0] + ' 🎾');
       break;
     }
 
@@ -4562,10 +4558,9 @@ document.addEventListener('click', e => {
       me.bio = d.bio;
       me.city = d.city;
       me.region = d.region;
-      me.skill = d.skill;
-      me.position = d.position;
-      me.preferredCourt = d.preferredCourt;
-      me.dominant = d.dominant;
+      me.level = d.level;
+      me.hand = d.hand;
+      me.surface = d.surface;
       me.playstyle = d.playstyle.slice();
       me.interests = d.interests.slice();
       me.status = d.status;
@@ -4623,18 +4618,16 @@ document.addEventListener('click', e => {
       if (!hasText && !hasImage){ toast('Add text or a photo'); break; }
 
       if (d._for){
-        /* Editing existing */
         const p = DB.posts.find(x => x.id === d._for);
         if (p){
           p.text = d.text;
-          if (d.imageDataUrl) { p.imageDataUrl = d.imageDataUrl; p.imageUrl = null; }
-          else if (!d.imageUrl) { p.imageDataUrl = null; p.imageUrl = null; }
+          if (d.imageDataUrl){ p.imageDataUrl = d.imageDataUrl; p.imageUrl = null; }
+          else if (!d.imageUrl){ p.imageDataUrl = null; p.imageUrl = null; }
           p.editedAt = now();
           p.isEdited = true;
         }
         toast('Post updated ✓');
       } else {
-        /* New post */
         const newPost = {
           id: uid('p'),
           authorId: 'me',
@@ -4705,12 +4698,10 @@ document.addEventListener('click', e => {
       break;
     }
 
-    case 'post-edit': {
-      const id = el.dataset.id;
+    case 'post-edit':
       state.postDraft = null;
-      go('postcomposer', { postId: id }, 'Edit Post');
+      go('postcomposer', { postId: el.dataset.id }, 'Edit Post');
       break;
-    }
 
     case 'post-delete': {
       const p = DB.posts.find(x => x.id === el.dataset.id);
@@ -4735,11 +4726,8 @@ document.addEventListener('click', e => {
       me.posts = DB.posts.filter(x => x.authorId === 'me');
       closeLayer();
       toast('Post deleted');
-      /* Go back to profile if we were viewing the post detail */
       const top = nav.stack[nav.stack.length - 1];
-      if (top && top.screen === 'postdetail'){
-        nav.stack.pop();
-      }
+      if (top && top.screen === 'postdetail'){ nav.stack.pop(); }
       render();
       break;
     }
@@ -4756,7 +4744,6 @@ document.addEventListener('click', e => {
         '</div>';
       break;
     }
-
     case 'close-lightbox':
       closeLayer();
       break;
@@ -4774,29 +4761,29 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---------- PAYWALL-GATED ACTIONS ---------- */
+    /* ---------- PAYWALL-GATED ---------- */
     case 'request': {
       e.stopPropagation();
       const u = userById(el.dataset.id);
       if (!u) return;
       if (state.requestsSent[u.id]){ toast('Already sent'); break; }
       paywallPopup({
-        title: 'Send invite to ' + u.name.split(' ')[0],
-        body: 'One-time fee to send a run invite. They\'ll see your profile and can accept or decline.',
+        title: 'Send request to ' + u.name.split(' ')[0],
+        body: 'One-time fee to send a play request directly. They\'ll see your profile and can accept or decline.',
         price: PRICES.requestPlayer,
         platformFee: PRICES.requestPlayer,
-        cta: 'Send Invite · $' + PRICES.requestPlayer,
+        cta: 'Send Request · $' + PRICES.requestPlayer,
         onConfirm: () => {
           const res = charge('me', {
             kind:'request', amount: PRICES.requestPlayer,
-            note:'Run invite to ' + u.name, sourceId: null,
+            note:'Play request to ' + u.name, sourceId: null,
             platformFee: PRICES.requestPlayer
           });
           if (res.ok){
             state.requestsSent[u.id] = true;
             Chat.ensureThread(u.id);
             closeLayer();
-            toast('Invite sent to ' + u.name.split(' ')[0] + ' ✓');
+            toast('Request sent to ' + u.name.split(' ')[0] + ' ✓');
             render();
           } else toast('Insufficient balance');
         }
@@ -4845,7 +4832,7 @@ document.addEventListener('click', e => {
       const u = userById(el.dataset.id);
       if (!u) return;
       const inp = document.getElementById('chatInput');
-      const text = inp?.value.trim();
+      const text = inp && inp.value.trim();
       if (!text) return;
       const thread = Chat.threadWith(u.id);
       if (!thread) return;
@@ -4854,23 +4841,23 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---------- JOIN CREW ---------- */
-    case 'joincrew': {
+    /* ---------- JOIN COMMUNITY ---------- */
+    case 'joinclub': {
       e.stopPropagation();
-      const k = crewById(el.dataset.id);
+      const k = commById(el.dataset.id);
       if (!k) return;
       if (k.monthlyFee && k.monthlyFee > 0){
         paywallPopup({
           title: 'Join ' + k.name,
-          body: 'First month of membership. Renews monthly. ' + PRICES.crewPct + '% platform fee applies.',
+          body: 'First month of membership. Renews monthly. ' + PRICES.communityPct + '% platform fee applies.',
           price: k.monthlyFee,
-          platformFee: crewFee(k.monthlyFee),
+          platformFee: communityFee(k.monthlyFee),
           cta: 'Join · ' + money(k.monthlyFee),
           onConfirm: () => {
             const res = charge('me', {
-              kind:'crew-join', amount: k.monthlyFee,
+              kind:'community-join', amount: k.monthlyFee,
               note:'Joined ' + k.name, sourceId: k.createdBy,
-              platformFee: crewFee(k.monthlyFee)
+              platformFee: communityFee(k.monthlyFee)
             });
             if (res.ok){
               closeLayer();
@@ -4880,7 +4867,7 @@ document.addEventListener('click', e => {
           }
         });
       } else {
-        me.crewId = k.id;
+        me.communityId = k.id;
         toast('Joined ' + k.name + ' ✓');
         el.textContent = 'Joined';
         el.classList.add('is-sent');
@@ -4889,17 +4876,15 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---------- BOOKING FLOW ---------- */
+    /* ---------- BOOKING ---------- */
     case 'date':
       state.booking.date = el.dataset.v;
       render();
       break;
-
     case 'slot':
       state.booking.time = (state.booking.time === el.dataset.v) ? null : el.dataset.v;
       render();
       break;
-
     case 'book': {
       const c = courtById(el.dataset.id);
       if (!c || !state.booking.time) return;
@@ -4918,8 +4903,9 @@ document.addEventListener('click', e => {
             sourceId: null, platformFee: fee
           });
           if (res.ok){
-            (c.bookings ||= []).push({
-              id: uid('bk'), userId:'me', time: state.booking.time,
+            if (!c.bookings) c.bookings = [];
+            c.bookings.push({
+              id: uid('b'), userId:'me', time: state.booking.time,
               duration:'90 min', status:'upcoming', date: state.booking.date
             });
             closeLayer();
@@ -4932,28 +4918,28 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---------- TRAINER BOOKING ---------- */
-    case 'trainerbook': {
+    /* ---------- COACH BOOKING ---------- */
+    case 'coachbook': {
       const c = courtById(el.dataset.court);
-      const tr = c && c.trainers.find(x => x.id === el.dataset.trainer);
-      if (!c || !tr) return;
-      const fee = trainerFee(tr.rate);
+      const co = c && c.coaches.find(x => x.id === el.dataset.coach);
+      if (!c || !co) return;
+      const fee = coachFee(co.rate);
       const time = el.dataset.time || 'next available slot';
       paywallPopup({
-        title: 'Book ' + tr.name,
-        body: 'Session at ' + c.name + ' · ' + time + '. Trainer receives ' + (100 - PRICES.trainerPct) + '%; ' + PRICES.trainerPct + '% platform fee.',
-        price: tr.rate,
+        title: 'Book ' + co.name,
+        body: 'Lesson at ' + c.name + ' · ' + time + '. Coach receives ' + (100 - PRICES.coachPct) + '%; ' + PRICES.coachPct + '% platform fee.',
+        price: co.rate,
         platformFee: fee,
-        cta: 'Book · $' + tr.rate,
+        cta: 'Book · $' + co.rate,
         onConfirm: () => {
           const res = charge('me', {
-            kind:'trainer-session', amount: tr.rate,
-            note: tr.name + ' · ' + time, sourceId: tr.userId,
+            kind:'coach-session', amount: co.rate,
+            note: co.name + ' · ' + time, sourceId: co.userId,
             platformFee: fee
           });
           if (res.ok){
             closeLayer();
-            toast('Session booked with ' + tr.name + ' ✓');
+            toast('Lesson booked with ' + co.name + ' ✓');
           } else toast('Insufficient balance');
         }
       });
@@ -4989,7 +4975,7 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---------- TOURNAMENT JOIN ---------- */
+    /* ---------- TOURNAMENTS ---------- */
     case 'tourneyjoin': {
       const t = tourneyById(el.dataset.id);
       if (!t) return;
@@ -5033,12 +5019,12 @@ document.addEventListener('click', e => {
         '<div class="scrim" data-act="close-layer"></div>'+
         '<div class="popup">'+
           '<div class="popup__pill">SUBMIT SCORE</div>'+
-          '<h3>Log game result</h3>'+
+          '<h3>Log match result</h3>'+
           '<p>Enter the final score. The opposing team will be notified to confirm.</p>'+
           '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:16px">'+
-            '<input class="form-input" id="ms-a" type="number" min="0" max="200" placeholder="0" style="text-align:center;font-size:22px;font-weight:900">'+
+            '<input class="form-input" id="ms-a" type="number" min="0" max="7" placeholder="0" style="text-align:center;font-size:22px;font-weight:900">'+
             '<div style="font-size:11px;font-weight:900;color:var(--muted);letter-spacing:.1em">VS</div>'+
-            '<input class="form-input" id="ms-b" type="number" min="0" max="200" placeholder="0" style="text-align:center;font-size:22px;font-weight:900">'+
+            '<input class="form-input" id="ms-b" type="number" min="0" max="7" placeholder="0" style="text-align:center;font-size:22px;font-weight:900">'+
           '</div>'+
           '<div class="popup__btns">'+
             '<button class="btn btn--ghost" data-act="close-layer">Cancel</button>'+
@@ -5047,12 +5033,11 @@ document.addEventListener('click', e => {
         '</div>';
       break;
     }
-
     case 'tourneyreportsave': {
       const t = tourneyById(el.dataset.t);
       if (!t) return;
-      const a = parseInt(document.getElementById('ms-a')?.value) || 0;
-      const b = parseInt(document.getElementById('ms-b')?.value) || 0;
+      const a = parseInt((document.getElementById('ms-a')||{}).value) || 0;
+      const b = parseInt((document.getElementById('ms-b')||{}).value) || 0;
       if (t.bracket){
         Tournaments.recordResult(t, t.bracket.currentRound, el.dataset.m, a, b, 'me');
       }
@@ -5061,7 +5046,6 @@ document.addEventListener('click', e => {
       render();
       break;
     }
-
     case 'tourneybracket': {
       const t = tourneyById(el.dataset.id);
       if (!t) return;
@@ -5069,9 +5053,9 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---------- TRAINER DASHBOARD ---------- */
+    /* ---------- COACH DASHBOARD ---------- */
     case 'setcourtstatus': {
-      const c = courtById(me.trainerCourt);
+      const c = courtById(me.coachCourt);
       if (!c) break;
       const next = el.dataset.v;
       if (c.courtStatus === next) break;
@@ -5080,7 +5064,6 @@ document.addEventListener('click', e => {
       toast('Court set to ' + next);
       break;
     }
-
     case 'bookingaction': {
       const c = courtById(el.dataset.court);
       if (!c) break;
@@ -5088,15 +5071,15 @@ document.addEventListener('click', e => {
       if (!b) break;
       b.status = el.dataset.s;
       render();
-      toast('Session ' + b.status);
+      toast('Booking ' + b.status);
       break;
     }
 
     /* ---------- LOST & FOUND ---------- */
     case 'lfadd':
       DB.lostFound.unshift({
-        id:'l'+Date.now(), type:'lost', title:'Green basketball shorts',
-        emoji:'🩳', hue:150, place:'Riverside Basketball Club', time:'just now',
+        id:'l'+Date.now(), type:'lost', title:'Green tennis cap',
+        emoji:'🧢', hue:150, place:'Riverside Tennis Club', time:'just now',
         note:'Added from the demo composer.'
       });
       render();
@@ -5111,10 +5094,13 @@ document.addEventListener('click', e => {
       break;
 
     case 'vendorsubmit': {
-      const item = document.getElementById('v-item')?.value.trim();
-      const price = document.getElementById('v-price')?.value;
-      const note = document.getElementById('v-note')?.value.trim();
-      if (!item || !state.vendorDraft?.category){ toast('Please fill in all fields'); break; }
+      const itemEl = document.getElementById('v-item');
+      const priceEl = document.getElementById('v-price');
+      const noteEl = document.getElementById('v-note');
+      const item = itemEl && itemEl.value.trim();
+      const price = priceEl && priceEl.value;
+      const note = noteEl && noteEl.value.trim();
+      if (!item || !state.vendorDraft || !state.vendorDraft.category){ toast('Please fill in all fields'); break; }
       paywallPopup({
         title: 'Vendor listing fee',
         body: 'One-time fee to submit your listing. ' + PRICES.shopPct + '% of any future sale also applies.',
@@ -5147,23 +5133,25 @@ document.addEventListener('click', e => {
       break;
     }
 
-    case 'trainercourt':
-      state.trainerCourt = state.trainerCourt === el.dataset.id ? null : el.dataset.id;
+    case 'coachcourt':
+      state.coachCourt = state.coachCourt === el.dataset.id ? null : el.dataset.id;
       render();
       break;
-
-    case 'trainersubmit': {
-      const spec = document.getElementById('tr-spec')?.value.trim();
-      const rate = parseInt(document.getElementById('tr-rate')?.value) || 30;
-      const exp = document.getElementById('tr-exp')?.value.trim() || '5 yrs';
-      if (!state.trainerCourt || !spec){ toast('Please complete all fields'); break; }
-      DB.pending.trainers.push({
-        id:'ptr'+Date.now(), userId:me.id, courtId:state.trainerCourt,
+    case 'coachsubmit': {
+      const specEl = document.getElementById('co-spec');
+      const rateEl = document.getElementById('co-rate');
+      const expEl = document.getElementById('co-exp');
+      const spec = specEl && specEl.value.trim();
+      const rate = parseInt(rateEl && rateEl.value) || 30;
+      const exp = (expEl && expEl.value.trim()) || '5 yrs';
+      if (!state.coachCourt || !spec){ toast('Please complete all fields'); break; }
+      DB.pending.coaches.push({
+        id:'pco'+Date.now(), userId:me.id, courtId:state.coachCourt,
         rate, spec, exp, submitted:'just now',
         cert:'—', availability:'Weekdays 5–8pm'
       });
-      state.trainerCourt = null;
-      toast('Trainer application submitted ✓');
+      state.coachCourt = null;
+      toast('Coach application submitted ✓');
       setTimeout(() => { nav.stack = []; nav.tab = 'more'; render(); }, 500);
       break;
     }
@@ -5172,12 +5160,15 @@ document.addEventListener('click', e => {
       state.courtSurface = el.dataset.v;
       render();
       break;
-
     case 'courtsubmit': {
-      const name = document.getElementById('nc-name')?.value.trim();
-      const addr = document.getElementById('nc-addr')?.value.trim();
-      const price = parseInt(document.getElementById('nc-price')?.value) || 0;
-      const count = parseInt(document.getElementById('nc-count')?.value) || 0;
+      const nameEl = document.getElementById('nc-name');
+      const addrEl = document.getElementById('nc-addr');
+      const priceEl = document.getElementById('nc-price');
+      const countEl = document.getElementById('nc-count');
+      const name = nameEl && nameEl.value.trim();
+      const addr = addrEl && addrEl.value.trim();
+      const price = parseInt(priceEl && priceEl.value) || 0;
+      const count = parseInt(countEl && countEl.value) || 0;
       if (!name || !addr || !state.courtSurface){ toast('Please complete all fields'); break; }
       DB.pending.courts.push({
         id:'pct'+Date.now(), name, address:addr, price,
@@ -5196,13 +5187,17 @@ document.addEventListener('click', e => {
       state.hostFormat = el.dataset.v;
       render();
       break;
-
     case 'hosttourneysubmit': {
-      const name = document.getElementById('ht-name')?.value.trim();
-      const court = document.getElementById('ht-court')?.value;
-      const max = parseInt(document.getElementById('ht-max')?.value) || 8;
-      const entry = parseInt(document.getElementById('ht-entry')?.value) || 5;
-      const prize = parseInt(document.getElementById('ht-prize')?.value) || 60;
+      const nameEl = document.getElementById('ht-name');
+      const courtEl = document.getElementById('ht-court');
+      const maxEl = document.getElementById('ht-max');
+      const entryEl = document.getElementById('ht-entry');
+      const prizeEl = document.getElementById('ht-prize');
+      const name = nameEl && nameEl.value.trim();
+      const court = courtEl && courtEl.value;
+      const max = parseInt(maxEl && maxEl.value) || 8;
+      const entry = parseInt(entryEl && entryEl.value) || 5;
+      const prize = parseInt(prizeEl && prizeEl.value) || 60;
       if (!name || !state.hostFormat){ toast('Please complete all fields'); break; }
       paywallPopup({
         title: 'Host tournament',
@@ -5217,7 +5212,7 @@ document.addEventListener('click', e => {
             platformFee: PRICES.tournamentHost
           });
           if (res.ok){
-            const teamSize = parseInt(state.hostFormat[0]);
+            const teamSize = state.hostFormat.indexOf('singles') === 0 ? 1 : 2;
             DB.tournaments.push({
               id:'t'+Date.now(), name, hostId:me.id, format: state.hostFormat,
               entry, prize, maxTeams:max, courts:court,
@@ -5242,33 +5237,28 @@ document.addEventListener('click', e => {
       render();
       toast('ID verified ✓');
       break;
-
     case 'verifyphoto':
       me.photoVerified = true;
       render();
       toast('Photo verified ✓');
       break;
-
     case 'safetytoggle': {
       const f = el.dataset.f;
       me.safety[f] = !me.safety[f];
       render();
       break;
     }
-
     case 'emergencycontact': {
       const v = prompt('Emergency contact name + phone:', me.safety.emergencyContact || '');
       if (v != null) me.safety.emergencyContact = v;
       render();
       break;
     }
-
     case 'unblock':
       me.safety.blocked = me.safety.blocked.filter(id => id !== el.dataset.id);
       render();
       toast('Unblocked');
       break;
-
     case 'report-abuse':
       toast('Report submitted to moderation ✓');
       break;
@@ -5285,7 +5275,6 @@ document.addEventListener('click', e => {
     case 'topup':
       topupPopup();
       break;
-
     case 'topup-pick': {
       state.topupPick = parseInt(el.dataset.v);
       const btns = layerEl.querySelectorAll('[data-act="topup-pick"]');
@@ -5297,7 +5286,6 @@ document.addEventListener('click', e => {
       }
       break;
     }
-
     case 'topup-confirm': {
       const amt = parseInt(el.dataset.v || state.topupPick) || 25;
       topup('me', amt);
@@ -5306,7 +5294,6 @@ document.addEventListener('click', e => {
       render();
       break;
     }
-
     case 'paywall-confirm': {
       const opts = layerEl._paywall;
       if (opts && opts.onConfirm) opts.onConfirm();
@@ -5319,24 +5306,20 @@ document.addEventListener('click', e => {
       render();
       mainEl.scrollTop = 0;
       break;
-
     case 'admingotoapp':
       state.adminTab = 'approvals';
       state.adminAppTab = el.dataset.v;
       render();
       break;
-
     case 'adminappdetail':
       go('admindetail', { type:el.dataset.type, id:el.dataset.id },
-        { vendor:'Vendor Application', crew:'Crew Verification',
-          trainer:'Trainer Verification', court:'Court Submission' }[el.dataset.type] || 'Details');
+        { vendor:'Vendor Application', community:'Community Verification',
+          coach:'Coach Verification', court:'Court Submission' }[el.dataset.type] || 'Details');
       break;
-
     case 'adminlogtoggle':
       adminToggleLog(el.dataset.id);
       break;
 
-    /* ---- Approvals ---- */
     case 'approvevendor': {
       const v = DB.pending.vendors.find(x => x.id === el.dataset.id);
       if (!v) break;
@@ -5344,7 +5327,7 @@ document.addEventListener('click', e => {
       const prevStatus = u.vendorStatus;
       const newListing = {
         id:'s'+Date.now(), title:v.itemName, price:v.price,
-        cond:v.category + ' · Verified', emoji: '🏀', hue:u.hue,
+        cond:v.category + ' · Verified', emoji:'🎾', hue:u.hue,
         sellerId:u.id, place:u.city, status:'approved'
       };
       adminDo(
@@ -5383,11 +5366,11 @@ document.addEventListener('click', e => {
       break;
     }
 
-    case 'approvecrew': {
-      const k = DB.pending.crews.find(x => x.id === el.dataset.id);
+    case 'approvecomm': {
+      const k = DB.pending.communities.find(x => x.id === el.dataset.id);
       if (!k) break;
-      const newCrew = {
-        id:'c'+Date.now(), name:k.name,
+      const newComm = {
+        id:'k'+Date.now(), name:k.name,
         members: parseInt(k.members)||0,
         dist:600, hue:30, desc:k.desc,
         verified:'approved', createdBy:k.creatorId,
@@ -5395,69 +5378,69 @@ document.addEventListener('click', e => {
       };
       adminDo(
         () => {
-          DB.crews.push(newCrew);
-          DB.pending.crews = DB.pending.crews.filter(x => x.id !== k.id);
+          DB.communities.push(newComm);
+          DB.pending.communities = DB.pending.communities.filter(x => x.id !== k.id);
         },
         () => {
-          DB.crews = DB.crews.filter(x => x.id !== newCrew.id);
-          DB.pending.crews.push(k);
+          DB.communities = DB.communities.filter(x => x.id !== newComm.id);
+          DB.pending.communities.push(k);
         },
-        'Verified crew: ' + k.name
+        'Verified community: ' + k.name
       );
       nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
       render();
       break;
     }
-    case 'rejectcrew': {
-      const k = DB.pending.crews.find(x => x.id === el.dataset.id);
+    case 'rejectcomm': {
+      const k = DB.pending.communities.find(x => x.id === el.dataset.id);
       if (!k) break;
       adminDo(
-        () => { DB.pending.crews = DB.pending.crews.filter(x => x.id !== k.id); },
-        () => { DB.pending.crews.push(k); },
-        'Rejected crew: ' + k.name
+        () => { DB.pending.communities = DB.pending.communities.filter(x => x.id !== k.id); },
+        () => { DB.pending.communities.push(k); },
+        'Rejected community: ' + k.name
       );
       nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
       render();
       break;
     }
 
-    case 'approvetrainer': {
-      const a = DB.pending.trainers.find(x => x.id === el.dataset.id);
+    case 'approvecoach': {
+      const a = DB.pending.coaches.find(x => x.id === el.dataset.id);
       if (!a) break;
       const u = userById(a.userId);
       const c = courtById(a.courtId);
       const prevRole = u.role;
-      const prevCourt = u.trainerCourt;
-      const newTrainerEntry = {
-        id:'tr'+Date.now(), userId:u.id, name:u.name,
+      const prevCourt = u.coachCourt;
+      const newCoachEntry = {
+        id:'co'+Date.now(), userId:u.id, name:u.name,
         rate:a.rate, spec:a.spec, exp:a.exp, verified:true
       };
       adminDo(
         () => {
-          u.role = 'trainer';
-          u.trainerCourt = a.courtId;
-          if (c) c.trainers.push(newTrainerEntry);
-          DB.pending.trainers = DB.pending.trainers.filter(x => x.id !== a.id);
+          u.role = 'coach';
+          u.coachCourt = a.courtId;
+          if (c) c.coaches.push(newCoachEntry);
+          DB.pending.coaches = DB.pending.coaches.filter(x => x.id !== a.id);
         },
         () => {
           u.role = prevRole;
-          u.trainerCourt = prevCourt;
-          if (c) c.trainers = c.trainers.filter(x => x.id !== newTrainerEntry.id);
-          DB.pending.trainers.push(a);
+          u.coachCourt = prevCourt;
+          if (c) c.coaches = c.coaches.filter(x => x.id !== newCoachEntry.id);
+          DB.pending.coaches.push(a);
         },
-        'Verified trainer: ' + u.name
+        'Verified coach: ' + u.name
       );
       nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
       render();
       break;
     }
-    case 'rejecttrainer': {
-      const a = DB.pending.trainers.find(x => x.id === el.dataset.id);
+    case 'rejectcoach': {
+      const a = DB.pending.coaches.find(x => x.id === el.dataset.id);
       if (!a) break;
       adminDo(
-        () => { DB.pending.trainers = DB.pending.trainers.filter(x => x.id !== a.id); },
-        () => { DB.pending.trainers.push(a); },
-        'Rejected trainer application'
+        () => { DB.pending.coaches = DB.pending.coaches.filter(x => x.id !== a.id); },
+        () => { DB.pending.coaches.push(a); },
+        'Rejected coach application'
       );
       nav.stack = nav.stack.filter(x => x.screen !== 'admindetail');
       render();
@@ -5468,10 +5451,10 @@ document.addEventListener('click', e => {
       const ct = DB.pending.courts.find(x => x.id === el.dataset.id);
       if (!ct) break;
       const newCourt = {
-        id:'h'+Date.now(), name:ct.name, rating:4.0, price:ct.price,
+        id:'c'+Date.now(), name:ct.name, rating:4.0, price:ct.price,
         dist:800, surface:ct.surface, courtCount:ct.courtCount, hue:200,
         status:'approved', address:ct.address, amenities:ct.amenities,
-        trainers:[], playersHere:[], courtStatus:'open', bookings:[]
+        coaches:[], playersHere:[], courtStatus:'open', bookings:[]
       };
       adminDo(
         () => {
@@ -5501,7 +5484,6 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---- National squad ---- */
     case 'addnational': {
       const u = userById(el.dataset.id);
       if (!u) break;
@@ -5511,9 +5493,9 @@ document.addEventListener('click', e => {
       adminDo(
         () => { u.isNational = true; u.rankN = nextRank; recomputeGeneralRanks(); },
         () => { u.isNational = prevNat; u.rankN = prevRank; recomputeGeneralRanks(); },
-        'Added to National Squad: ' + u.name
+        'Added to National Team: ' + u.name
       );
-      toast('Added to National Squad');
+      toast('Added to National Team');
       break;
     }
     case 'removenational': {
@@ -5523,13 +5505,12 @@ document.addEventListener('click', e => {
       adminDo(
         () => { u.isNational = false; u.rankN = null; recomputeGeneralRanks(); },
         () => { u.isNational = true; u.rankN = prevRank; recomputeGeneralRanks(); },
-        'Removed from National Squad: ' + u.name
+        'Removed from National Team: ' + u.name
       );
-      toast('Removed from National Squad');
+      toast('Removed from National Team');
       break;
     }
 
-    /* ---- Points adjustment ---- */
     case 'ptsplus': {
       const u = userById(el.dataset.id);
       if (!u) break;
@@ -5553,7 +5534,6 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---- User edit ---- */
     case 'adminuseredit':
       go('adminuser', { id:el.dataset.id }, 'Edit User');
       break;
@@ -5605,16 +5585,16 @@ document.addEventListener('click', e => {
     case 'adminusersave': {
       const u = userById(el.dataset.id);
       if (!u) break;
-      const name = document.getElementById('au-name')?.value.trim();
-      const skill = document.getElementById('au-skill')?.value.trim();
-      const region = document.getElementById('au-region')?.value.trim();
-      const tc = document.getElementById('au-trainercourt')?.value;
-      const cm = document.getElementById('au-crew')?.value;
-      if (name) u.name = name;
-      if (skill) u.skill = skill;
-      if (region) u.region = region;
-      if (tc != null) u.trainerCourt = tc || null;
-      if (cm != null) u.crewId = cm || null;
+      const nameEl = document.getElementById('au-name');
+      const levelEl = document.getElementById('au-level');
+      const regionEl = document.getElementById('au-region');
+      const ccEl = document.getElementById('au-coachcourt');
+      const cmEl = document.getElementById('au-comm');
+      if (nameEl && nameEl.value.trim()) u.name = nameEl.value.trim();
+      if (levelEl && levelEl.value.trim()) u.level = levelEl.value.trim();
+      if (regionEl && regionEl.value.trim()) u.region = regionEl.value.trim();
+      if (ccEl) u.coachCourt = ccEl.value || null;
+      if (cmEl) u.communityId = cmEl.value || null;
       u.initials = u.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
       toast('User saved ✓');
       setTimeout(() => back(), 400);
@@ -5662,7 +5642,8 @@ document.addEventListener('click', e => {
       const newAdmin = {
         id, email, pin, name:'Admin ' + n, initials:'A' + n,
         hue:(n*47) % 360, photo: n,
-        createdAt: new Date().toISOString(), lastLogin:null
+        createdAt: new Date().toISOString(), lastLogin:null,
+        profileComplete: false
       };
       adminDo(
         () => { ADMINS.push(newAdmin); },
@@ -5673,7 +5654,6 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---- Moderation ---- */
     case 'reportresolve': {
       const r = DB.reports.find(x => x.id === el.dataset.id);
       if (!r) break;
@@ -5702,7 +5682,6 @@ document.addEventListener('click', e => {
       break;
     }
 
-    /* ---------- GENERIC TOAST ---------- */
     case 'toast':
       toast(el.dataset.msg || 'Done');
       break;
@@ -5713,7 +5692,7 @@ document.addEventListener('click', e => {
 });
 
 /* ============================================================
-   SECTION 45 — INPUT HANDLERS
+   SECTION 46 — INPUT HANDLERS
    ============================================================ */
 document.addEventListener('input', e => {
   const el = e.target.closest('[data-input]');
@@ -5739,24 +5718,26 @@ document.addEventListener('input', e => {
   if (key === 'adminEmail'){ state.gateAdminEmail = el.value; return; }
   if (key === 'adminPin'){ state.gateAdminPin = el.value; return; }
 
+  /* Onboarding */
   if (key === 'onboard-name'){ state.onboardDraft.name = el.value; return; }
   if (key === 'onboard-city'){ state.onboardDraft.city = el.value; return; }
   if (key === 'onboard-region'){ state.onboardDraft.region = el.value; return; }
-  if (key === 'onboard-bio'){
-    state.onboardDraft.bio = el.value.slice(0, 240);
-    return;
-  }
-  if (key === 'onboard-skill'){
-    state.onboardDraft.skill = parseFloat(el.value).toFixed(1);
+  if (key === 'onboard-bio'){ state.onboardDraft.bio = el.value.slice(0, 240); return; }
+  if (key === 'onboard-level'){
+    state.onboardDraft.level = parseFloat(el.value).toFixed(1);
     render();
     return;
   }
+  if (key === 'onboard-admin-email'){ state.onboardDraft.adminEmail = el.value; return; }
+  if (key === 'onboard-admin-pin'){ state.onboardDraft.adminPin = el.value; return; }
 
+  /* Profile form */
   if (key === 'profile-name'){ state.profileDraft.name = el.value; return; }
   if (key === 'profile-bio'){ state.profileDraft.bio = el.value.slice(0, 240); return; }
   if (key === 'profile-city'){ state.profileDraft.city = el.value; return; }
   if (key === 'profile-region'){ state.profileDraft.region = el.value; return; }
 
+  /* Post composer */
   if (key === 'post-text'){
     state.postDraft = state.postDraft || {};
     state.postDraft.text = el.value.slice(0, 500);
@@ -5774,6 +5755,7 @@ document.addEventListener('input', e => {
     return;
   }
 
+  /* Post comment */
   if (key === 'post-comment'){
     state.commentDraft = el.value;
     const btn = document.querySelector('[data-act="post-comment-send"]');
@@ -5782,7 +5764,7 @@ document.addEventListener('input', e => {
   }
 });
 
-/* Enter handlers for auth and chat */
+/* Enter handlers */
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter'){
     if (!SESSION.mode){
@@ -5806,13 +5788,14 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape'){
     if (layerEl.innerHTML) closeLayer();
     else if (nav.stack.length){
-      /* exiting onboarding resets session */
       const top = nav.stack[nav.stack.length - 1];
       if (top && top.screen === 'onboarding'){
         SESSION.mode = null;
+        SESSION.adminId = null;
         nav.stack = [];
         state.onboardDraft = null;
         state.onboardStep = 1;
+        state.onboardRole = null;
         render();
       } else {
         back();
@@ -5822,7 +5805,7 @@ document.addEventListener('keydown', e => {
 });
 
 /* ============================================================
-   SECTION 46 — BOOT
+   SECTION 47 — BOOT
    ============================================================ */
 render();
 
