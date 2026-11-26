@@ -2,7 +2,7 @@
 
 Base path: `/api/users/`
 
-All endpoints accept and return JSON. Password-reset emails are sent using Django's email backend. In local development, the configured console backend prints the email to the server terminal. Configure Django's `EMAIL_BACKEND` and `SMTP_*` environment variables to deliver email through SMTP in a deployed environment.
+All endpoints accept and return JSON. Password-reset emails are sent using Django's email backend. In local development, the configured console backend prints the email to the server terminal. I will Configure Django's `EMAIL_BACKEND` and `SMTP_*` environment variables to deliver email through SMTP in a deployed environment.
 
 ## Sign up
 
@@ -82,7 +82,7 @@ Response (`200 OK`):
 
 ```json
 {
-  "message": "If an active account exists for that email, password reset instructions have been sent."
+  "message": "Logic:If an active account exists for that email, password reset instructions will be sent."
 }
 ```
 
